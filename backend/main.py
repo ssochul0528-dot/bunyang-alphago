@@ -13,7 +13,7 @@ app = FastAPI(title="Bunyang AlphaGo API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("ALLOWED_ORIGINS", "*").split(","),
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -322,18 +322,6 @@ async def submit_lead(lead: LeadForm):
     return {"status": "success", "message": "Lead submitted successfully"}
 
 # --- Reusable Copywriting Engines ---
-def generate_lms_variants(req: AnalysisRequest, gap_percent: float):
-    region = req.address.split(" ")[0] + " " + req.address.split(" ")[1] if len(req.address.split(" ")) > 1 else req.address
-    variants = []
-    
-    # --- Dynamic Templates for Randomization ---
-    headers = [
-        f"[{req.field_name}] 선착순 분양 및 조건변경 안내",
-        f"🚨 긴급공지: {req.field_name} 조건변경 잔여세대 안내",
-        f"✨ {req.field_name} 마지막 로열층 선점 기회",
-        f"💎 {req.field_name} | {region} 프리미엄 분양 안내",
-        f"🚩 [정보] {req.field_name} 파격 조건변경 소식"
-    ]
     
 def generate_lms_variants(req: AnalysisRequest, gap_percent: float):
     region = req.address.split(" ")[0] + " " + req.address.split(" ")[1] if len(req.address.split(" ")) > 1 else req.address
@@ -715,4 +703,5 @@ async def analyze_field(request: AnalysisRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
