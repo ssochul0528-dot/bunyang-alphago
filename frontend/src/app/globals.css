@@ -1,9 +1,6 @@
-@import "tailwindcss";
-
-@theme {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background: #020617;
@@ -25,7 +22,7 @@ body {
 
 @layer base {
   * {
-    border-color: var(--border);
+    @apply border-[#1e293b];
   }
 }
 
@@ -47,6 +44,7 @@ body {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
