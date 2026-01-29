@@ -1,0 +1,135 @@
+
+> frontend@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.1 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.219.147:3000
+
+✓ Starting...
+✓ Ready in 720ms
+ GET / 200 in 834ms (compile: 658ms, render: 175ms)
+ GET / 200 in 50ms (compile: 3ms, render: 48ms)
+ GET / 200 in 330ms (compile: 170ms, render: 160ms)
+ GET / 200 in 122ms (compile: 46ms, render: 76ms)
+ GET / 200 in 103ms (compile: 22ms, render: 82ms)
+ GET / 200 in 99ms (compile: 40ms, render: 59ms)
+ GET / 200 in 103ms (compile: 38ms, render: 65ms)
+✓ Compiled in 1042ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+✓ Compiled in 34ms
+ GET / 200 in 622ms (compile: 264ms, render: 358ms)
+ GET / 200 in 261ms (compile: 74ms, render: 187ms)
+ GET / 200 in 159ms (compile: 73ms, render: 85ms)
+ GET / 200 in 119ms (compile: 48ms, render: 72ms)
+ GET / 200 in 286ms (compile: 178ms, render: 108ms)
+ GET / 200 in 109ms (compile: 31ms, render: 78ms)
+ GET / 200 in 195ms (compile: 79ms, render: 116ms)
+ GET / 200 in 188ms (compile: 91ms, render: 97ms)
+ GET / 200 in 221ms (compile: 88ms, render: 133ms)
+ GET /analysis 404 in 2.4s (compile: 2.3s, render: 127ms)
+ GET / 200 in 194ms (compile: 42ms, render: 152ms)
+✓ Compiled in 193ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+✓ Compiled in 49ms
+ GET / 200 in 764ms (compile: 152ms, render: 613ms)
+ GET / 200 in 340ms (compile: 7ms, render: 334ms)
+ GET / 200 in 348ms (compile: 10ms, render: 337ms)
+ GET / 200 in 287ms (compile: 17ms, render: 269ms)
+ GET / 200 in 250ms (compile: 5ms, render: 246ms)
+ GET / 200 in 216ms (compile: 6ms, render: 210ms)
+ GET / 200 in 183ms (compile: 6ms, render: 177ms)
+ GET / 200 in 119ms (compile: 9ms, render: 110ms)
+ GET / 200 in 116ms (compile: 21ms, render: 94ms)
+ GET / 200 in 182ms (compile: 38ms, render: 144ms)
+ GET / 200 in 130ms (compile: 50ms, render: 80ms)
+ GET / 200 in 255ms (compile: 76ms, render: 179ms)
+ GET / 200 in 192ms (compile: 79ms, render: 113ms)
+⚠ Cross origin request detected from 127.0.0.1 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+✓ Compiled in 189ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 200 in 1093ms (compile: 420ms, render: 673ms)
+ GET / 200 in 1116ms (compile: 552ms, render: 564ms)
+ GET / 200 in 299ms (compile: 47ms, render: 252ms)
+ GET / 200 in 373ms (compile: 11ms, render: 362ms)
+ GET / 200 in 436ms (compile: 17ms, render: 419ms)
+ GET / 200 in 534ms (compile: 22ms, render: 513ms)
+ GET / 200 in 593ms (compile: 44ms, render: 549ms)
+ GET / 200 in 536ms (compile: 29ms, render: 507ms)
+ GET / 200 in 556ms (compile: 24ms, render: 532ms)
+ GET / 200 in 396ms (compile: 19ms, render: 377ms)
+ GET / 200 in 281ms (compile: 15ms, render: 267ms)
+✓ Compiled in 226ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 200 in 824ms (compile: 151ms, render: 673ms)
+ GET / 200 in 834ms (compile: 180ms, render: 655ms)
+ GET / 200 in 535ms (compile: 7ms, render: 528ms)
+ GET / 200 in 578ms (compile: 39ms, render: 538ms)
+ GET / 200 in 506ms (compile: 11ms, render: 495ms)
+ GET / 200 in 422ms (compile: 29ms, render: 393ms)
+ GET / 200 in 324ms (compile: 10ms, render: 314ms)
+ GET / 200 in 322ms (compile: 9ms, render: 313ms)
+ GET / 200 in 339ms (compile: 10ms, render: 329ms)
+ GET / 200 in 267ms (compile: 11ms, render: 256ms)
+ GET / 200 in 220ms (compile: 8ms, render: 212ms)
+✓ Compiled in 233ms
+ GET / 200 in 385ms (compile: 156ms, render: 229ms)
+ GET / 200 in 455ms (compile: 263ms, render: 191ms)
+ GET / 200 in 1213ms (compile: 550ms, render: 662ms)
+ GET / 200 in 388ms (compile: 118ms, render: 270ms)
+ GET / 200 in 377ms (compile: 181ms, render: 196ms)
+ GET / 200 in 457ms (compile: 275ms, render: 182ms)
+✓ Compiled in 273ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+✓ Compiled in 88ms
+ GET / 200 in 1513ms (compile: 619ms, render: 894ms)
+ GET / 200 in 391ms (compile: 69ms, render: 322ms)
+ GET / 200 in 241ms (compile: 12ms, render: 229ms)
+ GET / 200 in 166ms (compile: 20ms, render: 146ms)
+ GET / 200 in 337ms (compile: 105ms, render: 232ms)
+ GET / 200 in 355ms (compile: 200ms, render: 155ms)
+ GET / 200 in 297ms (compile: 133ms, render: 164ms)
+ GET / 200 in 400ms (compile: 158ms, render: 242ms)
+ GET / 200 in 361ms (compile: 132ms, render: 230ms)
+ GET /analysis/%ED%9E%90%EC%8A%A4%ED%85%8C%EC%9D%B4%ED%8A%B8-%ED%9A%8C%EB%A3%A1%EC%97%AD-%ED%8C%8C%ED%81%AC%EB%B7%B0 404 in 301ms (compile: 148ms, render: 153ms)
+ GET / 200 in 302ms (compile: 201ms, render: 101ms)
+ GET /dashboard 404 in 419ms (compile: 158ms, render: 261ms)
+ GET / 200 in 533ms (compile: 296ms, render: 236ms)
+ GET / 200 in 560ms (compile: 261ms, render: 299ms)
+ GET / 200 in 1105ms (compile: 668ms, render: 437ms)
+ GET / 200 in 484ms (compile: 337ms, render: 147ms)
