@@ -1,43 +1,100 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   --background: #020617;
   --foreground: #f8fafc;
   --primary: #3b82f6;
-  --primary-foreground: #ffffff;
+  --primary-glow: rgba(59, 130, 246, 0.5);
   --secondary: #1e293b;
-  --accent: #60a5fa;
+  --accent: #6366f1;
   --muted: #475569;
   --card: #0f172a;
-  --border: #1e293b;
+  --border: rgba(255, 255, 255, 0.1);
+  --success: #10b981;
 }
 
 body {
-  background: var(--background);
+  background: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 100%) no-repeat fixed;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
 }
 
 @layer base {
   * {
-    @apply border-[#1e293b];
+    @apply border-white/10;
   }
 }
 
-.glass {
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+/* Premium UI Utilities */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
-.blue-glow {
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+.glass-card {
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
 }
 
-.radar-sweep {
-  animation: sweep 4s linear infinite;
+.glass-card:hover {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+}
+
+.text-gradient {
+  background: linear-gradient(to bottom right, #ffffff 30%, #94a3b8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.blue-glow-text {
+  text-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+}
+
+.blue-glow-border {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+/* Dynamic Background Elements */
+.bg-mesh {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%);
+  opacity: 0.8;
+}
+
+/* Animations */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
 }
 
 @keyframes sweep {
@@ -48,4 +105,25 @@ body {
   to {
     transform: rotate(360deg);
   }
+}
+
+.radar-sweep {
+  animation: sweep 4s linear infinite;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.1);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.5);
 }

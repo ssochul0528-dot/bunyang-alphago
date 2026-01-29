@@ -511,512 +511,528 @@ export default function BunyangAlphaGo() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-900/10 blur-[120px] rounded-full" />
       </div>
 
+      {/* Background Mesh Overlay */}
+      <div className="bg-mesh" />
+
       {/* Header */}
-      <header className="relative z-10 border-b border-blue-900/30 bg-slate-950/50 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center blue-glow">
+      <header className="fixed top-0 left-0 w-full z-50 glass-panel border-b border-white/5 h-20">
+        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center blue-glow-border shadow-[0_0_20px_rgba(59,130,246,0.5)]">
               <Cpu className="text-white" size={24} />
             </div>
-            <h1 className="text-2xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400">
-              분양알파고
-            </h1>
+            <div className="flex flex-col">
+              <span className="text-xl font-black tracking-tighter leading-none">분양알파고</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-blue-400 font-bold">Marketing AI Engine</span>
+            </div>
           </div>
           <div className="flex items-center gap-6">
-            <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400 mr-4">
+            <nav className="hidden lg:flex items-center gap-8 text-sm font-bold text-slate-400">
               <button
                 onClick={() => {
                   fetchHistory();
                   setShowHistoryModal(true);
                 }}
-                className="hover:text-blue-400 transition-colors flex items-center gap-2"
+                className="hover:text-blue-400 transition-all flex items-center gap-2 group"
               >
-                <Database size={16} /> 내 리포트 목록
+                <Database size={16} className="group-hover:scale-110 transition-transform" /> 내 리포트
               </button>
-              <a href="#" className="hover:text-blue-400 transition-colors">데이터 소스</a>
+              <a href="#" className="hover:text-blue-400 transition-all">솔루션 안내</a>
             </nav>
 
+            <div className="h-4 w-[1px] bg-white/10 hidden md:block" />
+
             {user ? (
-              <div className="flex items-center gap-4">
-                <div className="flex flex-col items-end">
-                  <span className="text-xs font-black text-white">{user.name}</span>
-                  <span className="text-[10px] text-slate-500">{user.email}</span>
+              <div className="flex items-center gap-3 pl-2">
+                <div className="flex flex-col items-end hidden sm:flex">
+                  <span className="text-[11px] font-black text-white">{user.name}</span>
+                  <span className="text-[9px] text-slate-500">{user.email}</span>
                 </div>
-                <div className="relative group">
-                  <div className="w-10 h-10 rounded-full border-2 border-blue-500/30 overflow-hidden bg-slate-800 p-1">
+                <div className="relative group cursor-pointer" onClick={handleLogout}>
+                  <div className="w-10 h-10 rounded-full border-2 border-blue-500/20 overflow-hidden bg-slate-900/50 p-1 group-hover:border-red-500/50 transition-all">
                     <img src={user?.image || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"} alt="profile" className="w-full h-full object-contain rounded-full" />
                   </div>
-                  <button
-                    onClick={handleLogout}
-                    className="absolute -bottom-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center border-2 border-slate-900 group-hover:scale-110 transition-transform"
-                  >
-                    <LogOut size={10} className="text-white" />
-                  </button>
+                  <div className="absolute inset-0 bg-red-600/60 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-full transition-all">
+                    <LogOut size={14} className="text-white" />
+                  </div>
                 </div>
               </div>
             ) : (
               <button
                 onClick={() => setShowLoginModal(true)}
-                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-sm font-black transition-all shadow-lg blue-glow flex items-center gap-2"
+                className="px-6 py-2.5 bg-white hover:bg-slate-200 text-slate-900 rounded-full text-xs font-black transition-all shadow-xl flex items-center gap-2 transform hover:scale-105"
               >
-                <User size={16} /> 로그인
+                <User size={14} /> 시작하기
               </button>
             )}
           </div>
         </div>
       </header>
 
-      <main className="relative z-10 max-w-7xl mx-auto px-6 py-12">
-        {/* Section 1: Scanner Dashboard */}
-        <section className="mb-16">
-          <div className="max-w-3xl mx-auto text-center mb-12">
+      <main className="relative z-10 max-w-7xl mx-auto px-6 pt-40 pb-24">
+        {/* Section 1: Hero & Real-time Scanner */}
+        <section className="mb-24 flex flex-col items-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mb-8 px-5 py-2 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] animate-float flex items-center gap-2"
+          >
+            <Zap size={12} fill="currentColor" /> Real-time Marketing Engine v2.0
+          </motion.div>
+
+          <div className="max-w-5xl mx-auto text-center mb-16">
             <motion.h2
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-5xl md:text-8xl font-black mb-10 tracking-tight leading-[1.02]"
+            >
+              마케팅 오류 <span className="blue-glow-text text-blue-500">ZERO</span>,<br />
+              <span className="text-gradient">AI 분양 분석 엔진</span>
+            </motion.h2>
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight"
+              transition={{ delay: 0.3 }}
+              className="text-lg md:text-2xl text-slate-400 font-medium max-w-3xl mx-auto leading-relaxed"
             >
-              마케팅 오류 <span className="text-blue-500">ZERO</span>,<br />AI가 설계하는 완판 로드맵
-            </motion.h2>
+              분양가 분석부터 타겟 추출, 카피 생성까지<br />
+              부동산 분양의 모든 과정을 AI가 정교하게 재설계합니다.
+            </motion.p>
           </div>
 
           {!showConfig && !result && (
-            <>
-              <div className="relative max-w-2xl mx-auto">
-                <div className="glass p-2 rounded-2xl flex items-center gap-2 focus-within:ring-2 ring-blue-500/50 transition-all relative">
-                  <div className="pl-4 text-slate-500"><MapPin size={20} /></div>
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="relative w-full max-w-3xl"
+            >
+              <div className="glass-panel p-3 rounded-[3rem] flex flex-col md:flex-row items-center gap-3 blue-glow-border group border-white/20">
+                <div className="flex-1 flex items-center gap-4 pl-6 w-full">
+                  <MapPin className="text-blue-500 group-focus-within:scale-110 transition-transform" size={24} />
                   <input
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="현장 이름 또는 주소를 입력하세요"
-                    className="flex-1 bg-transparent border-none outline-none py-4 px-2 text-lg text-white"
+                    className="flex-1 bg-transparent border-none outline-none py-5 text-xl text-white font-bold placeholder:text-slate-600"
+                    onKeyPress={(e) => e.key === 'Enter' && handleManualScan()}
                   />
-                  <button
-                    onClick={handleManualScan}
-                    disabled={isScanning}
-                    className="bg-blue-600 hover:bg-blue-500 px-6 py-4 rounded-xl font-bold transition-all flex items-center gap-2"
-                  >
-                    {isScanning ? <Zap className="animate-pulse" size={18} /> : <Search size={18} />}
-                    분석
-                  </button>
-                  {isSearching && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                      <RefreshCw size={14} className="animate-spin text-blue-500" />
-                      <span className="text-[10px] text-slate-500 font-bold uppercase">Searching</span>
-                    </div>
-                  )}
                 </div>
-
-                {/* Search Results Dropdown */}
-                <AnimatePresence>
-                  {(isSearching || (address.trim().length >= 1 && searchResults.length > 0) || (!isSearching && searchResults.length === 0 && address.trim().length >= 1)) && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute left-0 right-0 mt-2 glass border border-blue-500/30 rounded-2xl overflow-hidden z-50 shadow-2xl"
-                    >
-                      {isSearching && (
-                        <div className="px-6 py-10 text-center flex flex-col items-center gap-3">
-                          <RefreshCw size={24} className="animate-spin text-blue-500/50" />
-                          <p className="text-sm text-slate-500 font-medium">데이터베이스 검색 중...</p>
-                        </div>
-                      )}
-
-                      {!isSearching && searchResults.length > 0 && searchResults.map((site: any) => (
-                        <button
-                          key={site.id}
-                          onClick={() => handleSelectSite(site)}
-                          className="w-full px-6 py-4 text-left hover:bg-blue-600/20 transition-colors border-b border-slate-800 last:border-0 flex justify-between items-center group"
-                        >
-                          <div>
-                            <div className="flex items-center gap-2">
-                              {site.brand && site.brand !== "기타" && (
-                                <span className="text-[10px] font-black bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30">
-                                  {site.brand}
-                                </span>
-                              )}
-                              <div className="text-white font-bold group-hover:text-blue-400 transition-colors">{site.name}</div>
-                              {site.status && (
-                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${site.status.includes('미분양') || site.status.includes('할인') || site.status.includes('잔여')
-                                  ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                  : 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                  }`}>
-                                  {site.status}
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-xs text-slate-500 mt-1">{site.address}</div>
-                          </div>
-                          <ShieldCheck className="text-slate-700 group-hover:text-blue-500 transition-colors" size={20} />
-                        </button>
-                      ))}
-
-                      {!isSearching && searchResults.length === 0 && address.trim().length >= 1 && (
-                        <div className="px-6 py-10 text-center">
-                          <div className="text-slate-500 mb-4 flex flex-col items-center gap-2">
-                            <MapPin size={32} className="opacity-20" />
-                            <p className="text-sm">검색 결과가 없습니다.</p>
-                          </div>
-                          <button
-                            onClick={handleManualScan}
-                            className="text-xs font-bold text-blue-500 hover:text-blue-400 underline decoration-blue-500/30 underline-offset-4"
-                          >
-                            새로운 현장으로 직접 등록하기
-                          </button>
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <button
+                  onClick={handleManualScan}
+                  disabled={isScanning}
+                  className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 px-10 py-5 rounded-[2.2rem] font-black text-lg transition-all flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:shadow-[0_0_60px_rgba(59,130,246,0.5)] transform hover:scale-[1.02] active:scale-95"
+                >
+                  {isScanning ? <RefreshCw className="animate-spin" size={20} /> : <Zap size={20} fill="currentColor" />}
+                  시작하기
+                </button>
+                {isSearching && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    <RefreshCw size={14} className="animate-spin text-blue-500" />
+                    <span className="text-[10px] text-slate-500 font-bold uppercase">Searching</span>
+                  </div>
+                )}
               </div>
 
-              {/* New: Detailed Introduction Section */}
-              {!isScanning && !showConfig && !result && (
-                <motion.div
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.8 }}
-                  className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
-                >
-                  <div className="md:col-span-3 mb-10 text-center">
-                    <span className="px-4 py-1.5 bg-blue-500/10 text-blue-500 text-[10px] font-black rounded-full border border-blue-500/20 uppercase tracking-[0.2em] mb-4 inline-block">Service Deep-Dive</span>
-                    <h3 className="text-3xl font-black text-white">마케팅 현장의 패러다임을 바꿉니다</h3>
-                  </div>
-
-                  <div className="glass rounded-[2rem] border-white/5 hover:border-blue-500/30 transition-all group overflow-hidden flex flex-col">
-                    <div className="h-48 w-full relative overflow-hidden">
-                      <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop" alt="Real-time Data" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60" />
-                      <div className="absolute bottom-4 left-6 w-12 h-12 bg-blue-600/20 rounded-xl backdrop-blur-md flex items-center justify-center border border-blue-500/30">
-                        <Database className="text-blue-500" size={24} />
+              {/* Search Results Dropdown */}
+              <AnimatePresence>
+                {(isSearching || (address.trim().length >= 1 && searchResults.length > 0) || (!isSearching && searchResults.length === 0 && address.trim().length >= 1)) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute left-0 right-0 mt-2 glass border border-blue-500/30 rounded-2xl overflow-hidden z-50 shadow-2xl"
+                  >
+                    {isSearching && (
+                      <div className="px-6 py-10 text-center flex flex-col items-center gap-3">
+                        <RefreshCw size={24} className="animate-spin text-blue-500/50" />
+                        <p className="text-sm text-slate-500 font-medium">데이터베이스 검색 중...</p>
                       </div>
-                    </div>
-                    <div className="p-8">
-                      <h4 className="text-xl font-bold mb-4 text-blue-100">실시간 데이터 동기화</h4>
-                      <p className="text-sm text-slate-400 leading-relaxed">네이버 부동산, 국토부 실거래가, 구글 트렌드 데이터를 실시간으로 크롤링하여 현장 및 주변 시세를 1분 만에 분석합니다.</p>
-                      <ul className="mt-6 space-y-2">
-                        {["평당가 자동 연산", "경쟁 단지 SOV 분석", "지역 하이엔드 갭 분석"].map(v => (
-                          <li key={v} className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
-                            <div className="w-1 h-1 rounded-full bg-blue-500" /> {v}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
+                    )}
 
-                  <div className="glass rounded-[2rem] border-white/5 hover:border-indigo-500/30 transition-all group overflow-hidden bg-indigo-900/5 flex flex-col">
-                    <div className="h-48 w-full relative overflow-hidden">
-                      <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop" alt="AI Strategy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60" />
-                      <div className="absolute bottom-4 left-6 w-12 h-12 bg-indigo-600/20 rounded-xl backdrop-blur-md flex items-center justify-center border border-indigo-500/30">
-                        <Cpu className="text-indigo-500" size={24} />
-                      </div>
-                    </div>
-                    <div className="p-8">
-                      <h4 className="text-xl font-bold mb-4 text-indigo-100">AI 마케팅 페르소나</h4>
-                      <p className="text-sm text-slate-400 leading-relaxed">분양 전문가들의 노하우가 담긴 AI 엔진이 타겟 오디언스를 세분화하고 가장 효율적인 매체 믹스 가이드라인을 제시합니다.</p>
-                      <ul className="mt-6 space-y-2">
-                        {["맞춤형 매체 비중 산출", "타겟 페르소나 도출", "4주 집중 로드맵"].map(v => (
-                          <li key={v} className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
-                            <div className="w-1 h-1 rounded-full bg-indigo-500" /> {v}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="glass rounded-[2rem] border-white/5 hover:border-orange-500/30 transition-all group overflow-hidden bg-orange-900/5 flex flex-col">
-                    <div className="h-48 w-full relative overflow-hidden">
-                      <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071&auto=format&fit=crop" alt="Copywriting" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60" />
-                      <div className="absolute bottom-4 left-6 w-12 h-12 bg-orange-600/20 rounded-xl backdrop-blur-md flex items-center justify-center border border-orange-500/30">
-                        <MessageSquare className="text-orange-500" size={24} />
-                      </div>
-                    </div>
-                    <div className="p-8">
-                      <h4 className="text-xl font-bold mb-4 text-orange-100">고효율 카피라이팅</h4>
-                      <p className="text-sm text-slate-400 leading-relaxed">호갱노노, 채널톡, LMS 등 매체별 특성에 최적화된 10종 이상의 카피 변체를 생성하여 클릭률과 전환율을 극대화합니다.</p>
-                      <ul className="mt-6 space-y-2">
-                        {["호갱노노 채널톡 특화", "전략별 5종 LMS 카피", "방문 사은품 소구 연동"].map(v => (
-                          <li key={v} className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
-                            <div className="w-1 h-1 rounded-full bg-orange-500" /> {v}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-3 mt-32 space-y-32">
-                    {/* Intro Heading */}
-                    <div className="text-center space-y-6">
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        className="inline-block px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-[0.2em]"
+                    {!isSearching && searchResults.length > 0 && searchResults.map((site: any) => (
+                      <button
+                        key={site.id}
+                        onClick={() => handleSelectSite(site)}
+                        className="w-full px-6 py-4 text-left hover:bg-blue-600/20 transition-colors border-b border-slate-800 last:border-0 flex justify-between items-center group"
                       >
-                        The Power of Bunyang AlphaGo
-                      </motion.div>
-                      <h2 className="text-5xl font-black tracking-tight leading-tight">
-                        데이터로 분양 성과를 <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">완벽하게 통제하는 방법</span>
-                      </h2>
-                      <p className="text-slate-500 text-lg max-w-2xl mx-auto font-medium leading-relaxed">
-                        단순한 추측이 아닌 데이터로 증명합니다. <br />
-                        알파고가 제공하는 4가지 핵심 통찰력을 통해 분양 마케팅의 뉴 노멀을 경험하세요.
-                      </p>
-                    </div>
-
-                    {/* Feature 1: Market Intelligence */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                      <div className="space-y-8 order-2 lg:order-1">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                          <BarChart3 className="text-emerald-400" size={16} />
-                          <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Market IQ</span>
-                        </div>
-                        <h3 className="text-4xl font-black leading-[1.2]">실시간 데이터 기반의 <br /><span className="text-emerald-400 text-glow-emerald">냉철한 시장 진단</span></h3>
-                        <div className="space-y-6">
-                          <p className="text-slate-400 leading-relaxed text-lg">
-                            "현장이 매력적인가요?"라는 질문에 감으로 대답하지 마십시오. 알파고는 네이버 부동산의 실거래가와 호가를 즉시 수집하여 주변 단지와의 시세 차이를 데이터로 입증합니다.
-                          </p>
-                          <ul className="space-y-4">
-                            {[
-                              "반경 5km 내 주요 대장주 단지 실시간 시세 대조",
-                              "구매 결정의 핵심인 '시세 우위 지수' 자동 산출",
-                              "주변 공급 물량 및 미분양 현황 기반의 희소성 평가"
-                            ].map(v => (
-                              <li key={v} className="flex items-start gap-4 text-slate-300 font-medium group">
-                                <CheckCircle2 size={20} className="text-emerald-500 shrink-0 mt-0.5 group-hover:scale-125 transition-transform" />
-                                {v}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                      <div className="order-1 lg:order-2 perspective-1000">
-                        <motion.div
-                          whileHover={{ rotateY: -5, rotateX: 5 }}
-                          className="glass rounded-[3.5rem] p-10 border-white/5 bg-gradient-to-br from-emerald-500/10 via-slate-900/40 to-transparent relative group overflow-hidden shadow-2xl"
-                        >
-                          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1551288049-bbbda536339a?q=80&w=2070&auto=format&fit=crop')] opacity-10 grayscale group-hover:scale-105 transition-transform duration-700" />
-                          <div className="relative z-10 space-y-8">
-                            <div className="h-56 w-full bg-slate-950/80 rounded-[2rem] border border-white/5 flex flex-col items-center justify-center p-8 backdrop-blur-md">
-                              <div className="text-[10px] font-black text-slate-500 mb-2 uppercase tracking-widest">Market Price Gap</div>
-                              <div className="text-6xl font-black text-emerald-400 tracking-tighter">-12.5%</div>
-                              <div className="px-4 py-1.5 bg-emerald-500/10 rounded-full text-[10px] text-emerald-500 font-black mt-4 border border-emerald-500/20">강력 매수 권고 구간</div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="p-5 bg-slate-900/90 rounded-2xl border border-white/5">
-                                <div className="text-[10px] text-slate-500 mb-1 font-bold">우리 현장 분양가</div>
-                                <div className="text-xl font-black text-white">2,810만원</div>
-                              </div>
-                              <div className="p-5 bg-slate-900/90 rounded-2xl border border-white/5">
-                                <div className="text-[10px] text-slate-500 mb-1 font-bold">인근 시세 평균</div>
-                                <div className="text-xl font-black text-white">3,240만원</div>
-                              </div>
-                            </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            {site.brand && site.brand !== "기타" && (
+                              <span className="text-[10px] font-black bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30">
+                                {site.brand}
+                              </span>
+                            )}
+                            <div className="text-white font-bold group-hover:text-blue-400 transition-colors">{site.name}</div>
+                            {site.status && (
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${site.status.includes('미분양') || site.status.includes('할인') || site.status.includes('잔여')
+                                ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                }`}>
+                                {site.status}
+                              </span>
+                            )}
                           </div>
-                        </motion.div>
-                      </div>
-                    </div>
+                          <div className="text-xs text-slate-500 mt-1">{site.address}</div>
+                        </div>
+                        <ShieldCheck className="text-slate-700 group-hover:text-blue-500 transition-colors" size={20} />
+                      </button>
+                    ))}
 
-                    {/* Feature 2: Media Strategy */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                      <div className="lg:order-1 perspective-1000">
-                        <motion.div
-                          whileHover={{ rotateY: 5, rotateX: 5 }}
-                          className="glass rounded-[3.5rem] p-10 border-white/5 bg-gradient-to-br from-blue-500/10 via-slate-900/40 to-transparent relative group overflow-hidden shadow-2xl"
+                    {!isSearching && searchResults.length === 0 && address.trim().length >= 1 && (
+                      <div className="px-6 py-10 text-center">
+                        <div className="text-slate-500 mb-4 flex flex-col items-center gap-2">
+                          <MapPin size={32} className="opacity-20" />
+                          <p className="text-sm">검색 결과가 없습니다.</p>
+                        </div>
+                        <button
+                          onClick={handleManualScan}
+                          className="text-xs font-bold text-blue-500 hover:text-blue-400 underline decoration-blue-500/30 underline-offset-4"
                         >
-                          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop')] opacity-10 grayscale group-hover:scale-105 transition-transform duration-700" />
-                          <div className="relative z-10 grid grid-cols-2 gap-5">
-                            {[
-                              { m: 'Meta Reels', pct: '45%', c: 'bg-blue-600', val: 85 },
-                              { m: 'Naver Search', pct: '25%', c: 'bg-emerald-600', val: 60 },
-                              { m: 'Hogangnono', pct: '20%', c: 'bg-orange-500', val: 40 },
-                              { m: 'Carrot Ads', pct: '10%', c: 'bg-orange-600', val: 20 }
-                            ].map(item => (
-                              <div key={item.m} className="p-5 bg-slate-950/80 rounded-2xl border border-white/5 backdrop-blur-md">
-                                <div className="text-[9px] font-black text-slate-500 uppercase mb-2">{item.m}</div>
-                                <div className="text-2xl font-black text-white mb-2">{item.pct}</div>
-                                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                                  <motion.div
-                                    initial={{ width: 0 }}
-                                    whileInView={{ width: `${item.val}%` }}
-                                    className={`h-full ${item.c}`}
-                                  />
-                                </div>
-                              </div>
-                            ))}
-                            <div className="col-span-2 p-5 bg-blue-600/10 rounded-2xl border border-blue-500/30 text-center">
-                              <div className="text-[10px] font-black text-blue-400 mb-2 tracking-widest uppercase">Target Persona</div>
-                              <div className="text-base font-bold text-white tracking-tight">"내 집 마련을 꿈꾸는 서울 서북권 30대 신혼부부"</div>
-                            </div>
-                          </div>
-                        </motion.div>
+                          새로운 현장으로 직접 등록하기
+                        </button>
                       </div>
-                      <div className="space-y-8 lg:order-2">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                          <Cpu className="text-blue-400" size={16} />
-                          <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Ad AI Controller</span>
-                        </div>
-                        <h3 className="text-4xl font-black leading-[1.2]">매체비를 버리지 않는 <br /><span className="text-blue-400 text-glow-blue">데이터 미디어 믹스</span></h3>
-                        <div className="space-y-6">
-                          <p className="text-slate-400 leading-relaxed text-lg">
-                            DB당 단가를 최소화하는 '필승 조합'을 찾으십시오. 알파고는 현장 스코어와 사업 단계(사전/정당회/잔여)를 분석하여 광고 도달 대비 전환율이 가장 높은 매체 비중을 제안합니다.
-                          </p>
-                          <ul className="space-y-4">
-                            {[
-                              "Meta, 네이버, 호갱노노 등 10대 부동산 매체 실시간 효율 기반",
-                              "사업 현황에 최적화된 하계/동계 시즌별 로드맵 제시",
-                              "광고 피로도를 고려한 예산 투입 강도 실시간 최적화"
-                            ].map(v => (
-                              <li key={v} className="flex items-start gap-4 text-slate-300 font-medium group">
-                                <CheckCircle2 size={20} className="text-blue-500 shrink-0 mt-0.5 group-hover:scale-125 transition-transform" />
-                                {v}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
 
-                    {/* Feature 3: Copywriting */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                      <div className="space-y-8 order-2 lg:order-1">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20">
-                          <MessageSquare className="text-orange-400" size={16} />
-                          <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Copy AI</span>
-                        </div>
-                        <h3 className="text-4xl font-black leading-[1.2]">클릭을 부르는 <br /><span className="text-orange-400 text-glow-orange">심리 기반 AI 카피라이팅</span></h3>
-                        <div className="space-y-6">
-                          <p className="text-slate-400 leading-relaxed text-lg">
-                            마케터의 수 시간 고민을 1초로 단축하십시오. 단순한 정보 나이열이 아닌, 사용자의 '결핍'과 '욕망'을 자극하는 행동 유도형 카피를 채널별 특성에 맞춰 무한 생성합니다.
-                          </p>
-                          <ul className="space-y-4">
-                            {[
-                              "LMS, 채널톡, 호갱노노 배너 등 채널별 최적화된 텍스트 볼륨",
-                              "신뢰형/금융집중형/마감임박형 등 성과가 검증된 3대 전략 카피",
-                              "현장의 특장점(Keypoints)을 AI가 자동으로 문장으로 조합"
-                            ].map(v => (
-                              <li key={v} className="flex items-start gap-4 text-slate-300 font-medium group">
-                                <CheckCircle2 size={20} className="text-orange-500 shrink-0 mt-0.5 group-hover:scale-125 transition-transform" />
-                                {v}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                      <div className="order-1 lg:order-2 perspective-1000">
-                        <div className="glass rounded-[3.5rem] p-12 border-white/5 bg-gradient-to-br from-orange-500/10 via-slate-900/40 to-transparent relative group overflow-hidden shadow-2xl">
-                          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071&auto=format&fit=crop')] opacity-10 grayscale group-hover:scale-105 transition-transform duration-700" />
-                          <div className="relative z-10 space-y-6">
-                            <motion.div
-                              initial={{ x: 50, opacity: 0 }}
-                              whileInView={{ x: 0, opacity: 1 }}
-                              className="p-6 bg-slate-950/95 rounded-2xl border border-white/10 shadow-xl backdrop-blur-xl rotate-[-2deg] hover:rotate-0 transition-transform cursor-default"
-                            >
-                              <div className="text-[10px] text-orange-500 font-black mb-3 flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" /> LMS 프리미엄형
-                              </div>
-                              <div className="text-[13px] text-slate-200 leading-snug font-medium">
-                                "💎 [공지] {addressValue.split(' ')[1]} 지역 시세 대비 -12.5% 합리적 분양가 확정! 마지막 로열층 선착순 계약 중..."
-                              </div>
-                            </motion.div>
-                            <motion.div
-                              initial={{ x: -20, opacity: 0 }}
-                              whileInView={{ x: 0, opacity: 1 }}
-                              transition={{ delay: 0.2 }}
-                              className="p-6 bg-slate-950/95 rounded-2xl border border-white/10 shadow-xl backdrop-blur-xl ml-12 rotate-[2deg] hover:rotate-0 transition-transform cursor-default"
-                            >
-                              <div className="text-[10px] text-blue-500 font-black mb-3 flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" /> 채널톡 긴급형
-                                🚨 [속보] 조건변경 공지 이후 홍보관 방문객 3배 폭증! 남은 잔여세대 실시간 확인 필수...
-                              </div>
-                            </motion.div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+          {/* New: Detailed Introduction Section */}
+          {!isScanning && !showConfig && !result && (
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+                <div className="md:col-span-3 mb-12 text-center">
+                  <span className="px-4 py-1.5 bg-blue-500/10 text-blue-500 text-[10px] font-black rounded-full border border-blue-500/20 uppercase tracking-[0.2em] mb-4 inline-block">Service Deep-Dive</span>
+                  <h3 className="text-4xl md:text-5xl font-black text-white tracking-tight">마케팅 현장의 패러다임을 바꿉니다</h3>
+                </div>
 
-                    {/* Feature 4: ROI Simulation */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                      <div className="lg:order-1 perspective-1000">
-                        <motion.div
-                          whileHover={{ scale: 1.02 }}
-                          className="glass rounded-[3.5rem] p-12 border-white/5 bg-gradient-to-br from-indigo-500/10 via-slate-900/40 to-transparent relative group overflow-hidden shadow-2xl"
-                        >
-                          <div className="relative z-10 space-y-8">
-                            <div className="h-48 w-full bg-slate-950/80 rounded-[2rem] border border-blue-500/20 flex flex-col items-center justify-center p-8 backdrop-blur-md">
-                              <div className="text-[10px] font-black text-blue-500 mb-2 uppercase tracking-widest">Expected ROI Optimization</div>
-                              <div className="text-5xl font-black text-white">4.2<span className="text-xl text-blue-500 ml-1">%</span></div>
-                              <div className="text-[9px] text-slate-500 mt-2 font-bold uppercase tracking-wider">Final Conversion Rate</div>
-                            </div>
-                            <div className="space-y-4">
-                              <div className="flex justify-between items-end">
-                                <div className="text-[10px] font-bold text-slate-500 uppercase">Lead Pipeline</div>
-                                <div className="text-xs font-black text-blue-400 tracking-tighter">MAX EFFICIENCY</div>
-                              </div>
-                              <div className="h-3 w-full bg-slate-800/50 rounded-full overflow-hidden p-0.5 border border-white/5">
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  whileInView={{ width: '75%' }}
-                                  className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 rounded-full"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      </div>
-                      <div className="space-y-8 lg:order-2">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-                          <PieChart className="text-indigo-400" size={16} />
-                          <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">ROI Simulator</span>
-                        </div>
-                        <h3 className="text-4xl font-black leading-[1.2]">예산 투입 전 성과를 <br /><span className="text-indigo-400 text-glow-indigo">100% 시뮬레이션</span></h3>
-                        <div className="space-y-6">
-                          <p className="text-slate-400 leading-relaxed text-lg">
-                            마케팅 대행사에 예산을 맡기기 전에 먼저 시뮬레이션 하십시오. 예산 규모에 따른 DB 확보량, 예상 단가(CPL), 최종 상담 방문량을 정밀 연산하여 마케팅 실패 확률을 제로로 만듭니다.
-                          </p>
-                          <ul className="space-y-4">
-                            {[
-                              "실시간 예산 조정에 따른 성과 지표 자동 업데이트",
-                              "현장 매력도와 전환율이 연동된 과학적 예측 모델",
-                              "DB 확보부터 방문까지 고도화된 성과 파이프라인 시각화"
-                            ].map(v => (
-                              <li key={v} className="flex items-start gap-4 text-slate-300 font-medium group">
-                                <CheckCircle2 size={20} className="text-indigo-500 shrink-0 mt-0.5 group-hover:scale-125 transition-transform" />
-                                {v}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Final Persuasion CTA */}
-                    <div className="py-28 text-center glass rounded-[5rem] border-white/10 bg-gradient-to-b from-blue-600/20 via-slate-900/60 to-transparent relative overflow-hidden">
-                      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5" />
-                      <div className="relative z-10">
-                        <h4 className="text-5xl font-black mb-8 tracking-tight">성공하는 현장은 <br /><span className="text-blue-500 underline decoration-blue-500/30 underline-offset-8">데이터를 먼저 봅니다</span></h4>
-                        <p className="text-slate-400 max-w-2xl mx-auto mb-12 text-lg leading-relaxed font-medium">
-                          불확실한 부동산 시장에서 감에만 의존하시겠습니까?<br />
-                          알파고가 제공하는 압도적 통찰력이 당신의 현장을 '대장주'로 만듭니다.
-                        </p>
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                          className="px-12 py-6 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-[2rem] text-lg blue-glow transition-all shadow-2xl shadow-blue-500/40 flex items-center gap-4 mx-auto"
-                        >
-                          <Search size={24} /> 지금 바로 무료 분석 시작하기
-                        </motion.button>
-                        <div className="mt-8 text-[11px] font-bold text-slate-500 uppercase tracking-[0.3em]">No Registration Required · Instant Feedback</div>
-                      </div>
+                {/* Card 1: Data */}
+                <div className="glass-card rounded-[2.5rem] overflow-hidden flex flex-col group">
+                  <div className="h-52 w-full relative overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop" alt="Real-time Data" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
+                    <div className="absolute bottom-6 left-8 w-14 h-14 glass-panel rounded-2xl flex items-center justify-center border-blue-500/30">
+                      <Database className="text-blue-500" size={28} />
                     </div>
                   </div>
+                  <div className="p-10 pt-6">
+                    <h4 className="text-2xl font-black mb-4 text-white">실시간 데이터 동기화</h4>
+                    <p className="text-slate-400 leading-relaxed font-medium">네이버 부동산, 국토부 실거래가 데이터를 실시간 크롤링하여 현장 및 주변 시세를 1분 만에 분석합니다.</p>
+                  </div>
+                </div>
+
+                {/* Card 2: AI */}
+                <div className="glass-card rounded-[2.5rem] overflow-hidden flex flex-col group">
+                  <div className="h-52 w-full relative overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop" alt="AI Strategy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
+                    <div className="absolute bottom-6 left-8 w-14 h-14 glass-panel rounded-2xl flex items-center justify-center border-indigo-500/30">
+                      <Cpu className="text-indigo-400" size={28} />
+                    </div>
+                  </div>
+                  <div className="p-10 pt-6">
+                    <h4 className="text-2xl font-black mb-4 text-white">AI 마케팅 페르소나</h4>
+                    <p className="text-slate-400 leading-relaxed font-medium">분양 전문가의 노하우가 담긴 AI 엔진이 타겟 오디언스를 세분화하고 고효율 매체 믹스 가이드를 제시합니다.</p>
+                  </div>
+                </div>
+
+                {/* Card 3: Copy */}
+                <div className="glass-card rounded-[2.5rem] overflow-hidden flex flex-col group">
+                  <div className="h-52 w-full relative overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071&auto=format&fit=crop" alt="Copywriting" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
+                    <div className="absolute bottom-6 left-8 w-14 h-14 glass-panel rounded-2xl flex items-center justify-center border-orange-500/30">
+                      <MessageSquare className="text-orange-400" size={28} />
+                    </div>
+                  </div>
+                  <div className="p-10 pt-6">
+                    <h4 className="text-2xl font-black mb-4 text-white">고효율 카피라이팅</h4>
+                    <p className="text-slate-400 leading-relaxed font-medium">호갱노노, 채널톡, LMS 등 매체별 특성에 최적화된 카피 변체를 생성하여 클릭률을 극대화합니다.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Intro Heading */}
+              <div className="text-center space-y-8 mb-40">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  className="inline-block px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-[0.2em]"
+                >
+                  The Power of Bunyang AlphaGo
                 </motion.div>
-              )}
-            </>
+                <h2 className="text-5xl md:text-7xl font-black tracking-tight leading-[1.1]">
+                  데이터로 분양 성과를 <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-600">완벽하게 통제하는 방법</span>
+                </h2>
+                <p className="text-slate-500 text-xl max-w-3xl mx-auto font-medium leading-relaxed">
+                  단순한 추측이 아닌 데이터로 입증합니다. <br />
+                  알파고가 제공하는 4가지 혁신적 통찰력을 통해 분양 마케팅의 뉴 노멀을 경험하세요.
+                </p>
+              </div>
+
+              {/* Feature 1: Market Intelligence */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center mb-60">
+                <div className="space-y-10 order-2 lg:order-1">
+                  <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                    <BarChart3 className="text-emerald-400" size={18} />
+                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Market Intelligence</span>
+                  </div>
+                  <h3 className="text-5xl font-black leading-tight text-white">실시간 데이터 기반의 <br /><span className="text-emerald-400">냉철한 시장 진단</span></h3>
+                  <div className="space-y-8">
+                    <p className="text-slate-400 leading-relaxed text-xl font-medium">
+                      "현장이 매력적인가요?"라는 질문에 감으로 대답하지 마십시오. 알파고는 네이버 부동산의 실거래가와 호가를 즉시 수집하여 주변 단지와의 시세 차이를 데이터로 입증합니다.
+                    </p>
+                    <ul className="space-y-5">
+                      {[
+                        "반경 5km 내 주요 대장주 단지 실시간 시세 대조",
+                        "구매 결정의 핵심인 '시세 우위 지수' 자동 산출",
+                        "주변 공급 물량 및 미분양 현황 기반의 희소성 평가"
+                      ].map(v => (
+                        <li key={v} className="flex items-start gap-5 text-slate-300 font-bold group">
+                          <CheckCircle2 size={24} className="text-emerald-500 shrink-0 mt-0.5 group-hover:scale-125 transition-transform" />
+                          <span className="text-lg">{v}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+                <div className="order-1 lg:order-2 perspective-2000">
+                  <motion.div
+                    whileHover={{ rotateY: -10, rotateX: 5, scale: 1.02 }}
+                    className="glass-card rounded-[4rem] p-12 border-white/10 bg-gradient-to-br from-emerald-500/10 via-slate-950/40 to-transparent relative group overflow-hidden shadow-2xl shadow-emerald-900/10"
+                  >
+                    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1551288049-bbbda536339a?q=80&w=2070&auto=format&fit=crop')] opacity-10 grayscale group-hover:scale-110 transition-transform duration-1000" />
+                    <div className="relative z-10 space-y-10">
+                      <div className="h-64 w-full glass-panel rounded-[2.5rem] border border-white/5 flex flex-col items-center justify-center p-10 backdrop-blur-2xl">
+                        <div className="text-[10px] font-black text-slate-500 mb-3 uppercase tracking-[0.3em]">Market Price Concentration</div>
+                        <div className="text-7xl font-black text-emerald-400 tracking-tighter">-12.5%</div>
+                        <div className="px-6 py-2 bg-emerald-500/10 rounded-full text-[11px] text-emerald-400 font-black mt-6 border border-emerald-500/20 shadow-lg shadow-emerald-500/10">강력 매수 권고 구간</div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="p-7 glass-panel rounded-3xl border border-white/5">
+                          <div className="text-[10px] text-slate-500 mb-2 font-black uppercase tracking-widest">Expected Price</div>
+                          <div className="text-2xl font-black text-white">2,810<span className="text-sm text-slate-500 ml-1">만원</span></div>
+                        </div>
+                        <div className="p-7 glass-panel rounded-3xl border border-white/5">
+                          <div className="text-[10px] text-slate-500 mb-2 font-black uppercase tracking-widest">Market Avg</div>
+                          <div className="text-2xl font-black text-white">3,240<span className="text-sm text-slate-500 ml-1">만원</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+
+              {/* Feature 2: Media Strategy */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center mb-60">
+                <div className="lg:order-1 perspective-2000">
+                  <motion.div
+                    whileHover={{ rotateY: 10, rotateX: 5, scale: 1.02 }}
+                    className="glass-card rounded-[4rem] p-12 border-white/10 bg-gradient-to-br from-blue-500/10 via-slate-950/40 to-transparent relative group overflow-hidden shadow-2xl shadow-blue-900/10"
+                  >
+                    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop')] opacity-10 grayscale group-hover:scale-110 transition-transform duration-1000" />
+                    <div className="relative z-10 grid grid-cols-2 gap-6">
+                      {[
+                        { m: 'Meta Reels', pct: '45%', c: 'bg-blue-600', val: 85 },
+                        { m: 'Naver Search', pct: '25%', c: 'bg-indigo-600', val: 60 },
+                        { m: 'Hogangnono', pct: '20%', c: 'bg-blue-400', val: 40 },
+                        { m: 'Carrot Ads', pct: '10%', c: 'bg-slate-600', val: 20 }
+                      ].map(item => (
+                        <div key={item.m} className="p-6 glass-panel rounded-3xl border border-white/5 backdrop-blur-xl">
+                          <div className="text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest">{item.m}</div>
+                          <div className="text-3xl font-black text-white mb-3">{item.pct}</div>
+                          <div className="h-2 w-full bg-slate-800/50 rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              whileInView={{ width: `${item.val}%` }}
+                              transition={{ duration: 1, ease: "easeOut" }}
+                              className={`h-full ${item.c} shadow-[0_0_15px_rgba(59,130,246,0.4)]`}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                      <div className="col-span-2 p-8 bg-blue-600/10 rounded-3xl border border-blue-500/30 text-center backdrop-blur-xl">
+                        <div className="text-[10px] font-black text-blue-400 mb-3 tracking-[0.3em] uppercase">Target Persona IQ</div>
+                        <div className="text-lg font-bold text-white tracking-tight leading-relaxed">"내 집 마련을 꿈꾸는 서울 서북권 30대 신혼부부"</div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+                <div className="space-y-10 lg:order-2">
+                  <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                    <Cpu className="text-blue-400" size={18} />
+                    <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Media Intelligence</span>
+                  </div>
+                  <h3 className="text-5xl font-black leading-tight text-white">매체비를 버리지 않는 <br /><span className="text-blue-500">데이터 미디어 믹스</span></h3>
+                  <div className="space-y-8">
+                    <p className="text-slate-400 leading-relaxed text-xl font-medium">
+                      DB당 단가를 최소화하는 '필승 조합'을 찾으십시오. 알파고는 현장 스코어와 사업 단계(사전/본계약/잔여)를 분석하여 전환율이 가장 높은 매체 비중을 제안합니다.
+                    </p>
+                    <ul className="space-y-5">
+                      {[
+                        "Meta, 네이버, 호갱노노 등 10대 부동산 매체 실시간 효율 기반",
+                        "사업 현황에 최적화된 시즌별/단계별 미디어 로드맵 제시",
+                        "광고 피로도를 고려한 예산 투입 강도 실시간 최적화 엔진"
+                      ].map(v => (
+                        <li key={v} className="flex items-start gap-5 text-slate-300 font-bold group">
+                          <CheckCircle2 size={24} className="text-blue-500 shrink-0 mt-0.5 group-hover:scale-125 transition-transform" />
+                          <span className="text-lg">{v}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Feature 3: Copywriting */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center mb-60">
+                <div className="space-y-10 order-2 lg:order-1">
+                  <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                    <MessageSquare className="text-orange-400" size={18} />
+                    <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Direct Response AI</span>
+                  </div>
+                  <h3 className="text-5xl font-black leading-tight text-white">클릭을 부르는 <br /><span className="text-orange-400">심리 기반 AI 카피라이팅</span></h3>
+                  <div className="space-y-8">
+                    <p className="text-slate-400 leading-relaxed text-xl font-medium">
+                      마케터의 수 시간 고민을 1초로 단축하십시오. 단순한 정보 나열이 아닌, 사용자의 '결핍'과 '욕망'을 자극하는 행동 유도형 카피를 무한 생성합니다.
+                    </p>
+                    <ul className="space-y-5">
+                      {[
+                        "LMS, 채널톡, 호갱노노 배너 등 채널별 최적화된 텍스트 볼륨",
+                        "신뢰형/금융집중형/마감임박형 등 성과 검증된 3대 전략 카피",
+                        "현장의 특장점(USP)을 AI가 자동으로 매칭하여 문장 조합"
+                      ].map(v => (
+                        <li key={v} className="flex items-start gap-5 text-slate-300 font-bold group">
+                          <CheckCircle2 size={24} className="text-orange-500 shrink-0 mt-0.5 group-hover:scale-125 transition-transform" />
+                          <span className="text-lg">{v}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+                <div className="order-1 lg:order-2 perspective-2000">
+                  <div className="glass-card rounded-[4rem] p-16 border-white/10 bg-gradient-to-br from-orange-500/10 via-slate-950/40 to-transparent relative group overflow-hidden shadow-2xl shadow-orange-900/10">
+                    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071&auto=format&fit=crop')] opacity-10 grayscale group-hover:scale-110 transition-transform duration-1000" />
+                    <div className="relative z-10 space-y-10">
+                      <motion.div
+                        initial={{ x: 50, opacity: 0 }}
+                        whileInView={{ x: 0, opacity: 1 }}
+                        className="p-8 glass-panel rounded-3xl border border-white/10 shadow-2xl backdrop-blur-2xl rotate-[-3deg] hover:rotate-0 transition-all duration-500"
+                      >
+                        <div className="text-[11px] text-orange-500 font-black mb-4 flex items-center gap-2 uppercase tracking-widest">
+                          <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.6)]" /> Premium LMS v1
+                        </div>
+                        <div className="text-base text-slate-100 leading-relaxed font-bold italic">
+                          "💎 [공지] 시세 대비 -12.5% 파격 분양가 확정! {addressValue.split(' ')[1] || '해당'} 지역 마지막 7억대 주거 찬스..."
+                        </div>
+                      </motion.div>
+                      <motion.div
+                        initial={{ x: -50, opacity: 0 }}
+                        whileInView={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                        className="p-8 glass-panel rounded-3xl border border-white/10 shadow-2xl backdrop-blur-2xl ml-16 rotate-[3deg] hover:rotate-0 transition-all duration-500"
+                      >
+                        <div className="text-[11px] text-blue-500 font-black mb-4 flex items-center gap-2 uppercase tracking-widest">
+                          <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.6)]" /> Alert Mode v2
+                        </div>
+                        <div className="text-base text-slate-100 leading-relaxed font-bold mb-2">
+                          🚨 [실시간] 조건변경 공지 직후 홍보관 방문객 4배 폭증! 남은 고층 잔여세대 실시간 동향 파악하기...
+                        </div>
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Feature 4: ROI Simulation */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center mb-60">
+                <div className="lg:order-1 perspective-2000">
+                  <motion.div
+                    whileHover={{ scale: 1.05, rotateX: 5 }}
+                    className="glass-card rounded-[4rem] p-16 border-white/10 bg-gradient-to-br from-indigo-500/10 via-slate-950/40 to-transparent relative group overflow-hidden shadow-2xl shadow-indigo-900/10"
+                  >
+                    <div className="relative z-10 space-y-10">
+                      <div className="h-64 w-full glass-panel rounded-[2.5rem] border border-indigo-500/20 flex flex-col items-center justify-center p-12 backdrop-blur-3xl shadow-inner">
+                        <div className="text-[10px] font-black text-indigo-400 mb-4 uppercase tracking-[0.4em]">Expected ROI Optimization</div>
+                        <div className="text-8xl font-black text-white tracking-tighter">4.2<span className="text-2xl text-indigo-500 ml-2">%</span></div>
+                        <div className="text-[10px] text-slate-500 mt-6 font-bold uppercase tracking-[0.2em]">Predicted Final Conversion Rate</div>
+                      </div>
+                      <div className="space-y-6">
+                        <div className="flex justify-between items-end px-2">
+                          <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Efficiency Pipeline</div>
+                          <div className="text-sm font-black text-indigo-400 tracking-tight">OPTIMIZED AT 92%</div>
+                        </div>
+                        <div className="h-4 w-full bg-slate-900/80 rounded-full overflow-hidden p-1 border border-white/5">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            whileInView={{ width: '92%' }}
+                            transition={{ duration: 1.5, ease: "circOut" }}
+                            className="h-full bg-gradient-to-r from-indigo-600 via-blue-500 to-indigo-400 rounded-full shadow-[0_0_20px_rgba(99,102,241,0.5)]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+                <div className="space-y-10 lg:order-2">
+                  <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+                    <PieChart className="text-indigo-400" size={18} />
+                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">ROI Simulator</span>
+                  </div>
+                  <h3 className="text-5xl font-black leading-tight text-white">예산 투입 전 성과를 <br /><span className="text-indigo-400">100% 시뮬레이션</span></h3>
+                  <div className="space-y-8">
+                    <p className="text-slate-400 leading-relaxed text-xl font-medium">
+                      마케팅 대행사에 예산을 맡기기 전에 먼저 시뮬레이션 하십시오. 예산 규모에 따른 DB 확보량, 예상 단가(CPL)를 정밀 연산하여 실패 확률을 제로로 만듭니다.
+                    </p>
+                    <ul className="space-y-5">
+                      {[
+                        "실시간 예산 조정에 따른 성과 지표 자동 업데이트 엔진",
+                        "현장 매력도와 전환율이 연동된 과학적 성과 예측 모델",
+                        "DB 확보부터 방문까지 고도화된 성과 파이프라인 시각화"
+                      ].map(v => (
+                        <li key={v} className="flex items-start gap-5 text-slate-300 font-bold group">
+                          <CheckCircle2 size={24} className="text-indigo-500 shrink-0 mt-0.5 group-hover:scale-125 transition-transform" />
+                          <span className="text-lg">{v}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Final Persuasion CTA */}
+              <div className="py-40 text-center glass-card rounded-[5rem] border-white/10 bg-gradient-to-b from-blue-600/20 via-slate-950/60 to-transparent relative overflow-hidden px-10">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5" />
+                <div className="relative z-10 max-w-4xl mx-auto">
+                  <h4 className="text-6xl md:text-7xl font-black mb-12 tracking-tight leading-[1.1]">
+                    성공하는 현장은 <br />
+                    <span className="text-blue-500 underline decoration-blue-500/30 underline-offset-[16px]">데이터를 먼저 봅니다</span>
+                  </h4>
+                  <p className="text-slate-400 text-2xl font-medium mb-20 leading-relaxed">
+                    불확실한 부동산 시장에서 감에만 의존하시겠습니까?<br />
+                    알파고의 압도적 통찰력이 당신의 현장을 '대장주'로 만듭니다.
+                  </p>
+                  <motion.button
+                    whileHover={{ scale: 1.05, y: -5 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className="px-16 py-8 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-[2.5rem] text-2xl shadow-[0_0_60px_rgba(59,130,246,0.4)] transition-all flex items-center gap-6 mx-auto"
+                  >
+                    <Zap size={32} fill="currentColor" /> 지금 바로 무료 분석 시작하기
+                  </motion.button>
+                  <div className="mt-12 text-[12px] font-black text-slate-500 uppercase tracking-[0.5em] opacity-50">Insight Guaranteed · Data Driven Success</div>
+                </div>
+              </div>
+            </motion.div>
           )}
 
           <AnimatePresence>
@@ -1992,6 +2008,6 @@ export default function BunyangAlphaGo() {
           </div>
         )}
       </AnimatePresence>
-    </div >
+    </div>
   );
 }

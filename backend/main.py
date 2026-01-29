@@ -6,6 +6,7 @@ import random
 import datetime
 import json
 import os
+import asyncio
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 app = FastAPI(title="Bunyang AlphaGo API")
@@ -35,22 +36,125 @@ class AnalysisHistory(SQLModel, table=True):
     created_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
     response_json: str # Complete result as JSON
 
+class Site(SQLModel, table=True):
+    id: str = Field(primary_key=True)
+    name: str
+    address: str
+    brand: Optional[str] = None
+    category: str
+    price: float
+    target_price: float
+    supply: int
+    status: Optional[str] = None
+    last_updated: datetime.datetime = Field(default_factory=datetime.datetime.now)
+
 @app.on_event("startup")
-def on_startup():
+async def on_startup():
     create_db_and_tables()
+    seed_sites()
+    # Start the daily update background task
+    asyncio.create_task(update_sites_task())
+
+def seed_sites():
+    with Session(engine) as session:
+        # Check if sites exist
+        if session.exec(select(Site)).first():
+            return
+        
+        for s in MOCK_SITES:
+            site = Site(
+                id=s["id"],
+                name=s["name"],
+                address=s["address"],
+                brand=s["brand"],
+                category=s["category"],
+                price=s["price"],
+                target_price=s["target_price"],
+                supply=s["supply"],
+                status=s["status"]
+            )
+            session.add(site)
+        session.commit()
+
+async def update_sites_task():
+    """Simulates a daily update from Naver Land / MOLIT APIs"""
+    while True:
+        # Wait for 24 hours (86400 seconds)
+        # For demo purposes, we can make it shorter, but let's stick to the concept
+        await asyncio.sleep(86400)
+        
+        print(f"[{datetime.datetime.now()}] AI Engine: Syncing with Naver Realty & MOLIT Data...")
+        with Session(engine) as session:
+            sites = session.exec(select(Site)).all()
+            for site in sites:
+                # Simulate price fluctuation (±0.5% daily trend)
+                change = random.uniform(-0.005, 0.005)
+                site.target_price = round(site.target_price * (1 + change), 1)
+                
+                # Simulate status changes for unsold units
+                if "미분양" in site.status or "선착순" in site.status:
+                    if random.random() < 0.05: # 5% chance of progress
+                         site.status = "잔여세대 마감 임박"
+                
+                site.last_updated = datetime.datetime.now()
+                session.add(site)
+            session.commit()
+        print(f"[{datetime.datetime.now()}] AI Engine: Daily sync complete.")
 
 # Mock Site Database for Validation (Expanded with Unsold/Special Sites)
 MOCK_SITES = [
+    # --- 아파트 / 오피스텔 (분양 중 & 미분양) ---
     {"id": "s1", "name": "힐스테이트 회룡역 파크뷰", "address": "경기도 의정부시 호원동 281-21", "brand": "힐스테이트", "category": "아파트", "price": 2417, "target_price": 2750, "supply": 1816, "status": "선착순 계약 중"},
     {"id": "s2", "name": "e편한세상 내포 퍼스트드림", "address": "충청남도 홍성군 홍북읍", "brand": "e편한세상", "category": "아파트", "price": 1100, "target_price": 1300, "supply": 600, "status": "선착순 분양 중"},
     {"id": "s3", "name": "마포 에피트 어바닉", "address": "서울특별시 마포구 아현동", "brand": "에피트", "category": "오피스텔", "price": 4500, "target_price": 5200, "supply": 300, "status": "잔여세대 분양 중"},
     {"id": "s4", "name": "동탄 레이크파크 자연앤 e편한세상", "address": "경기도 화성시 동탄동", "brand": "e편한세상", "category": "아파트", "price": 1800, "target_price": 2400, "supply": 1200, "status": "분양 완료"},
     {"id": "s5", "name": "용인 푸르지오 원클러스터", "address": "경기도 용인시 처인구", "brand": "푸르지오", "category": "아파트", "price": 1900, "target_price": 2200, "supply": 1500, "status": "청약 진행 중"},
-    {"id": "s6", "name": "의왕 고천 민간임대 아파트", "address": "경기도 의왕시 고천동", "brand": "기타", "category": "민간임대", "price": 800, "target_price": 1200, "supply": 500, "status": "입주자 모집 중"},
-    {"id": "s7", "name": "제주 월령 민간임대 주택", "address": "제주특별자치도 제주시", "brand": "기타", "category": "민간임대", "price": 600, "target_price": 900, "supply": 200, "status": "선착순 계약 중"},
     {"id": "s8", "name": "자이 더 헤리티지", "address": "인천광역시 미추홀구", "brand": "자이", "category": "아파트", "price": 2100, "target_price": 2500, "supply": 900, "status": "잔여세대 분양 중"},
     {"id": "s9", "name": "대구 범어 아이파크 2차", "address": "대구광역시 수성구", "brand": "아이파크", "category": "아파트", "price": 3200, "target_price": 3500, "supply": 450, "status": "미분양 관리 현장"},
     {"id": "s10", "name": "울산 문수로 푸르지오", "address": "울산광역시 남구", "brand": "푸르지오", "category": "아파트", "price": 2200, "target_price": 2100, "supply": 800, "status": "할인 분양 검토 중"},
+    {"id": "s11", "name": "평택 푸르지오 센터파인", "address": "경기도 평택시 화양지구", "brand": "푸르지오", "category": "아파트", "price": 1450, "target_price": 1600, "supply": 851, "status": "선착순 동호지정 중"},
+    {"id": "s12", "name": "의정부 롯데캐슬 나리벡시티", "address": "경기도 의정부시 금오동", "brand": "롯데캐슬", "category": "아파트", "price": 2100, "target_price": 2300, "supply": 671, "status": "미분양 잔여세대"},
+    {"id": "s13", "name": "포레나 평택화양", "address": "경기도 평택시 안중읍", "brand": "포레나", "category": "아파트", "price": 1380, "target_price": 1500, "supply": 995, "status": "중도금 무이자 진행 중"},
+    {"id": "s15", "name": "남양주 다산역 데시앙", "address": "경기도 남양주시 다산동", "brand": "데시앙", "category": "오피스텔", "price": 2800, "target_price": 3200, "supply": 531, "status": "회사보유분 특별분양"},
+    {"id": "s16", "name": "파주 운정 힐스테이트 더 운정", "address": "경기도 파주시 와동동", "brand": "힐스테이트", "category": "오피스텔", "price": 3100, "target_price": 3500, "supply": 2669, "status": "선착순 조건변경 중"},
+    {"id": "s17", "name": "고양 장항 카이브 유보라", "address": "경기도 고양시 일산동구", "brand": "유보라", "category": "아파트", "price": 2400, "target_price": 2800, "supply": 1694, "status": "청약 마감 후 잔여분"},
+    {"id": "s18", "name": "안산 푸르지오 브리파크", "address": "경기도 안산시 단원구", "brand": "푸르지오", "category": "아파트", "price": 1850, "target_price": 2100, "supply": 1714, "status": "준공 후 미분양 분양"},
+    {"id": "s19", "name": "수원 영통 푸르지오 트레센츠", "address": "경기도 수원시 영통구", "brand": "푸르지오", "category": "아파트", "price": 2100, "target_price": 2400, "supply": 796, "status": "선착순 계약 (잔여세대)"},
+    {"id": "s21", "name": "천안 백석 센트레빌 파크디션", "address": "충청남도 천안시 서북구", "brand": "센트레빌", "category": "아파트", "price": 1400, "target_price": 1550, "supply": 358, "status": "미분양 선착순 분양"},
+    {"id": "s22", "name": "청주 가경 아이파크 6차", "address": "충청북도 청주시 흥덕구", "brand": "아이파크", "category": "아파트", "price": 1280, "target_price": 1500, "supply": 946, "status": "분양 완료 (예비번호)"},
+    {"id": "s31", "name": "대구 상인 푸르지오 센터파크", "address": "대구광역시 달서구 상인동", "brand": "푸르지오", "category": "아파트", "price": 1650, "target_price": 1800, "supply": 990, "status": "대구 미분양 특별분양"},
+    {"id": "s32", "name": "평택 브레인시티 중흥S-클래스", "address": "경기도 평택시 도일동", "brand": "중흥S-클래스", "category": "아파트", "price": 1520, "target_price": 1700, "supply": 1980, "status": "선착순 계약 (동호지정)"},
+    {"id": "s33", "name": "포항 학산 한신더휴 엘리트파크", "address": "경상북도 포항시 북구 학산동", "brand": "한신더휴", "category": "아파트", "price": 1350, "target_price": 1450, "supply": 1455, "status": "계약금 5% 정액제"},
+    {"id": "s34", "name": "광양 푸르지오 센터파크", "address": "전라남도 광양시 광양읍", "brand": "푸르지오", "category": "아파트", "price": 1150, "target_price": 1250, "supply": 992, "status": "잔여세대 특별분양 중"},
+    {"id": "s35", "name": "거제 아주 내진 힐스테이트", "address": "경상남도 거제시 아주동", "brand": "힐스테이트", "category": "아파트", "price": 1200, "target_price": 1350, "supply": 700, "status": "미분양 선착순 분양 중"},
+
+    # --- 민간임대 아파트 (공공지원 / 장기임대) ---
+    {"id": "s6", "name": "의왕 고천 민간임대 아파트", "address": "경기도 의왕시 고천동", "brand": "기타", "category": "민간임대", "price": 800, "target_price": 1200, "supply": 500, "status": "입주자 모집 중"},
+    {"id": "s7", "name": "제주 월령 민간임대 주택", "address": "제주특별자치도 제주시", "brand": "기타", "category": "민간임대", "price": 600, "target_price": 900, "supply": 200, "status": "선착순 계약 중"},
+    {"id": "s23", "name": "양주 옥정 신도시 에코뷰", "address": "경기도 양주시 옥정동", "brand": "기타", "category": "민간임대", "price": 750, "target_price": 1100, "supply": 1200, "status": "임차인 모집 및 분양전환"},
+    {"id": "s27", "name": "안성 당왕지구 경남아너스빌", "address": "경기도 안성시 당왕동", "brand": "경남아너스빌", "category": "민간임대", "price": 550, "target_price": 850, "supply": 976, "status": "10년 확정 분양가 임대"},
+    {"id": "s30", "name": "구리 갈매 스타힐스", "address": "경기도 구리시 갈매동", "brand": "기타", "category": "민간임대", "price": 1200, "target_price": 1450, "supply": 640, "status": "공가 세대 선착순 모집"},
+    {"id": "s36", "name": "오산 세교2지구 칸타빌 더퍼스트", "address": "경기도 오산시 세교동", "brand": "칸타빌", "category": "민간임대", "price": 680, "target_price": 950, "supply": 1030, "status": "사전 임차인 모집 완료"},
+    {"id": "s37", "name": "평택 화양지구 서희스타힐스 센트럴", "address": "경기도 평택시 화양지구", "brand": "서희스타힐스", "category": "민간임대", "price": 580, "target_price": 800, "supply": 1554, "status": "10년 후 분양전환형"},
+    {"id": "s38", "name": "화성 비봉지구 예미지 2차", "address": "경기도 화성시 비봉면", "brand": "예미지", "category": "민간임대", "price": 620, "target_price": 880, "supply": 900, "status": "선착순 동호지정 임대"},
+
+    # --- 타운하우스 / 단독주택 (수도권 & 제주) ---
+    {"id": "s14", "name": "용인 남사 한숲시티 타운하우스", "address": "경기도 용인시 처인구 남사읍", "brand": "기타", "category": "타운하우스", "price": 1200, "target_price": 1500, "supply": 45, "status": "준공 후 분양 중"},
+    {"id": "s20", "name": "용인 기흥 고매동 테라하우스", "address": "경기도 용인시 기흥구 고매동", "brand": "기타", "category": "타운하우스", "price": 1550, "target_price": 1800, "supply": 36, "status": "즉시 입주 가능"},
+    {"id": "s24", "name": "인천 영종도 제이원 타운하우스", "address": "인천광역시 중구 운남동", "brand": "기타", "category": "타운하우스", "price": 980, "target_price": 1200, "supply": 18, "status": "잔여 3세대 특별공급"},
+    {"id": "s26", "name": "보정역 에코메트로 타운하우스", "address": "경기도 용인시 기흥구 보정동", "brand": "기타", "category": "타운하우스", "price": 2200, "target_price": 2800, "supply": 24, "status": "상담 후 계약 진행"},
+    {"id": "s29", "name": "제주 서귀포 루스톤 타운하우스", "address": "제주특별자치도 서귀포시 안덕면", "brand": "기타", "category": "타운하우스", "price": 1800, "target_price": 2100, "supply": 12, "status": "단독형 풀빌라 분양"},
+    {"id": "s39", "name": "가평 설악면 로얄 타운하우스", "address": "경기도 가평군 설악면", "brand": "기타", "category": "타운하우스", "price": 1400, "target_price": 1650, "supply": 22, "status": "수도권 인접 숲세권"},
+    {"id": "s40", "name": "양평 양서면 강변 테라스", "address": "경기도 양평군 양서면", "brand": "기타", "category": "타운하우스", "price": 1550, "target_price": 1900, "supply": 18, "status": "준공 완료 샘플하우스 오픈"},
+    {"id": "s41", "name": "파주 야당동 어반 빌리지", "address": "경기도 파주시 야당동", "brand": "기타", "category": "타운하우스", "price": 1100, "target_price": 1400, "supply": 32, "status": "잔여 미분양 5개동 분양"},
+
+    # --- 지식산업센터 / 상업시설 ---
+    {"id": "s25", "name": "하남 미사 강변 SK V1 center", "address": "경기도 하남시 망월동", "brand": "SK V1", "category": "지식산업센터", "price": 1100, "target_price": 1400, "supply": 800, "status": "선착순 전매/임대"},
+    {"id": "s28", "name": "광명 소하 테크노파크", "address": "경기도 광명시 소하동", "brand": "기타", "category": "지식산업센터", "price": 1400, "target_price": 1700, "supply": 450, "status": "잔여호실 입주지원금"},
+    {"id": "s42", "name": "송도 스마트밸리 지식산업센터", "address": "인천광역시 연수구 송도동", "brand": "기타", "category": "지식산업센터", "price": 1250, "target_price": 1450, "supply": 1200, "status": "임대수익 보장제 실시"},
+    {"id": "s43", "name": "판교 제2테크노밸리 메타비즈", "address": "경기도 성남시 수정구", "brand": "기타", "category": "지식산업센터", "price": 2800, "target_price": 3500, "supply": 950, "status": "청약 마감 후 부적격분"},
+    {"id": "s44", "name": "동탄 테크노밸리 SH타임스퀘어", "address": "경기도 화성시 영천동", "brand": "기타", "category": "지식산업센터", "price": 1600, "target_price": 1950, "supply": 600, "status": "잔여 오피스 특별분양"},
+    {"id": "s45", "name": "문정역 현대 지식산업센터", "address": "서울특별시 송파구 문정동", "brand": "현대", "category": "지식산업센터", "price": 3500, "target_price": 4200, "supply": 2100, "status": "분양 완료 (임대 전환)"}
 ]
 
 class SiteSearchResponse(BaseModel):
@@ -148,12 +252,18 @@ class LeadForm(BaseModel):
 async def search_sites(q: str):
     if not q: return []
     q_clean = q.lower().replace(" ", "")
+    
+    with Session(engine) as session:
+        # We fetch all and filter in Python for smart matching (similar to previous mock logic)
+        all_sites = session.exec(select(Site)).all()
+        
     results = [
-        SiteSearchResponse(id=s["id"], name=s["name"], address=s["address"], brand=s["brand"], status=s.get("status"))
-        for s in MOCK_SITES 
-        if q_clean in s["name"].lower().replace(" ", "") or 
-           q_clean in s["address"].lower().replace(" ", "") or 
-           q_clean in s["brand"].lower().replace(" ", "")
+        SiteSearchResponse(id=s.id, name=s.name, address=s.address, brand=s.brand, status=s.status)
+        for s in all_sites 
+        if q_clean in s.name.lower().replace(" ", "") or 
+           q_clean in s.address.lower().replace(" ", "") or 
+           (s.brand and q_clean in s.brand.lower().replace(" ", "")) or
+           q_clean in s.category.lower().replace(" ", "") # Allow searching by category like '민간임대'
     ]
     return results
 
