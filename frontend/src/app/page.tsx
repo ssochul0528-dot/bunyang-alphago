@@ -188,8 +188,14 @@ export default function BunyangAlphaGo() {
         const timeoutId = setTimeout(() => controller.abort(), 5000);
 
         try {
+          console.log("🔍 Fetching from:", `${API_BASE_URL}/search-sites?q=${encodeURIComponent(address.trim())}`);
           const res = await fetch(`${API_BASE_URL}/search-sites?q=${encodeURIComponent(address.trim())}`, {
-            signal: controller.signal
+            signal: controller.signal,
+            cache: 'no-store', // 🚨 캐시 방지 추가
+            headers: {
+              'Pragma': 'no-cache',
+              'Cache-Control': 'no-cache'
+            }
           });
           clearTimeout(timeoutId);
           if (res.ok) {
