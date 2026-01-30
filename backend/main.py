@@ -283,7 +283,8 @@ async def get_history(email: Optional[str] = None):
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to Bunyang AlphaGo API"}
+    port = os.getenv("PORT", "8000")
+    return {"message": "Welcome to Bunyang AlphaGo API", "active_port": port}
 
 @app.post("/submit-lead")
 async def submit_lead(lead: LeadForm):
