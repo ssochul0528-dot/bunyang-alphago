@@ -22,7 +22,12 @@ app.add_middleware(
 # --- Database Setup ---
 sqlite_file_name = "database.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
-engine = create_engine(sqlite_url, echo=False, connect_args={"check_same_thread": False})
+# SQLite 연결 최적화: timeout 설정 추가로 잠김 현상 방지
+engine = create_engine(
+    sqlite_url, 
+    echo=False, 
+    connect_args={"check_same_thread": False, "timeout": 30}
+)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
@@ -58,8 +63,12 @@ async def on_startup():
 def seed_sites():
     with Session(engine) as session:
         # Check if sites exist
-        if session.exec(select(Site)).first():
+        existing_count = session.exec(select(Site)).all()
+        if len(existing_count) > 0:
+            print(f"--- Database already has {len(existing_count)} sites. Skipping seed. ---")
             return
+        
+        print("--- Database is empty. Seeding starting... ---")
         
         for s in MOCK_SITES:
             site = Site(
@@ -250,26 +259,37 @@ class LeadForm(BaseModel):
 
 @app.get("/search-sites", response_model=List[SiteSearchResponse])
 async def search_sites(q: str):
-    if not q: return []
-    q_clean = q.lower().replace(" ", "")
+    if not q or len(q.strip().lower()) < 1: 
+        return []
     
-    with Session(engine) as session:
-        # We fetch all and filter in Python for smart matching (similar to previous mock logic)
-        all_sites = session.exec(select(Site)).all()
-        
-    results = [
-        SiteSearchResponse(id=s.id, name=s.name, address=s.address, brand=s.brand, status=s.status)
-        for s in all_sites 
-        if q_clean in s.name.lower().replace(" ", "") or 
-           q_clean in s.address.lower().replace(" ", "") or 
-           (s.brand and q_clean in s.brand.lower().replace(" ", "")) or
-           q_clean in s.category.lower().replace(" ", "") # Allow searching by category like '민간임대'
-    ]
-    return results
+    # 검색어 하나만 들어와도 다 찾을 수 있게 정규화
+    q_norm = q.lower().replace(" ", "")
+    
+    try:
+        with Session(engine) as session:
+            all_sites = session.exec(select(Site)).all()
+            
+            results = []
+            for s in all_sites:
+                # 현장명, 주소, 브랜드, 카테고리 전체 통합 검색
+                search_pool = (s.name + s.address + (s.brand or "") + s.category).lower().replace(" ", "")
+                
+                if q_norm in search_pool:
+                    results.append(SiteSearchResponse(
+                        id=s.id, name=s.name, address=s.address, brand=s.brand, status=s.status
+                    ))
+            return results
+    except Exception as e:
+        print(f"Search Error: {e}")
+        return []
 
 @app.get("/site-details/{site_id}")
 async def get_site_details(site_id: str):
-    return site
+    with Session(engine) as session:
+        site = session.get(Site, site_id)
+        if not site:
+            raise HTTPException(status_code=404, detail="Site not found")
+        return site
 
 @app.get("/history")
 async def get_history(email: Optional[str] = None):
