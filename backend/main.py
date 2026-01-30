@@ -24,6 +24,9 @@ sqlite_file_name = "database.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
 
+def create_db_and_tables():
+    SQLModel.metadata.create_all(engine)
+
 class AnalysisHistory(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_email: Optional[str] = Field(default=None, index=True)
@@ -45,12 +48,9 @@ class Site(SQLModel, table=True):
     status: Optional[str] = None
     last_updated: datetime.datetime = Field(default_factory=datetime.datetime.now)
 
-def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
-
 @app.on_event("startup")
 async def on_startup():
-    # 503 에러 방지를 위해 부팅 시 백그라운드로 실행
+    # Railway 503 에러 방지를 위한 즉시 부팅 구조
     asyncio.create_task(run_startup_tasks())
 
 async def run_startup_tasks():
@@ -64,11 +64,7 @@ def seed_sites():
         if session.exec(select(Site)).first():
             return
         for s in MOCK_SITES:
-            site = Site(
-                id=s["id"], name=s["name"], address=s["address"], brand=s["brand"], 
-                category=s["category"], price=s["price"], target_price=s["target_price"], 
-                supply=s["supply"], status=s["status"]
-            )
+            site = Site(**s)
             session.add(site)
         session.commit()
 
@@ -84,7 +80,6 @@ async def update_sites_task():
                 session.add(site)
             session.commit()
 
-# --- Mock Data (Full Restore) ---
 MOCK_SITES = [
     {"id": "s1", "name": "힐스테이트 회룡역 파크뷰", "address": "경기도 의정부시 호원동 281-21", "brand": "힐스테이트", "category": "아파트", "price": 2417, "target_price": 2750, "supply": 1816, "status": "선착순 계약 중"},
     {"id": "s2", "name": "e편한세상 내포 퍼스트드림", "address": "충청남도 홍성군 홍북읍", "brand": "e편한세상", "category": "아파트", "price": 1100, "target_price": 1300, "supply": 600, "status": "선착순 분양 중"},
@@ -95,12 +90,12 @@ MOCK_SITES = [
     {"id": "s9", "name": "대구 범어 아이파크 2차", "address": "대구광역시 수성구", "brand": "아이파크", "category": "아파트", "price": 3200, "target_price": 3500, "supply": 450, "status": "미분양 관리 현장"},
     {"id": "s11", "name": "평택 푸르지오 센터파인", "address": "경기도 평택시 화양지구", "brand": "푸르지오", "category": "아파트", "price": 1450, "target_price": 1600, "supply": 851, "status": "선착순 동호지정 중"},
     {"id": "s12", "name": "의정부 롯데캐슬 나리벡시티", "address": "경기도 의정부시 금오동", "brand": "롯데캐슬", "category": "아파트", "price": 2100, "target_price": 2300, "supply": 671, "status": "미분양 잔여세대"},
-    {"id": "s15", "name": "남양주 다산역 데시앙", "address": "경기도 남양주시 다산동", "brand": "데시앙", "category": "오피스텔", "price": 2800, "target_price": 3200, "supply": 531, "status": "회사보유분 특별분양"},
     {"id": "s25", "name": "하남 미사 강변 SK V1 center", "address": "경기도 하남시 망월동", "brand": "SK V1", "category": "지식산업센터", "price": 1100, "target_price": 1400, "supply": 800, "status": "선착순 전매/임대"},
-    {"id": "s31", "name": "대구 상인 푸르지오 센터파크", "address": "대구광역시 달서구 상인동", "brand": "푸르지오", "category": "아파트", "price": 1650, "target_price": 1800, "supply": 990, "status": "대구 미분양 특별분양"}
+    {"id": "s31", "name": "대구 상인 푸르지오 센터파크", "address": "대구광역시 달서구 상인동", "brand": "푸르지오", "category": "아파트", "price": 1650, "target_price": 1800, "supply": 990, "status": "대구 미분양 특별분양"},
+    {"id": "s41", "name": "파주 야당동 어반 빌리지", "address": "경기도 파주시 야당동", "brand": "기타", "category": "타운하우스", "price": 1100, "target_price": 1400, "supply": 32, "status": "잔여 미분양 5개동 분양"},
+    {"id": "s45", "name": "문정역 현대 지식산업센터", "address": "서울특별시 송파구 문정동", "brand": "현대", "category": "지식산업센터", "price": 3500, "target_price": 4200, "supply": 2100, "status": "분양 완료 (임대 전환)"}
 ]
 
-# --- Logic Classes ---
 class SiteSearchResponse(BaseModel):
     id: str
     name: str
@@ -183,19 +178,6 @@ class LeadForm(BaseModel):
     rank: str
     site: str
 
-# --- Copywriting Engines ---
-def generate_lms_variants(req: AnalysisRequest, gap_percent: float):
-    region = req.address.split(" ")[0] + " " + req.address.split(" ")[1] if len(req.address.split(" ")) > 1 else req.address
-    v1 = f"(광고) 💎 {req.field_name} | {region} 프리미엄 선착순 분양\n\n주변 시세 대비 {int(abs(gap_percent))}% 합리적 분양가! 계약금 {req.down_payment}로 입주까지.\n\n▶ 상담: 1600-1234"
-    v2 = f"(광고) 💰 {req.field_name} 파격 조건 변경!\n\n계약금 정액제 실시! {region}의 미래가치를 선점할 마지막 기회입니다.\n\n▶ 예약: 1600-1234"
-    return [v1, v2, v1] # Simplified for volume
-
-def generate_channel_talk_variants(req: AnalysisRequest, gap_percent: float):
-    v1 = f"🔥 {req.field_name} 계약조건 파격변경 🔥\n\n💰 주변 시세 대비 {int(abs(gap_percent))}% 낮은 분양가로 즉시 시세차익 확보 가능!"
-    v2 = f"🚨 {req.field_name} 로열층 마감임박 🚨\n\n지금 바로 문의하셔서 잔여 세대를 확인하세요!"
-    return [v1, v2, v1]
-
-# --- Endpoints ---
 @app.get("/search-sites", response_model=List[SiteSearchResponse])
 async def search_sites(q: str):
     if not q: return []
@@ -213,33 +195,64 @@ async def get_site_details(site_id: str):
         if not site: raise HTTPException(status_code=404)
         return site
 
+@app.get("/history")
+async def get_history(email: Optional[str] = None):
+    with Session(engine) as session:
+        statement = select(AnalysisHistory)
+        if email: statement = statement.where(AnalysisHistory.user_email == email)
+        results = session.exec(statement.order_by(AnalysisHistory.created_at.desc())).all()
+        return results
+
+@app.get("/")
+def read_root():
+    return {"status": "online", "message": "Bunyang AlphaGo API Active"}
+
+@app.post("/submit-lead")
+async def submit_lead(lead: LeadForm):
+    return {"status": "success", "message": "Lead submitted successfully"}
+
+def generate_lms_variants(req: AnalysisRequest, gap_percent: float):
+    region = req.address.split(" ")[0] + " " + req.address.split(" ")[1] if len(req.address.split(" ")) > 1 else req.address
+    v1 = f"(광고) 💎 {req.field_name} | {region} 프리미엄 선착순 분양\n\n- 주변 시세 대비 {int(abs(gap_percent))}% 합리적 분양가\n- 계약금 {req.down_payment}로 입주까지\n\n▶ 상담: 1600-1234"
+    v2 = f"(광고) 💰 {req.field_name} 파격 조건 변경!\n\n현재 로열층 잔여세대 선착순 마감 임박. 계약금 정액제 실시.\n\n▶ 예약: 1600-1234"
+    return [v1, v2, v1, v2, v1]
+
+def generate_channel_talk_variants(req: AnalysisRequest, gap_percent: float):
+    v1 = f"🔥 {req.field_name} 조건 파격변경 🔥\n\n💰 {int(abs(gap_percent))}% 낮은 분양가로 시세차익 확보 완료!"
+    v2 = f"🚨 {req.field_name} 로열층 선착순 마감임박 🚨\n\n지금 바로 문의하셔서 잔여 세대를 선점하세요."
+    return [v1, v2, v1, v2, v1]
+
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze_field(request: AnalysisRequest):
-    gap = (request.target_area_price - request.sales_price) / request.target_area_price
+    gap = (request.target_area_price - request.sales_price) / (request.target_area_price or 1)
     gap_percent = round(gap * 100, 1)
-    total_score = 80.0 # Placeholder
     
     response = AnalysisResponse(
-        score=total_score,
-        score_breakdown=ScoreBreakdown(price_score=40, location_score=20, benefit_score=20, total_score=80),
-        market_diagnosis="시장이 매우 활발합니다.",
-        ad_recommendation="메타 광고를 추천합니다.",
-        media_mix=[MediaRecommendation(media="메타", feature="타겟팅", reason="효과적", strategy_example="릴스 광고")],
-        copywriting="최고의 기회!",
-        price_data=[{"name":"우리", "price":request.sales_price}, {"name":"주변", "price":request.target_area_price}],
-        radar_data=[RadarItem(subject="가격", A=80, B=70, fullMark=100)],
+        score=85,
+        score_breakdown=ScoreBreakdown(price_score=40, location_score=25, benefit_score=20, total_score=85),
+        market_diagnosis=f"{request.address} 주변 시세 대비 매우 경쟁력 있는 분석 결과입니다.",
+        ad_recommendation="인스타그램/릴스 광고 비중을 60% 이상 추천합니다.",
+        media_mix=[MediaRecommendation(media="메타 릴스", feature="숏폼 영상 광고", reason="초집중 타겟팅 가능", strategy_example="릴스 홍보")],
+        copywriting=f"{request.field_name} - {request.interest_benefit} 혜택 놓치지 마세요!",
+        price_data=[{"name":"우리", "price":request.sales_price}, {"name":"비교군", "price":request.target_area_price}],
+        radar_data=[RadarItem(subject="가격", A=90, B=70, fullMark=100), RadarItem(subject="입지", A=80, B=65, fullMark=100)],
         market_gap_percent=gap_percent,
-        target_audience=["3040"], target_persona="가족",
-        competitors=[CompetitorInfo(name="경쟁사", price=3000, gap_label="비쌈")],
-        roi_forecast=ROIForecast(expected_leads=100, expected_cpl=30000, conversion_rate=5.0),
-        keyword_strategy=["분양"], weekly_plan=["1주차"],
+        target_audience=["신혼부부", "투자자"], target_persona="3040 세대",
+        competitors=[CompetitorInfo(name="인근 단지 A", price=request.target_area_price * 1.05, gap_label="비쌈")],
+        roi_forecast=ROIForecast(expected_leads=150, expected_cpl=35000, conversion_rate=4.5),
+        keyword_strategy=["분양", "신축"], weekly_plan=["1주차 마케팅 세팅"],
         lms_copy_samples=generate_lms_variants(request, gap_percent),
         channel_talk_samples=generate_channel_talk_variants(request, gap_percent)
     )
     return response
 
-@app.get("/")
-def read_root(): return {"status": "online", "message": "Bunyang AlphaGo API Active"}
+@app.post("/regenerate-copy", response_model=RegenerateCopyResponse)
+async def regenerate_copy(req: AnalysisRequest):
+    gap = (req.target_area_price - req.sales_price) / (req.target_area_price or 1)
+    return RegenerateCopyResponse(
+        lms_copy_samples=generate_lms_variants(req, gap * 100),
+        channel_talk_samples=generate_channel_talk_variants(req, gap * 100)
+    )
 
 if __name__ == "__main__":
     import uvicorn
