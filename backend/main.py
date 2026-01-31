@@ -42,11 +42,11 @@ def create_db_and_tables():
 
 @app.on_event("startup")
 async def on_startup():
-    # Background task to initialize DB and seed
+    # Railway 503 방지: 부팅 즉시 완료 신호를 보내고 데이터는 백그라운드에서 채움
     asyncio.create_task(run_startup_tasks())
 
 async def run_startup_tasks():
-    await asyncio.sleep(1)
+    await asyncio.sleep(0.5)
     create_db_and_tables()
 
 def seed_sites():
@@ -89,9 +89,10 @@ async def get_site_details(site_id: str):
 
 @app.get("/")
 def home():
-    return {"status": "online", "message": "Bunyang AlphaGo API Active"}
+    return {"status": "online", "message": "Bunyang AlphaGo API is ready"}
 
 if __name__ == "__main__":
     import uvicorn
-    # Hardcode to 8000 as requested/configured in Railway
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Railway가 준 포트를 우선적으로 사용, 없으면 8000
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
