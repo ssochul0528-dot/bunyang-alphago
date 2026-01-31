@@ -36,17 +36,16 @@ async def search_sites(q: str):
     q_norm = q.lower().replace(" ", "")
     results = []
     for s in MOCK_SITES:
-        search_all = (s["name"] + s["address"] + (s["brand"] or "")).lower().replace(" ", "")
-        if q_norm in search_all:
+        text = (s["name"] + s["address"] + (s["brand"] or "")).lower().replace(" ", "")
+        if q_norm in text:
             results.append(SiteSearchResponse(**s))
     return results
 
 @app.get("/")
 def home():
-    return {"status": "online", "message": "BAA V3"}
+    return {"status": "online", "message": "Final Sync 8080"}
 
 if __name__ == "__main__":
     import uvicorn
-    # Try to use PORT env var, fallback to 8000
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    # 🚨 8080 포트로 강력 고정
+    uvicorn.run(app, host="0.0.0.0", port=8080)
