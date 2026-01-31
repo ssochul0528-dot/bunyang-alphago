@@ -3,8 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import os
+import uvicorn
 
-app = FastAPI(title="Bunyang AlphaGo API")
+app = FastAPI(title="Bunyang AlphaGo API Recovery")
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,7 +15,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Mock Data ---
 MOCK_SITES = [
     {"id": "s1", "name": "힐스테이트 회룡역 파크뷰", "address": "경기도 의정부시 호원동 281-21", "brand": "힐스테이트", "category": "아파트", "status": "선착순 계약 중"},
     {"id": "s2", "name": "e편한세상 내포 퍼스트드림", "address": "충청남도 홍성군 홍북읍", "brand": "e편한세상", "category": "아파트", "status": "선착순 분양 중"},
@@ -34,18 +34,17 @@ class SiteSearchResponse(BaseModel):
 async def search_sites(q: str):
     if not q: return []
     q_norm = q.lower().replace(" ", "")
-    results = []
-    for s in MOCK_SITES:
-        text = (s["name"] + s["address"] + (s["brand"] or "")).lower().replace(" ", "")
-        if q_norm in text:
-            results.append(SiteSearchResponse(**s))
+    results = [SiteSearchResponse(**s) for s in MOCK_SITES 
+               if q_norm in (s["name"] + s["address"]).lower().replace(" ", "")]
     return results
 
 @app.get("/")
 def home():
-    return {"status": "online", "message": "Final Sync 8080"}
+    # 현재 서버가 인식하고 있는 포트 정보를 보여줍니다.
+    port = os.getenv("PORT", "Unknown")
+    return {"status": "online", "message": "API Sync Complete", "assigned_port": port}
 
 if __name__ == "__main__":
-    import uvicorn
-    # 🚨 8080 포트로 강력 고정
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    # 이 부분은 로컬 테스트용이며, 서버에서는 railway.json의 명령어를 따릅니다.
+    port = int(os.getenv("PORT", 8080))
+    uvicorn.run(app, host="0.0.0.0", port=port)
