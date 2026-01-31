@@ -14,7 +14,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Mock Data (No DB for Maximum Stability) ---
+# --- Mock Data ---
 MOCK_SITES = [
     {"id": "s1", "name": "힐스테이트 회룡역 파크뷰", "address": "경기도 의정부시 호원동 281-21", "brand": "힐스테이트", "category": "아파트", "status": "선착순 계약 중"},
     {"id": "s2", "name": "e편한세상 내포 퍼스트드림", "address": "충청남도 홍성군 홍북읍", "brand": "e편한세상", "category": "아파트", "status": "선착순 분양 중"},
@@ -36,23 +36,17 @@ async def search_sites(q: str):
     q_norm = q.lower().replace(" ", "")
     results = []
     for s in MOCK_SITES:
-        search_pool = (s["name"] + s["address"] + (s["brand"] or "")).lower().replace(" ", "")
-        if q_norm in search_pool:
+        search_all = (s["name"] + s["address"] + (s["brand"] or "")).lower().replace(" ", "")
+        if q_norm in search_all:
             results.append(SiteSearchResponse(**s))
     return results
 
-@app.get("/site-details/{site_id}")
-async def get_site_details(site_id: str):
-    for s in MOCK_SITES:
-        if s["id"] == site_id:
-            return s
-    raise HTTPException(status_code=404, detail="Site not found")
-
 @app.get("/")
 def home():
-    return {"status": "online", "message": "Bunyang AlphaGo API is ready", "version": "2.0"}
+    return {"status": "online", "message": "BAA V3"}
 
 if __name__ == "__main__":
     import uvicorn
+    # Try to use PORT env var, fallback to 8000
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run(app, host="0.0.0.0", port=port)
