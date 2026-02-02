@@ -5,7 +5,7 @@ from typing import List, Optional
 import os
 import uvicorn
 
-app = FastAPI(title="Bunyang AlphaGo API Final")
+app = FastAPI(title="Bunyang AlphaGo API Final Sync")
 
 app.add_middleware(
     CORSMiddleware,
@@ -15,6 +15,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- 현장 데이터 (연결 확인용) ---
 MOCK_SITES = [
     {"id": "s1", "name": "힐스테이트 회룡역 파크뷰", "address": "경기도 의정부시 호원동 281-21", "brand": "힐스테이트", "category": "아파트", "status": "선착순 계약 중"},
     {"id": "s2", "name": "e편한세상 내포 퍼스트드림", "address": "충청남도 홍성군 홍북읍", "brand": "e편한세상", "category": "아파트", "status": "선착순 분양 중"},
@@ -40,11 +41,9 @@ async def search_sites(q: str):
 
 @app.get("/")
 def home():
-    # Railway가 할당한 실제 포트 확인용
-    return {"status": "online", "active_port": os.getenv("PORT", "unknown")}
+    return {"status": "online", "message": "Server is listening on 0.0.0.0"}
 
 if __name__ == "__main__":
-    # Railway 시스템에서 주는 포트를 우선적으로 사용
     port = int(os.getenv("PORT", 8080))
-    print(f"Server starting on port: {port}")
+    # 🚨 host를 127.0.0.1이 아닌 0.0.0.0으로 무조건 고정
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
