@@ -7,7 +7,7 @@ import uvicorn
 import logging
 import sys
 
-# 디버깅을 위한 강력한 로그 설정
+# Logging setup
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -15,9 +15,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger("bunyang")
 
-app = FastAPI(title="Bunyang AlphaGo Final")
+app = FastAPI(title="Bunyang AlphaGo Final Verify")
 
-# CORS를 모든 도메인에 대해 활짝 엽니다
+# CORS setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -41,24 +41,23 @@ class SiteSearchResponse(BaseModel):
 
 @app.get("/")
 def home():
-    logger.info("Health check received at root /")
-    return {"status": "online", "message": "API IS READY"}
+    logger.info("Health check hit")
+    return {"status": "online", "sync": "v4"}
 
 @app.get("/search-sites", response_model=List[SiteSearchResponse])
 async def search_sites(q: str = ""):
-    logger.info(f"Search request for query: {q}")
+    logger.info(f"Search request: {q}")
     if not q: return []
     q_norm = q.lower().replace(" ", "")
     results = [SiteSearchResponse(**s) for s in MOCK_SITES 
                if q_norm in (s["name"] + s["address"]).lower().replace(" ", "")]
     
-    # 연결 성공 여부를 눈으로 확인하기 위해 결과가 없어도 가짜 데이터를 하나 보냅니다.
     if not results:
-        results = [SiteSearchResponse(id="debug", name=f"'{q}' 연결 성공!", address="서버와 통신이 원활합니다", status="OK")]
+        results = [SiteSearchResponse(id="debug", name=f"'{q}' 연결 성공!", address="조회된 데이터가 없습니다", status="OK")]
     return results
 
 if __name__ == "__main__":
-    # Railway가 할당하는 동적 포트를 완벽하게 지원
     port = int(os.getenv("PORT", 8080))
-    # 🚨 반드시 0.0.0.0으로 열어야 외부에서 접속 가능합니다!
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
+    logger.info(f"Starting server on 0.0.0.0:{port}")
+    # Using string reference for uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=port, log_level="info")
