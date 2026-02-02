@@ -5,7 +5,7 @@ from typing import List, Optional
 import os
 import uvicorn
 
-app = FastAPI(title="Bunyang AlphaGo API Recovery")
+app = FastAPI(title="Bunyang AlphaGo API Final")
 
 app.add_middleware(
     CORSMiddleware,
@@ -40,11 +40,11 @@ async def search_sites(q: str):
 
 @app.get("/")
 def home():
-    # 현재 서버가 인식하고 있는 포트 정보를 보여줍니다.
-    port = os.getenv("PORT", "Unknown")
-    return {"status": "online", "message": "API Sync Complete", "assigned_port": port}
+    # Railway가 할당한 실제 포트 확인용
+    return {"status": "online", "active_port": os.getenv("PORT", "unknown")}
 
 if __name__ == "__main__":
-    # 이 부분은 로컬 테스트용이며, 서버에서는 railway.json의 명령어를 따릅니다.
+    # Railway 시스템에서 주는 포트를 우선적으로 사용
     port = int(os.getenv("PORT", 8080))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    print(f"Server starting on port: {port}")
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
