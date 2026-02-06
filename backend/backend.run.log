@@ -1,0 +1,10 @@
+INFO:     Started server process [39432]
+INFO:     Waiting for application startup.
+INFO:main:Initializing database...
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:54847 - "OPTIONS /search-sites?q=%EC%9D%98%EC%A0%95%EB%B6%80 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://new.land.naver.com/api/search?keyword=%EC%9D%98%EC%A0%95%EB%B6%80 "HTTP/1.1 429 Too Many Requests"
+INFO:main:Naver Search [의정부] Response: 429
+WARNING:main:Naver sub-search failed: [Errno 8] nodename nor servname provided, or not known
+INFO:     127.0.0.1:54847 - "GET /search-sites?q=%EC%9D%98%EC%A0%95%EB%B6%80 HTTP/1.1" 200 OK
