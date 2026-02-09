@@ -139,16 +139,20 @@ async def search_sites(q: str = ""):
                 "Sec-Ch-Ua-Platform": '"macOS"'
             }
             
-            # 1. 네이버 분양(iSale) API - 신규 분양/청약 현장 전문 검색
+            # 1. 네이버 분양(iSale) 전문 검색 - 모든 필터(아파트/생숙/오동/임대/공공 등) 강제 적용
             try:
+                # complexType: APT(아파트), OP(오피스텔), OR(도시형생활주택), VL(빌라), ABC(상가/사무실), DDD(생숙/기타)
+                # salesType: mng(민간), pub(공공), rent(임대)
                 isale_url = "https://isale.land.naver.com/iSale/api/complex/searchList"
                 isale_params = {
                     "keyword": q,
                     "isGroup": "true",
-                    "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD", # 아파트, 오피스텔, 도시형, 생숙 등 전 유형
+                    "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC", # 모든 품목 포함
+                    "salesType": "mng:pub:rent", # 민간, 공공, 임대 모두 포함
+                    "salesStatus": "0:1:2:3:4", # 계획, 분양중, 청약중, 당첨발표, 계약중 모두 포함
                     "isPaging": "true",
                     "page": "1",
-                    "pageSize": "10"
+                    "pageSize": "20" # 결과 개수 확대
                 }
                 isale_headers = {**headers, "Referer": "https://isale.land.naver.com/"}
                 is_res = await client.get(isale_url, params=isale_params, headers=isale_headers, timeout=3.0)
@@ -157,8 +161,12 @@ async def search_sites(q: str = ""):
                     is_data = is_res.json()
                     for item in is_data.get("result", {}).get("list", []):
                         name = item.get("complexName", "")
-                        # 상태 정보 조합 (분양중, 청약중, 예정 등)
-                        status_str = f"{item.get('salesType', '')} | {item.get('salesStatusName', '정보없음')}"
+                        # 상태 및 유형 상세 표시 (예: [민간/아파트] 분양중)
+                        type_name = item.get("complexTypeName", "기타")
+                        sale_type = "민간" if item.get("salesType") == "mng" else "공공" if item.get("salesType") == "pub" else "임대"
+                        status_name = item.get("salesStatusName", "정보없음")
+                        status_str = f"[{sale_type}/{type_name}] {status_name}"
+                        
                         addr = item.get("address", "")
                         if not any(r.name == name for r in results):
                             results.append(SiteSearchResponse(
@@ -166,34 +174,34 @@ async def search_sites(q: str = ""):
                                 name=name, address=addr, status=status_str, brand=item.get("h_name")
                             ))
             except Exception as e:
-                logger.warning(f"iSale API failed: {e}")
+                logger.warning(f"iSale exhaustive API failed: {e}")
 
-            # 2. 기존 통합 검색 (단지 + 지역) - 보충용
+            # 2. 보충용: 통합 검색 (지역명 검색 시 유리)
             try:
                 search_url = "https://new.land.naver.com/api/search"
                 response = await client.get(search_url, params={"keyword": q}, headers=headers, timeout=3.0)
                 if response.status_code == 200:
                     data = response.json()
-                    # 단지 정보
+                    # 단지 정보 보충
                     for cp in data.get("complexes", []):
                         name = cp.get("complexName", "")
-                        addr = f"{cp.get('provinceName', '')} {cp.get('cityName', '')} {cp.get('townName', '')}".strip()
                         if not any(r.name == name for r in results):
+                            addr = f"{cp.get('provinceName', '')} {cp.get('cityName', '')} {cp.get('townName', '')}".strip()
                             results.append(SiteSearchResponse(
                                 id=f"extern_{cp.get('complexNo')}",
-                                name=name, address=addr, status="실시간 단지", brand=None
+                                name=name, address=addr, status="실시간 단지 정보", brand=None
                             ))
-                    # 지역 정보
+                    # 지역 정보 보충 (의정부, 강남 검색 시)
                     for rg in data.get("regions", []):
                         name = rg.get("regionName", "")
-                        addr = rg.get("displayAddress", rg.get("address", ""))
                         if not any(r.name == name for r in results):
+                            addr = rg.get("displayAddress", rg.get("address", ""))
                             results.append(SiteSearchResponse(
                                 id=f"extern_region_{rg.get('regionCode')}",
                                 name=name, address=addr, status="지역 정보", brand=None
                             ))
             except Exception as e:
-                logger.warning(f"Main search API failed: {e}")
+                logger.warning(f"Secondary search API failed: {e}")
 
     except Exception as e:
         logger.error(f"Naver search main error: {e}")
