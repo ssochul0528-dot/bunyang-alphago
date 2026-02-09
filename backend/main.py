@@ -139,45 +139,49 @@ async def search_sites(q: str = ""):
                 "Sec-Ch-Ua-Platform": '"macOS"'
             }
             
-            # 1. 네이버 분양(iSale) 전문 검색 (최우선)
+            # 네이버 차단 우회를 위한 고도화된 헤더 세트
+            enhanced_headers = {
+                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+                "Referer": "https://m.land.naver.com/",
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Language": "ko-KR,ko;q=0.9",
+                "Origin": "https://m.land.naver.com",
+                "X-Requested-With": "XMLHttpRequest"
+            }
+
+            # 1. 네이버 분양(iSale) 전문 검색
             try:
                 isale_url = "https://isale.land.naver.com/iSale/api/complex/searchList"
-                isale_params = {
-                    "keyword": q,
-                    "isGroup": "true",
+                is_params = {
+                    "keyword": q, "isGroup": "true",
                     "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC",
-                    "salesType": "mng:pub:rent",
-                    "salesStatus": "0:1:2:3:4",
-                    "isPaging": "true",
-                    "page": "1",
-                    "pageSize": "30"
+                    "salesType": "mng:pub:rent", "salesStatus": "0:1:2:3:4",
+                    "isPaging": "true", "page": "1", "pageSize": "30"
                 }
-                is_res = await client.get(isale_url, params=isale_params, headers={**headers, "Referer": "https://isale.land.naver.com/"}, timeout=5.0)
+                is_res = await client.get(isale_url, params=is_params, headers={**enhanced_headers, "Referer": "https://isale.land.naver.com/"}, timeout=5.0)
                 logger.info(f"[iSale] Search: {q} | Status: {is_res.status_code}")
                 
                 if is_res.status_code == 200:
                     data = is_res.json()
                     projects = data.get("result", {}).get("list", [])
-                    logger.info(f"[iSale] Found: {len(projects)} projects")
+                    logger.info(f"[iSale] Found: {len(projects)}")
                     for item in projects:
                         name = item.get("complexName", "")
                         type_name = item.get("complexTypeName", "부동산")
-                        sale_type = "민간" if item.get("salesType") == "mng" else "공공" if item.get("salesType") == "pub" else "임대"
-                        status_name = item.get("salesStatusName", "분양정보")
-                        status_str = f"[{sale_type}/{type_name}] {status_name}"
+                        sale_info = f"[{item.get('salesStatusName', '정보')}] {type_name}"
                         if not any(r.name == name for r in results):
-                            results.append(SiteSearchResponse(id=f"extern_isale_{item.get('complexNo')}", name=name, address=item.get("address", ""), status=status_str, brand=item.get("h_name")))
+                            results.append(SiteSearchResponse(id=f"extern_isale_{item.get('complexNo')}", name=name, address=item.get("address", ""), status=sale_info, brand=item.get("h_name")))
             except Exception as e:
                 logger.error(f"[iSale] Error: {e}")
 
-            # 2. 긴급 백업: 모바일 자동완성 API (차단에 매우 강함)
+            # 2. 모바일 자동완성 (차단 회피 1순위)
             if len(results) < 5:
                 try:
                     m_url = "https://m.land.naver.com/search/result/searchAutoComplete.json"
-                    m_res = await client.get(m_url, params={"keyword": q}, headers=headers, timeout=2.0)
+                    m_res = await client.get(m_url, params={"keyword": q}, headers=enhanced_headers, timeout=2.0)
                     if m_res.status_code == 200:
                         m_list = m_res.json().get("result", {}).get("list", [])
-                        logger.info(f"[MobileAC] Found: {len(m_list)} items")
+                        logger.info(f"[MobileAC] Found: {len(m_list)}")
                         for item in m_list:
                             name = item.get("name", "")
                             if not any(r.name == name for r in results):
@@ -185,16 +189,18 @@ async def search_sites(q: str = ""):
                 except Exception as e:
                     logger.error(f"[MobileAC] Error: {e}")
 
-            # 3. 통합 검색 (지역 정보 보충)
+            # 3. 통합 검색 (광역 검색)
             try:
                 search_url = "https://new.land.naver.com/api/search"
-                response = await client.get(search_url, params={"keyword": q}, headers=headers, timeout=3.0)
+                response = await client.get(search_url, params={"keyword": q}, headers=enhanced_headers, timeout=3.0)
                 if response.status_code == 200:
                     data = response.json()
+                    # 단체/단지 정보
                     for cp in data.get("complexes", []):
                         name = cp.get("complexName", "")
                         if not any(r.name == name for r in results):
                             results.append(SiteSearchResponse(id=f"extern_{cp.get('complexNo')}", name=name, address=f"{cp.get('provinceName', '')} {cp.get('cityName', '')}".strip(), status="단지 정보", brand=None))
+                    # 지역 정보
                     for rg in data.get("regions", []):
                         name = rg.get("regionName", "")
                         if not any(r.name == name for r in results):
