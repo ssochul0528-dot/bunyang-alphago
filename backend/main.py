@@ -139,25 +139,51 @@ async def search_sites(q: str = ""):
                 "Sec-Ch-Ua-Platform": '"macOS"'
             }
             
-            # API 1: 통합 검색 (단지 + 지역)
-            search_url = "https://new.land.naver.com/api/search"
+            # 1. 네이버 분양(iSale) API - 신규 분양/청약 현장 전문 검색
             try:
-                response = await client.get(search_url, params={"keyword": q}, headers=headers, timeout=4.0)
-                logger.info(f"Naver Search [{q}] Status: {response.status_code}")
+                isale_url = "https://isale.land.naver.com/iSale/api/complex/searchList"
+                isale_params = {
+                    "keyword": q,
+                    "isGroup": "true",
+                    "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD", # 아파트, 오피스텔, 도시형, 생숙 등 전 유형
+                    "isPaging": "true",
+                    "page": "1",
+                    "pageSize": "10"
+                }
+                isale_headers = {**headers, "Referer": "https://isale.land.naver.com/"}
+                is_res = await client.get(isale_url, params=isale_params, headers=isale_headers, timeout=3.0)
                 
+                if is_res.status_code == 200:
+                    is_data = is_res.json()
+                    for item in is_data.get("result", {}).get("list", []):
+                        name = item.get("complexName", "")
+                        # 상태 정보 조합 (분양중, 청약중, 예정 등)
+                        status_str = f"{item.get('salesType', '')} | {item.get('salesStatusName', '정보없음')}"
+                        addr = item.get("address", "")
+                        if not any(r.name == name for r in results):
+                            results.append(SiteSearchResponse(
+                                id=f"extern_isale_{item.get('complexNo')}",
+                                name=name, address=addr, status=status_str, brand=item.get("h_name")
+                            ))
+            except Exception as e:
+                logger.warning(f"iSale API failed: {e}")
+
+            # 2. 기존 통합 검색 (단지 + 지역) - 보충용
+            try:
+                search_url = "https://new.land.naver.com/api/search"
+                response = await client.get(search_url, params={"keyword": q}, headers=headers, timeout=3.0)
                 if response.status_code == 200:
                     data = response.json()
-                    # 1. 단지(Complexes) 정보 파싱
+                    # 단지 정보
                     for cp in data.get("complexes", []):
                         name = cp.get("complexName", "")
                         addr = f"{cp.get('provinceName', '')} {cp.get('cityName', '')} {cp.get('townName', '')}".strip()
                         if not any(r.name == name for r in results):
                             results.append(SiteSearchResponse(
                                 id=f"extern_{cp.get('complexNo')}",
-                                name=name, address=addr, status="실시간 데이터", brand=None
+                                name=name, address=addr, status="실시간 단지", brand=None
                             ))
-                    
-                    # 2. 지역(Regions) 정보 파싱 (추가)
+                    # 지역 정보
                     for rg in data.get("regions", []):
                         name = rg.get("regionName", "")
                         addr = rg.get("displayAddress", rg.get("address", ""))
@@ -166,38 +192,8 @@ async def search_sites(q: str = ""):
                                 id=f"extern_region_{rg.get('regionCode')}",
                                 name=name, address=addr, status="지역 정보", brand=None
                             ))
-                
-                # API 2: 모바일 자동완성 API (보충용 - 매우 강력함)
-                if len(results) < 5:
-                    mobile_ac_url = "https://m.land.naver.com/search/result/searchAutoComplete.json"
-                    m_res = await client.get(mobile_ac_url, params={"keyword": q}, headers=headers, timeout=2.0)
-                    if m_res.status_code == 200:
-                        m_data = m_res.json().get("result", {})
-                        for item in m_data.get("list", []):
-                            name = item.get("name", "")
-                            addr = item.get("fullAddress", "")
-                            item_id = item.get("id", name)
-                            if not any(r.name == name for r in results):
-                                results.append(SiteSearchResponse(
-                                    id=f"extern_{item_id}", name=name, address=addr, status="실시간 데이터", brand=None
-                                ))
-
-                # API 3: 레거시 자동완성 (최종 보루)
-                if len(results) < 3:
-                    ac_url = "https://ac.land.naver.com/ac"
-                    ac_params = {"q": q, "st": "10", "r_format": "json", "t_nm": "land", "q_enc": "utf-8", "r_enc": "utf-8"}
-                    ac_res = await client.get(ac_url, params=ac_params, headers=headers, timeout=2.0)
-                    if ac_res.status_code == 200:
-                        items = ac_res.json().get("items", [])
-                        if items and items[0]:
-                            for item in items[0]:
-                                name, desc = item[0], (item[1][0] if item[1] else "")
-                                if not any(r.name == name for r in results):
-                                    results.append(SiteSearchResponse(
-                                        id=f"extern_{name}", name=name, address=desc, status="실시간 데이터", brand=None
-                                    ))
-            except Exception as inner_e:
-                logger.warning(f"Naver sub-search failed: {inner_e}")
+            except Exception as e:
+                logger.warning(f"Main search API failed: {e}")
 
     except Exception as e:
         logger.error(f"Naver search main error: {e}")
