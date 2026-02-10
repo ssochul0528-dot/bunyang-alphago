@@ -651,12 +651,12 @@ export default function BunyangAlphaGo() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute left-0 right-0 mt-2 glass border border-blue-500/30 rounded-2xl overflow-hidden z-50 shadow-2xl"
+                    className="absolute left-0 right-0 mt-3 bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden z-[100] shadow-[0_20px_50px_rgba(0,0,0,1)]"
                   >
                     {isSearching && (
-                      <div className="px-6 py-10 text-center flex flex-col items-center gap-3">
+                      <div className="px-6 py-12 text-center flex flex-col items-center gap-3">
                         <RefreshCw size={24} className="animate-spin text-blue-500/50" />
-                        <p className="text-sm text-slate-500 font-medium">데이터베이스 검색 중...</p>
+                        <p className="text-sm text-slate-400 font-medium">데이터베이스 검색 중...</p>
                       </div>
                     )}
 
@@ -664,28 +664,31 @@ export default function BunyangAlphaGo() {
                       <button
                         key={site.id}
                         onClick={() => handleSelectSite(site)}
-                        className="w-full px-6 py-4 text-left hover:bg-blue-600/20 transition-colors border-b border-slate-800 last:border-0 flex justify-between items-center group"
+                        className="w-full px-6 py-5 text-left hover:bg-white/5 transition-all border-b border-white/5 last:border-0 flex justify-between items-center group"
                       >
-                        <div>
-                          <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
                             {site.brand && site.brand !== "기타" && (
-                              <span className="text-[10px] font-black bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30">
+                              <span className="text-[10px] font-black bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20">
                                 {site.brand}
                               </span>
                             )}
                             <div className="text-white font-bold group-hover:text-blue-400 transition-colors">{site.name}</div>
                             {site.status && (
                               <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${site.status.includes('미분양') || site.status.includes('할인') || site.status.includes('잔여')
-                                ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                ? 'bg-red-500/20 text-red-400 border border-red-500/20'
+                                : 'bg-green-500/20 text-green-400 border border-green-500/20'
                                 }`}>
                                 {site.status}
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-slate-500 mt-1">{site.address}</div>
+                          <div className="text-xs text-slate-300 flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-slate-500" />
+                            {site.address}
+                          </div>
                         </div>
-                        <ShieldCheck className="text-slate-700 group-hover:text-blue-500 transition-colors" size={20} />
+                        <ShieldCheck className="text-slate-800 group-hover:text-blue-500 transition-all transform group-hover:scale-110" size={20} />
                       </button>
                     ))}
 
