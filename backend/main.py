@@ -157,21 +157,21 @@ async def search_sites(q: str = ""):
 
             # --- 2. 다중 채널 스캔 (누락 방지) ---
 
-            # [채널 A] 분양/계획/임대 통합 스캔 (가장 중요)
+            # [채널 A] 분양/계획/임대/장기전세(SH/LH) 통합 스캔
             try:
                 is_url = "https://isale.land.naver.com/iSale/api/complex/searchList"
-                # 모든 상태(0~6)와 모든 유형을 포함하여 누락 차단
+                # salesType에 sh, lh (장기전세 등) 추가 / salesStatus에 0~6(전체) 적용
                 is_params = {
                     "keyword": q,
                     "isGroup": "true",
                     "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC:UR:HO:SH",
-                    "salesType": "mng:pub:rent:sh:lh",
-                    "salesStatus": "0:1:2:3:4:5:6",
+                    "salesType": "mng:pub:rent:sh:lh", # SH, LH 물량 명시적 추가
+                    "salesStatus": "0:1:2:3:4:5:6",     # 모든 분양 단계 포함
                     "isPaging": "true",
                     "page": "1",
-                    "pageSize": "50" # 개수 대폭 확대
+                    "pageSize": "80"                   # 더 많은 결과를 위해 확대
                 }
-                is_res = await client.get(is_url, params=is_params, headers={**common_headers, "Referer": "https://isale.land.naver.com/"}, timeout=5.0)
+                is_res = await client.get(is_url, params=is_params, headers={**common_headers, "Referer": "https://isale.land.naver.com/"}, timeout=6.0)
                 if is_res.status_code == 200:
                     is_data = is_res.json().get("result", {}).get("list", [])
                     logger.info(f"[Naver iSale] Scan hit: {len(is_data)}")
