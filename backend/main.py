@@ -139,102 +139,93 @@ async def search_sites(q: str = ""):
                 "Sec-Ch-Ua-Platform": '"macOS"'
             }
             
-            import random
-            
-            # --- 1. 헤더 위장 (랜덤화) ---
+            # --- 1. 헤더 위장 (강력하게) ---
             user_agents = [
-                "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3.1 Mobile/15E148 Safari/604.1",
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
             ]
             
             common_headers = {
                 "User-Agent": random.choice(user_agents),
                 "Accept": "application/json, text/plain, */*",
                 "Accept-Language": "ko-KR,ko;q=0.9",
-                "Cache-Control": "no-cache"
+                "Referer": "https://m.land.naver.com/"
             }
 
-            # --- 2. 다중 채널 스캔 (누락 방지) ---
+            # --- 2. 다중 채널 스캔 (누락 완전 방어) ---
 
-            # [채널 A] 분양/계획/임대/장기전세(SH/LH) 통합 스캔
-            try:
-                is_url = "https://isale.land.naver.com/iSale/api/complex/searchList"
-                # salesType에 sh, lh (장기전세 등) 추가 / salesStatus에 0~6(전체) 적용
-                is_params = {
-                    "keyword": q,
-                    "isGroup": "true",
-                    "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC:UR:HO:SH",
-                    "salesType": "mng:pub:rent:sh:lh", # SH, LH 물량 명시적 추가
-                    "salesStatus": "0:1:2:3:4:5:6",     # 모든 분양 단계 포함
-                    "isPaging": "true",
-                    "page": "1",
-                    "pageSize": "80"                   # 더 많은 결과를 위해 확대
-                }
-                is_res = await client.get(is_url, params=is_params, headers={**common_headers, "Referer": "https://isale.land.naver.com/"}, timeout=6.0)
-                if is_res.status_code == 200:
-                    is_data = is_res.json().get("result", {}).get("list", [])
-                    logger.info(f"[Naver iSale] Scan hit: {len(is_data)}")
-                    for item in is_data:
-                        name = item.get("complexName", "")
-                        comp_no = item.get("complexNo")
-                        if not any(r.name == name for r in results):
-                            status_label = item.get("salesStatusName", "정보")
-                            type_label = item.get("complexTypeName", "부동산")
-                            results.append(SiteSearchResponse(
-                                id=f"isale_{comp_no}",
-                                name=name,
-                                address=item.get("address", ""),
-                                status=f"[{status_label}] {type_label}",
-                                brand=item.get("h_name")
-                            ))
-            except Exception as e:
-                logger.warning(f"iSale Channel Fail: {e}")
-
-            # [채널 B] 모바일 자동완성 (실시간 유동 키워드 대응)
-            try:
-                m_url = "https://m.land.naver.com/search/result/searchAutoComplete.json"
-                m_res = await client.get(m_url, params={"keyword": q}, headers={**common_headers, "Referer": "https://m.land.naver.com/"}, timeout=3.0)
-                if m_res.status_code == 200:
-                    m_data = m_res.json().get("result", {}).get("list", [])
-                    logger.info(f"[Naver Mobile] Scan hit: {len(m_data)}")
-                    for item in m_data:
-                        name = item.get("name", "")
-                        if not any(r.name == name for r in results):
-                            results.append(SiteSearchResponse(
-                                id=f"mobile_{item.get('id', name)}",
-                                name=name,
-                                address=item.get("fullAddress", ""),
-                                status="실시간 데이터",
-                                brand=None
-                            ))
-            except Exception as e:
-                logger.warning(f"Mobile Channel Fail: {e}")
-
-            # [채널 C] 지도 기반 단지 스캔 (기존 단지 보완)
-            if len(results) < 10:
+            # [채널 A] 모바일 자동완성 (실시간 현장명에 가장 강함)
+            # 'GTX의정부역호반써밋' 같은 긴 이름은 여기서 가장 잘 잡힙니다.
+            async def fetch_mobile_ac(keyword):
                 try:
-                    s_url = "https://new.land.naver.com/api/search"
-                    s_res = await client.get(s_url, params={"keyword": q}, headers=common_headers, timeout=3.0)
+                    m_url = "https://m.land.naver.com/search/result/searchAutoComplete.json"
+                    res = await client.get(m_url, params={"keyword": keyword}, headers=common_headers, timeout=4.0)
+                    if res.status_code == 200:
+                        return res.json().get("result", {}).get("list", [])
+                except: return []
+                return []
+
+            # [채널 B] 분양/임대 전수 조사 (민간임대/장기전세 핵심)
+            async def fetch_isale(keyword):
+                try:
+                    is_url = "https://isale.land.naver.com/iSale/api/complex/searchList"
+                    is_params = {
+                        "keyword": keyword,
+                        "isGroup": "true",
+                        "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC:UR:HO:SH",
+                        "salesType": "mng:pub:rent:sh:lh:etc", # etc 추가하여 민간임대 보강
+                        "salesStatus": "0:1:2:3:4:5:6",
+                        "isPaging": "true", "page": "1", "pageSize": "100"
+                    }
+                    res = await client.get(is_url, params=is_params, headers={**common_headers, "Referer": "https://isale.land.naver.com/"}, timeout=5.0)
+                    if res.status_code == 200:
+                        return res.json().get("result", {}).get("list", [])
+                except: return []
+                return []
+
+            # 1단계: 검색어 그대로 검색
+            ac_hits = await fetch_mobile_ac(q)
+            isale_hits = await fetch_isale(q)
+            
+            # 2단계: 결과가 너무 없으면 검색어 단순화 (예: 'GTX의정부역호반써밋' -> '의정부 호반써밋')
+            if not ac_hits and not isale_hits and len(q) > 5:
+                short_q = q.replace("GTX", "").strip()
+                ac_hits = await fetch_mobile_ac(short_q)
+                isale_hits = await fetch_isale(short_q)
+
+            # 결과 병합
+            for item in ac_hits:
+                name = item.get("name", "")
+                if not any(r.name == name for r in results):
+                    results.append(SiteSearchResponse(
+                        id=f"ac_{item.get('id', name)}",
+                        name=name, address=item.get("fullAddress", ""),
+                        status="실시간 정보", brand=None
+                    ))
+
+            for item in isale_hits:
+                name = item.get("complexName", "")
+                if not any(r.name == name for r in results):
+                    results.append(SiteSearchResponse(
+                        id=f"isale_{item.get('complexNo')}",
+                        name=name, address=item.get("address", ""),
+                        status=f"[{item.get('salesStatusName', '분양')}] {item.get('complexTypeName', '부동산')}",
+                        brand=item.get("h_name")
+                    ))
+            
+            # 마지막 보루: 지도 기반 검색
+            if len(results) < 5:
+                try:
+                    s_res = await client.get("https://new.land.naver.com/api/search", params={"keyword": q}, headers=common_headers, timeout=3.0)
                     if s_res.status_code == 200:
-                        s_data = s_res.json()
-                        complexes = s_data.get("complexes", [])
-                        logger.info(f"[Naver Map] Scan hit: {len(complexes)}")
-                        for cp in complexes:
+                        for cp in s_res.json().get("complexes", []):
                             name = cp.get("complexName", "")
                             if not any(r.name == name for r in results):
-                                results.append(SiteSearchResponse(
-                                    id=f"map_{cp.get('complexNo')}",
-                                    name=name,
-                                    address=f"{cp.get('provinceName', '')} {cp.get('cityName', '')}".strip(),
-                                    status="단지 정보",
-                                    brand=None
-                                ))
-                except Exception as e:
-                    logger.warning(f"Map Channel Fail: {e}")
-            
-            # --- 3. 정렬 최적화 (분양 중인 현장을 상단으로) ---
-            results.sort(key=lambda x: ("분양중" in x.status or "모집공고" in x.status), reverse=True)
+                                results.append(SiteSearchResponse(id=f"map_{cp.get('complexNo')}", name=name, address=f"{cp.get('provinceName', '')} {cp.get('cityName', '')}".strip(), status="단지 정보", brand=None))
+                except: pass
+
+            # 정렬: '분양' 글자가 들어간 것을 우선
+            results.sort(key=lambda x: ("분양" in x.status), reverse=True)
 
     except Exception as e:
         logger.error(f"Naver search main error: {e}")
