@@ -106,8 +106,8 @@ const AnimatedNumber = ({ value, decimals = 0 }: { value: number, decimals?: num
   return <span>{displayValue.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</span>;
 };
 
-// --- Base URL Sanitization ---
-const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// --- Base URL - Force Production URL for stability ---
+const RAW_API_URL = "https://bunyang-alphago-production-d17b.up.railway.app";
 const API_BASE_URL = RAW_API_URL.replace(/\/$/, "");
 
 export default function BunyangAlphaGo() {
