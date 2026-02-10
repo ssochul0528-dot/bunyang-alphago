@@ -140,81 +140,85 @@ async def search_sites(q: str = ""):
             }
             
             import random
+            import time
             
-            # 차단 확률을 줄이기 위한 무작위 브라우저 헤더
+            # 1. 고도화된 세션 위장용 헤더 (매 호출마다 신선하게 유지)
             user_agents = [
-                "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1",
-                "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.164 Mobile Safari/537.36",
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Mobile/15E148 Safari/604.1",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.64 Mobile Safari/537.36"
             ]
             
-            curr_headers = {
+            base_headers = {
                 "User-Agent": random.choice(user_agents),
                 "Accept": "application/json, text/plain, */*",
                 "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
-                "Referer": "https://m.land.naver.com/",
-                "Cache-Control": "no-cache"
+                "Sec-Fetch-Site": "same-origin",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Dest": "empty",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache"
             }
 
-            # 1. 모바일 자동완성 (차단에 가장 강함 - 1순위)
+            # 2. 3중 교차 검색 엔진 (차단 우회용)
+            
+            # [Step 1] 모바일 전용 자동완성 (가장 가볍고 빠름)
             try:
                 m_url = "https://m.land.naver.com/search/result/searchAutoComplete.json"
-                m_res = await client.get(m_url, params={"keyword": q}, headers=curr_headers, timeout=2.5)
+                m_res = await client.get(m_url, params={"keyword": q}, headers={**base_headers, "Referer": "https://m.land.naver.com/search"}, timeout=3.5)
                 if m_res.status_code == 200:
-                    m_list = m_res.json().get("result", {}).get("list", [])
-                    logger.info(f"[Step 1: MobileAC] Found {len(m_list)} items for {q}")
-                    for item in m_list:
+                    m_data = m_res.json().get("result", {}).get("list", [])
+                    logger.info(f"[Search: {q}] Step1 (MobileAC) hit: {len(m_data)}")
+                    for item in m_data:
                         name = item.get("name", "")
                         if not any(r.name == name for r in results):
                             results.append(SiteSearchResponse(
                                 id=f"extern_{item.get('id', name)}",
-                                name=name,
-                                address=item.get("fullAddress", ""),
-                                status="실시간 데이터",
-                                brand=None
+                                name=name, address=item.get("fullAddress", ""),
+                                status="실시간 데이터", brand=None
                             ))
             except Exception as e:
-                logger.error(f"MobileAC Fail: {e}")
+                logger.warning(f"Step 1 Failed: {e}")
 
-            # 2. 분양 전용(iSale) 전문 검색 (2순위)
-            if len(results) < 10:
-                try:
-                    isale_url = "https://isale.land.naver.com/iSale/api/complex/searchList"
-                    is_params = {
-                        "keyword": q, "isGroup": "true",
-                        "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC",
-                        "salesType": "mng:pub:rent", "salesStatus": "0:1:2:3:4",
-                        "isPaging": "true", "page": "1", "pageSize": "20"
-                    }
-                    is_res = await client.get(isale_url, params=is_params, headers={**curr_headers, "Referer": "https://isale.land.naver.com/"}, timeout=3.0)
-                    if is_res.status_code == 200:
-                        projects = is_res.json().get("result", {}).get("list", [])
-                        logger.info(f"[Step 2: iSale] Found {len(projects)} projects")
-                        for item in projects:
-                            name = item.get("complexName", "")
-                            if not any(r.name == name for r in results):
-                                results.append(SiteSearchResponse(
-                                    id=f"extern_isale_{item.get('complexNo')}",
-                                    name=name, address=item.get("address", ""),
-                                    status=f"[{item.get('salesStatusName', '분양')}] {item.get('complexTypeName', '부동산')}",
-                                    brand=item.get("h_name")
-                                ))
-                except Exception as e:
-                    logger.error(f"iSale Fail: {e}")
+            # [Step 2] 분양전문(iSale) 전문 검색 (브랜드명 검색의 핵심)
+            try:
+                is_url = "https://isale.land.naver.com/iSale/api/complex/searchList"
+                is_params = {
+                    "keyword": q, "isGroup": "true",
+                    "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC",
+                    "salesType": "mng:pub:rent", "salesStatus": "0:1:2:3:4",
+                    "isPaging": "true", "page": "1", "pageSize": "30"
+                }
+                is_res = await client.get(is_url, params=is_params, headers={**base_headers, "Referer": "https://isale.land.naver.com/"}, timeout=5.0)
+                if is_res.status_code == 200:
+                    is_list = is_res.json().get("result", {}).get("list", [])
+                    logger.info(f"[Search: {q}] Step2 (iSale) hit: {len(is_list)}")
+                    for item in is_list:
+                        name = item.get("complexName", "")
+                        if not any(r.name == name for r in results):
+                            results.append(SiteSearchResponse(
+                                id=f"extern_isale_{item.get('complexNo')}",
+                                name=name, address=item.get("address", ""),
+                                status=f"[{item.get('salesStatusName', '분양')}] {item.get('complexTypeName', '부동산')}",
+                                brand=item.get("h_name")
+                            ))
+            except Exception as e:
+                logger.warning(f"Step 2 Failed: {e}")
 
-            # 3. 통합 검색 (마지막 보루)
+            # [Step 3] 통합 검색 (지역/단지 정보 보완)
             if len(results) < 5:
                 try:
                     search_url = "https://new.land.naver.com/api/search"
-                    s_res = await client.get(search_url, params={"keyword": q}, headers=curr_headers, timeout=3.0)
+                    s_res = await client.get(search_url, params={"keyword": q}, headers={**base_headers, "Referer": "https://new.land.naver.com/"}, timeout=4.0)
                     if s_res.status_code == 200:
-                        data = s_res.json()
-                        for cp in data.get("complexes", []):
+                        s_data = s_res.json()
+                        logger.info(f"[Search: {q}] Step3 (MainSearch) hit: {len(s_data.get('complexes', []))}")
+                        for cp in s_data.get("complexes", []):
                             name = cp.get("complexName", "")
                             if not any(r.name == name for r in results):
                                 results.append(SiteSearchResponse(id=f"extern_{cp.get('complexNo')}", name=name, address=f"{cp.get('provinceName', '')} {cp.get('cityName', '')}".strip(), status="단지 정보", brand=None))
                 except Exception as e:
-                    logger.error(f"MainSearch Fail: {e}")
+                    logger.warning(f"Step 3 Failed: {e}")
 
     except Exception as e:
         logger.error(f"Naver search main error: {e}")
