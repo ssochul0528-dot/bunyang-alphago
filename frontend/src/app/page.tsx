@@ -644,19 +644,20 @@ export default function BunyangAlphaGo() {
                 )}
               </div>
 
-              {/* Search Results Dropdown */}
+              {/* Search Results Dropdown - Forced Opaque for Visibility */}
               <AnimatePresence>
                 {(isSearching || (address.trim().length >= 1 && searchResults.length > 0) || (!isSearching && searchResults.length === 0 && address.trim().length >= 1)) && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute left-0 right-0 mt-3 bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden z-[100] shadow-[0_20px_50px_rgba(0,0,0,1)]"
+                    style={{ backgroundColor: '#020617', opacity: 1 }}
+                    className="absolute left-0 right-0 mt-3 border border-slate-800 rounded-2xl overflow-hidden z-[9999] shadow-[0_20px_60px_rgba(0,0,0,1)]"
                   >
                     {isSearching && (
                       <div className="px-6 py-12 text-center flex flex-col items-center gap-3">
-                        <RefreshCw size={24} className="animate-spin text-blue-500/50" />
-                        <p className="text-sm text-slate-400 font-medium">데이터베이스 검색 중...</p>
+                        <RefreshCw size={24} className="animate-spin text-blue-500" />
+                        <p className="text-sm text-slate-300 font-medium">실시간 데이터베이스 조회 중...</p>
                       </div>
                     )}
 
@@ -664,31 +665,31 @@ export default function BunyangAlphaGo() {
                       <button
                         key={site.id}
                         onClick={() => handleSelectSite(site)}
-                        className="w-full px-6 py-5 text-left hover:bg-white/5 transition-all border-b border-white/5 last:border-0 flex justify-between items-center group"
+                        className="w-full px-6 py-5 text-left hover:bg-white/10 transition-all border-b border-white/5 last:border-0 flex justify-between items-center group"
                       >
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1.5">
                             {site.brand && site.brand !== "기타" && (
-                              <span className="text-[10px] font-black bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20">
+                              <span className="text-[10px] font-black bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/40">
                                 {site.brand}
                               </span>
                             )}
-                            <div className="text-white font-bold group-hover:text-blue-400 transition-colors">{site.name}</div>
+                            <div className="text-white font-extrabold text-base group-hover:text-blue-400 transition-colors">{site.name}</div>
                             {site.status && (
                               <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${site.status.includes('미분양') || site.status.includes('할인') || site.status.includes('잔여')
-                                ? 'bg-red-500/20 text-red-400 border border-red-500/20'
-                                : 'bg-green-500/20 text-green-400 border border-green-500/20'
+                                ? 'bg-red-500/30 text-red-300 border border-red-500/40'
+                                : 'bg-green-500/30 text-green-300 border border-green-500/40'
                                 }`}>
                                 {site.status}
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-slate-300 flex items-center gap-1">
-                            <MapPin className="w-3 h-3 text-slate-500" />
+                          <div className="text-sm text-white flex items-center gap-1.5 font-medium">
+                            <MapPin className="w-3.5 h-3.5 text-blue-400" />
                             {site.address}
                           </div>
                         </div>
-                        <ShieldCheck className="text-slate-800 group-hover:text-blue-500 transition-all transform group-hover:scale-110" size={20} />
+                        <ShieldCheck className="text-slate-700 group-hover:text-blue-500 transition-all transform group-hover:scale-110" size={24} />
                       </button>
                     ))}
 
