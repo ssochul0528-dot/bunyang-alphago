@@ -110,23 +110,23 @@ async def search_sites(q: str):
                 if s.id not in seen_ids:
                     results.append(SiteSearchResponse(
                         id=s.id, name=s.name, address=s.address,
-                        status=s.status or "분양 정보", brand=s.brand
+                        status=s.status or "현장 정보", brand=s.brand
                     ))
                     seen_ids.add(s.id)
     except Exception as e:
         logger.error(f"DB Error: {e}")
 
-    # 2. 결과 부족 시 실시간 보완 (차단 위험이 있으나 시도는 함)
-    if len(results) < 5:
+    # 2. 결과 부족 시 실시간 보완
+    if len(results) < 8:
         try:
             async with httpx.AsyncClient() as client:
                 h = {"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1"}
                 res = await client.get("https://m.land.naver.com/search/result/searchAutoComplete.json", params={"keyword": q}, headers=h, timeout=3.0)
-                if res.status_code == 200 and "json" in res.headers.get("type", "json"):
+                if res.status_code == 200:
                     for item in res.json().get("result", {}).get("list", []):
                         sid = f"extern_ac_{item.get('id', item.get('name'))}"
                         if sid not in seen_ids:
-                            results.append(SiteSearchResponse(id=sid, name=item.get('name'), address=item.get('fullAddress'), status="실시간 데이터"))
+                            results.append(SiteSearchResponse(id=sid, name=item.get('name'), address=item.get('fullAddress'), status="실시간 정보"))
                             seen_ids.add(sid)
         except: pass
 
@@ -170,7 +170,7 @@ async def get_site_details(site_id: str):
     with Session(engine) as session:
         site = session.get(Site, site_id)
         if site: return site
-        return {"id": site_id, "name": "기타 현장", "address": "지역 정보", "brand": "기타", "category": "아파트", "price": 2500, "target_price": 2800, "supply": 500, "status": "실시간"}
+        return {"id": site_id, "name": "기타 현장", "address": "지역 정보", "brand": "기타", "category": "부동산", "price": 2500, "target_price": 2800, "supply": 500, "status": "실시간"}
 
 @app.post("/analyze")
 async def analyze(req: AnalysisRequest):
