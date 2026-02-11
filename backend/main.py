@@ -36,9 +36,9 @@ class Site(SQLModel, table=True):
 # --- MEGA SEED DATA: 도안리버파크 및 전국구 스타터 ---
 MOCK_SITES = [
     {"id": "h_doan_1", "name": "힐스테이트 도안리버파크 1단지", "address": "대전광역시 유성구 학하동", "brand": "힐스테이트", "category": "아파트", "price": 1950, "target_price": 2200, "supply": 1124, "status": "일반분양"},
-    {"id": "h_doan_2", "name": "힐스테이트 도안리버파크 2단지", "address": "대전광역시 유성구 학하동", "brand": "힐스테이트", "category": "아파트", "price": 1950, "target_price": 2200, "supply": 1437, "status": "분양예정"},
-    {"id": "h1", "name": "힐스테이트 회룡역 파크뷰", "address": "경기도 의정부시 호원동", "brand": "힐스테이트", "category": "아파트", "price": 2417, "target_price": 2750, "supply": 1816, "status": "분양중"},
-    {"id": "r1", "name": "GTX의정부역 호반써밋(민간임대)", "address": "경기도 의정부시 의정부동", "brand": "호반써밋", "category": "민간임대", "price": 2300, "target_price": 2600, "supply": 400, "status": "임대모집"},
+    {"id": "l1", "name": "의정부 롯데캐슬 나리벡시티", "address": "경기도 의정부시 금오동", "brand": "롯데캐슬", "category": "아파트", "price": 2150, "target_price": 2400, "supply": 671, "status": "선착순"},
+    {"id": "h_pk_hw", "name": "힐스테이트 평택 화양", "address": "경기도 평택시", "brand": "힐스테이트", "category": "아파트", "price": 1400, "target_price": 1600, "supply": 1571, "status": "미분양"},
+    {"id": "p_yi_on", "name": "용인 푸르지오 원클러스터", "address": "경기도 용인시", "brand": "푸르지오", "category": "아파트", "price": 1850, "target_price": 2100, "supply": 1681, "status": "잔여세대"},
 ]
 
 def create_db_and_tables():
@@ -83,12 +83,17 @@ async def search_sites(q: str):
     results = []
     seen_ids = set()
 
-    # 1. DB 고속 검색
+    # 1. DB 고속 검색 (미분양, 잔여세대, 선착순 등 키워드 포함)
     try:
         with Session(engine) as session:
             statement = select(Site).where(
-                or_(col(Site.name).contains(q), col(Site.address).contains(q), col(Site.brand).contains(q))
-            ).limit(100)
+                or_(
+                    col(Site.name).contains(q),
+                    col(Site.address).contains(q),
+                    col(Site.brand).contains(q),
+                    col(Site.status).contains(q)  # '선착순', '미분양' 검색 대응
+                )
+            ).order_by(col(Site.last_updated).desc()).limit(100)
             db_sites = session.exec(statement).all()
             for s in db_sites:
                 if s.id not in seen_ids:
@@ -96,7 +101,7 @@ async def search_sites(q: str):
                     seen_ids.add(s.id)
     except: pass
 
-    # 2. 실시간 엔진 보완 (전국 데이터가 부족할 경우 실시간 획득)
+    # 2. 실시간 엔진 보완
     if len(results) < 30:
         try:
             async with httpx.AsyncClient() as client:
@@ -113,30 +118,24 @@ async def search_sites(q: str):
                             seen_ids.add(sid)
         except: pass
 
-    results.sort(key=lambda x: (x.name.find(q) if x.name.find(q) != -1 else 999))
     return results[:100]
 
 @app.get("/sync-all")
 async def sync_all():
-    # 전국의 주요 구/군/시 키워드 100개 이상으로 전수 조사
-    regions = [
-        "강남", "강서", "송파", "마포", "용산", "서초", "노원", "일산", "분당", "수지", "기흥", "팔달", "권선", "영통", "장안", 
-        "단원", "상록", "부평", "남동", "동구", "서구", "중구", "북구", "유성", "대덕", "해운대", "수영", "남구", "수성", "달서", 
-        "세종", "진주", "원주", "천안", "청주", "전주", "순천", "여수", "창원", "김해", "구미", "포항", "광명", "김포", "의정부", 
-        "하남", "구리", "오산", "시흥", "평택", "안산", "화성", "용인", "성남", "부천", "광주", "안성", "양주", "이천", "파주"
+    # 전국 8도 + 미분양/잔여세대 핵심 키워드
+    keywords = [
+        "서울", "인천", "대전", "대구", "부산", "광주", "울산", "세종", "경기도", "용인", "평택", "화성", "의정부", "김포", "동탄", "검단",
+        "미분양 아파트", "선착순 분양", "잔여세대 모집", "무순위 청약", "임대주택", "민간임대", "오피스텔", "도안", "송도"
     ]
-    brands = ["힐스테이트", "푸르지오", "자이", "롯데캐슬", "아이파크", "e편한세상", "래미안", "더샵", "호반", "우미린", "중흥", "제일풍경채"]
-    keywords = regions + brands + ["민간임대", "오피스텔", "도안리버파크"]
-    
     count = 0
     async with httpx.AsyncClient() as client:
-        # 하나씩 순회하며 DB 채우기
         for kw in keywords:
             try:
                 fake_nnb = "".join(random.choices("0123456789ABCDEF", k=16))
                 h = {"User-Agent": "Mozilla/5.0", "Cookie": f"NNB={fake_nnb}"}
                 url = "https://isale.land.naver.com/iSale/api/complex/searchList"
-                params = {"keyword": kw, "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC:UR:HO:SH", "salesType": "mng:pub:rent:sh:lh:etc", "pageSize": "100"}
+                # 미분양/잔여세대 위주 필터 (salesStatus 0, 1, 2)
+                params = {"keyword": kw, "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC:UR:HO:SH", "salesType": "mng:pub:rent:sh:lh:etc", "salesStatus": "0:1:2:3:4:5:6", "pageSize": "100"}
                 res = await client.get(url, params=params, headers=h, timeout=10.0)
                 if res.status_code == 200:
                     items = res.json().get("result", {}).get("list", [])
@@ -147,13 +146,14 @@ async def sync_all():
                                 session.add(Site(
                                     id=sid, name=it.get("complexName"), address=it.get("address"),
                                     brand=it.get("h_name"), category=it.get("complexTypeName", "부동산"),
-                                    price=2000.0, target_price=2300.0, supply=500, status=it.get("salesStatusName")
+                                    price=2000.0, target_price=2300.0, supply=500, 
+                                    status=it.get("salesStatusName") # '선착순 분양중', '잔여세대' 등 상태 저장
                                 ))
                                 count += 1
                         session.commit()
-                await asyncio.sleep(0.3)
+                await asyncio.sleep(0.4)
             except: pass
-    return {"status": "sync_completed", "new_items": count, "message": "전국 전수 시군구 조사가 완료되었습니다."}
+    return {"status": "sync_completed", "new_items": count, "message": "전국 미분양 및 잔여세대 전수 조사가 완료되었습니다."}
 
 @app.get("/site-details/{site_id}")
 async def get_site_details(site_id: str):
