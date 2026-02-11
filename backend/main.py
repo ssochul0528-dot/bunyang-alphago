@@ -139,102 +139,107 @@ async def search_sites(q: str = ""):
                 "Sec-Ch-Ua-Platform": '"macOS"'
             }
             
-            # --- 1. 고도화된 변장 도구 (차단 우회 핵심) ---
+            # --- 1. 고단수 변장 도구 (차단 회피 3단계) ---
             user_agents = [
-                "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1",
-                "Mozilla/5.0 (Linux; Android 14; SM-S928B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
             ]
             
-            # 가짜 쿠키 및 세션 정보 생성 (네이버 차단 회피용)
-            def get_random_headers(referer):
-                return {
-                    "User-Agent": random.choice(user_agents),
-                    "Accept": "application/json, text/plain, */*",
-                    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
-                    "Referer": referer,
-                    "Cache-Control": "no-cache",
-                    "Pragma": "no-cache",
-                    "X-Requested-With": "XMLHttpRequest",
-                    "Cookie": f"NNB={str(random.random())[2:12]}; domain=.naver.com; path=/;"
-                }
-
-            async def fetch_channel(name, url, params, referer, timeout=4.0):
+            async def fetch_naver(name, url, params, referer):
                 try:
-                    # 네이버의 패턴 인식을 피하기 위해 미세한 지연 추가
-                    await asyncio.sleep(random.uniform(0.1, 0.4))
+                    # 네이버의 자동화 감지를 피하기 위해 0.1~0.3초 무작위 지연
+                    await asyncio.sleep(random.uniform(0.1, 0.3))
                     
-                    res = await client.get(url, params=params, headers=get_random_headers(referer), timeout=timeout, follow_redirects=False)
+                    h = {
+                        "User-Agent": random.choice(user_agents),
+                        "Accept": "application/json, text/plain, */*",
+                        "Referer": referer,
+                        "Cookie": f"NNB={str(random.random())[2:12]}; domain=.naver.com; path=/;"
+                    }
+                    
+                    res = await client.get(url, params=params, headers=h, timeout=4.0, follow_redirects=False)
                     
                     if res.status_code == 200:
-                        # JSON 파싱 전 텍스트 확인으로 에러 방지
+                        # 차단 시 네이버는 JSON 대신 HTML(200)을 보내기도 함 -> 이를 걸러냄
                         if "application/json" in res.headers.get("Content-Type", ""):
                             return res.json()
-                        logger.warning(f"[{name}] Not JSON: {res.text[:100]}")
-                    elif res.status_code in [302, 429]:
-                        logger.error(f"[{name}] BLOCKED (Status {res.status_code})")
+                        logger.warning(f"[{name}] Blocked (HTML received instead of JSON)")
+                    else:
+                        logger.warning(f"[{name}] API Status: {res.status_code}")
                     return None
                 except Exception as e:
-                    logger.warning(f"[{name}] Failed: {str(e)[:50]}")
+                    logger.warning(f"[{name}] Error: {str(e)[:50]}")
                     return None
 
-            # --- 2. 병렬 검색 실행 (모든 화력 집중) ---
+            # --- 2. 병렬 검색 (모든 채널 동시 스캔) ---
             tasks = [
-                fetch_channel("MobileAC", "https://m.land.naver.com/search/result/searchAutoComplete.json", {"keyword": q}, "https://m.land.naver.com/"),
-                fetch_channel("iSale", "https://isale.land.naver.com/iSale/api/complex/searchList", {
+                fetch_naver("MobileAC", "https://m.land.naver.com/search/result/searchAutoComplete.json", {"keyword": q}, "https://m.land.naver.com/"),
+                fetch_naver("iSale", "https://isale.land.naver.com/iSale/api/complex/searchList", {
                     "keyword": q, "isGroup": "true",
                     "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC:UR:HO:SH",
                     "salesType": "mng:pub:rent:sh:lh:etc",
                     "salesStatus": "0:1:2:3:4:5:6",
                     "isPaging": "true", "page": "1", "pageSize": "30"
                 }, "https://isale.land.naver.com/"),
-                fetch_channel("MapSearch", "https://new.land.naver.com/api/search", {"keyword": q}, "https://new.land.naver.com/")
+                fetch_naver("MapSearch", "https://new.land.naver.com/api/search", {"keyword": q}, "https://new.land.naver.com/")
             ]
 
-            results_raw = await asyncio.gather(*tasks)
-            ac_data = (results_raw[0] or {}).get("result", {}).get("list", [])
-            isale_data = (results_raw[1] or {}).get("result", {}).get("list", [])
-            map_data = (results_raw[2] or {}).get("complexes", [])
+            raw_results = await asyncio.gather(*tasks)
+            ac_list = (raw_results[0] or {}).get("result", {}).get("list", [])
+            isale_list = (raw_results[1] or {}).get("result", {}).get("list", [])
+            map_list = (raw_results[2] or {}).get("complexes", [])
 
-            # --- 3. 데이터 병합 (중복 제거) ---
-            seen_names = set()
+            # --- 3. 데이터 병합 (중복 방지 및 우선순위) ---
+            seen = set()
 
-            # iSale 우선
-            for item in isale_data:
+            # (1) 분양탭 정보 (현장 정보가 가장 풍부)
+            for item in isale_list:
                 name = item.get("complexName", "")
-                if name and name not in seen_names:
+                if name and name not in seen:
                     results.append(SiteSearchResponse(
                         id=f"extern_isale_{item.get('complexNo')}",
                         name=name, address=item.get("address", ""),
                         status=f"[{item.get('salesStatusName', '분양')}] {item.get('complexTypeName', '부동산')}",
                         brand=item.get("h_name")
                     ))
-                    seen_names.add(name)
+                    seen.add(name)
 
-            # MobileAC 보완
-            for item in ac_data:
+            # (2) 자동완성 정보 (긴 현장명 대응)
+            for item in ac_list:
                 name = item.get("name", "")
-                if name and name not in seen_names:
+                if name and name not in seen:
                     results.append(SiteSearchResponse(
                         id=f"extern_ac_{item.get('id', name)}",
                         name=name, address=item.get("fullAddress", ""),
                         status="실시간 데이터", brand=None
                     ))
-                    seen_names.add(name)
+                    seen.add(name)
 
-            # MapSearch 보완
-            for cp in map_data:
+            # (3) 지도 단지 정보 (기존 단지)
+            for cp in map_list:
                 name = cp.get("complexName", "")
-                if name and name not in seen_names:
+                if name and name not in seen:
                     results.append(SiteSearchResponse(
                         id=f"extern_map_{cp.get('complexNo')}",
-                        name=name, address=f"{cp.get('provinceName', '')} {cp.get('cityName', '')}".strip(),
+                        name=name, address=f"{cp.get('provinceName', '')} {cp.get('cityName', '')}".strip() or "지역정보",
                         status="단지 정보", brand=None
                     ))
-                    seen_names.add(name)
+                    seen.add(name)
 
-            # 정렬: '분양' 글자 우선
-            results.sort(key=lambda x: ("분양" in x.status), reverse=True)
+            # 결과가 너무 없으면 검색어를 줄여서 한 번 더 시도 (GTX의정부 -> 의정부)
+            if not results and len(q) > 4:
+                q_short = q[-4:] # 뒤에서 4글자만
+                res_retry = await fetch_naver("Retry", "https://m.land.naver.com/search/result/searchAutoComplete.json", {"keyword": q_short}, "https://land.naver.com")
+                if res_retry:
+                    for item in res_retry.get("result", {}).get("list", []):
+                        name = item.get("name", "")
+                        if name not in seen:
+                            results.append(SiteSearchResponse(id=f"extern_retry_{item.get('id', name)}", name=name, address=item.get("fullAddress", ""), status="재검색 결과", brand=None))
+                            seen.add(name)
+
+            # 정렬 및 컷
+            results.sort(key=lambda x: ("분양중" in x.status or "모집" in x.status), reverse=True)
+            results = results[:10]
 
     except Exception as e:
         logger.error(f"Naver search main error: {e}")
