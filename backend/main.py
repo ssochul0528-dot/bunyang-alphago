@@ -178,7 +178,7 @@ async def search_sites(q: str):
     return results[:15]
 
 # --- 전지역 데이터 동기화 (Sync) 엔드포인트 ---
-@app.post("/sync-all")
+@app.get("/sync-all")
 async def sync_all_sites():
     """
     주요 키워드(브랜드, 광역시 등)를 순회하며 전국의 데이터를 DB에 미리 채워넣습니다.
