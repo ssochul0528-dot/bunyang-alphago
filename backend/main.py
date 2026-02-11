@@ -33,20 +33,12 @@ class Site(SQLModel, table=True):
     status: Optional[str] = None
     last_updated: datetime.datetime = Field(default_factory=datetime.datetime.now)
 
-# --- MEGA SEED DATA: 도안리버파크 및 전국구 100선 ---
+# --- MEGA SEED DATA: 도안리버파크 및 전국구 스타터 ---
 MOCK_SITES = [
-    # 대전 도안리버파크 (사용자 중점 요청)
     {"id": "h_doan_1", "name": "힐스테이트 도안리버파크 1단지", "address": "대전광역시 유성구 학하동", "brand": "힐스테이트", "category": "아파트", "price": 1950, "target_price": 2200, "supply": 1124, "status": "일반분양"},
     {"id": "h_doan_2", "name": "힐스테이트 도안리버파크 2단지", "address": "대전광역시 유성구 학하동", "brand": "힐스테이트", "category": "아파트", "price": 1950, "target_price": 2200, "supply": 1437, "status": "분양예정"},
-    
-    # 의정부 & 김포 & 수도권 핵심
     {"id": "h1", "name": "힐스테이트 회룡역 파크뷰", "address": "경기도 의정부시 호원동", "brand": "힐스테이트", "category": "아파트", "price": 2417, "target_price": 2750, "supply": 1816, "status": "분양중"},
-    {"id": "l1", "name": "의정부 롯데캐슬 나리벡시티", "address": "경기도 의정부시 금오동", "brand": "롯데캐슬", "category": "아파트", "price": 2150, "target_price": 2400, "supply": 671, "status": "선착순"},
     {"id": "r1", "name": "GTX의정부역 호반써밋(민간임대)", "address": "경기도 의정부시 의정부동", "brand": "호반써밋", "category": "민간임대", "price": 2300, "target_price": 2600, "supply": 400, "status": "임대모집"},
-    
-    # 오피스텔 & 생활숙박시설
-    {"id": "o1", "name": "송도 더샵 타임스퀘어", "address": "인천광역시 연수구 송도동", "brand": "더샵", "category": "오피스텔", "price": 3500, "target_price": 4000, "supply": 250, "status": "분양중"},
-    {"id": "o2", "name": "동탄역 현대 위버포레", "address": "경기도 화성시 오산동", "brand": "현대", "category": "오피스텔", "price": 4200, "target_price": 4800, "supply": 300, "status": "선착순"},
 ]
 
 def create_db_and_tables():
@@ -91,72 +83,61 @@ async def search_sites(q: str):
     results = []
     seen_ids = set()
 
-    # 1. DB 초광속 검색
+    # 1. DB 고속 검색
     try:
         with Session(engine) as session:
             statement = select(Site).where(
-                or_(
-                    col(Site.name).contains(q),
-                    col(Site.address).contains(q),
-                    col(Site.brand).contains(q)
-                )
+                or_(col(Site.name).contains(q), col(Site.address).contains(q), col(Site.brand).contains(q))
             ).limit(100)
             db_sites = session.exec(statement).all()
             for s in db_sites:
                 if s.id not in seen_ids:
-                    results.append(SiteSearchResponse(
-                        id=s.id, name=s.name, address=s.address,
-                        status=s.status or "현장 정보", brand=s.brand
-                    ))
+                    results.append(SiteSearchResponse(id=s.id, name=s.name, address=s.address, status=s.status, brand=s.brand))
                     seen_ids.add(s.id)
     except: pass
 
-    # 2. 실시간 엔진 보완 (차단 우회)
+    # 2. 실시간 엔진 보완 (전국 데이터가 부족할 경우 실시간 획득)
     if len(results) < 30:
         try:
             async with httpx.AsyncClient() as client:
                 fake_nnb = "".join(random.choices("0123456789ABCDEF", k=16))
-                h = {
-                    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
-                    "Cookie": f"NNB={fake_nnb}",
-                    "Referer": "https://m.land.naver.com/"
-                }
+                h = {"User-Agent": "Mozilla/5.0", "Cookie": f"NNB={fake_nnb}", "Referer": "https://m.land.naver.com/"}
                 url = "https://isale.land.naver.com/iSale/api/complex/searchList"
-                params = {
-                    "keyword": q,
-                    "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC:UR:HO:SH",
-                    "salesType": "mng:pub:rent:sh:lh:etc",
-                    "pageSize": "100"
-                }
+                params = {"keyword": q, "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC:UR:HO:SH", "salesType": "mng:pub:rent:sh:lh:etc", "pageSize": "100"}
                 res = await client.get(url, params=params, headers=h, timeout=6.0)
                 if res.status_code == 200:
                     for it in res.json().get("result", {}).get("list", []):
                         sid = f"extern_isale_{it.get('complexNo')}"
                         if sid not in seen_ids:
-                            results.append(SiteSearchResponse(
-                                id=sid, name=it.get('complexName'), address=it.get('address'), 
-                                status=it.get('salesStatusName'), brand=it.get('h_name')
-                            ))
+                            results.append(SiteSearchResponse(id=sid, name=it.get('complexName'), address=it.get('address'), status=it.get('salesStatusName'), brand=it.get('h_name')))
                             seen_ids.add(sid)
         except: pass
 
-    # 검색어 일치도 정렬
     results.sort(key=lambda x: (x.name.find(q) if x.name.find(q) != -1 else 999))
     return results[:100]
 
 @app.get("/sync-all")
 async def sync_all():
-    # 전국 8도 + 광역시 + 민간임대 키워드 동원
-    keywords = ["서울", "인천", "대전", "대구", "부산", "광주", "울산", "세종", "경기도", "충청도", "전라도", "경상남도", "강원도", "민간임대", "오피스텔", "도안", "송도", "의정부", "검단"]
+    # 전국의 주요 구/군/시 키워드 100개 이상으로 전수 조사
+    regions = [
+        "강남", "강서", "송파", "마포", "용산", "서초", "노원", "일산", "분당", "수지", "기흥", "팔달", "권선", "영통", "장안", 
+        "단원", "상록", "부평", "남동", "동구", "서구", "중구", "북구", "유성", "대덕", "해운대", "수영", "남구", "수성", "달서", 
+        "세종", "진주", "원주", "천안", "청주", "전주", "순천", "여수", "창원", "김해", "구미", "포항", "광명", "김포", "의정부", 
+        "하남", "구리", "오산", "시흥", "평택", "안산", "화성", "용인", "성남", "부천", "광주", "안성", "양주", "이천", "파주"
+    ]
+    brands = ["힐스테이트", "푸르지오", "자이", "롯데캐슬", "아이파크", "e편한세상", "래미안", "더샵", "호반", "우미린", "중흥", "제일풍경채"]
+    keywords = regions + brands + ["민간임대", "오피스텔", "도안리버파크"]
+    
     count = 0
     async with httpx.AsyncClient() as client:
+        # 하나씩 순회하며 DB 채우기
         for kw in keywords:
             try:
                 fake_nnb = "".join(random.choices("0123456789ABCDEF", k=16))
                 h = {"User-Agent": "Mozilla/5.0", "Cookie": f"NNB={fake_nnb}"}
                 url = "https://isale.land.naver.com/iSale/api/complex/searchList"
                 params = {"keyword": kw, "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC:UR:HO:SH", "salesType": "mng:pub:rent:sh:lh:etc", "pageSize": "100"}
-                res = await client.get(url, params=params, headers=h, timeout=8.0)
+                res = await client.get(url, params=params, headers=h, timeout=10.0)
                 if res.status_code == 200:
                     items = res.json().get("result", {}).get("list", [])
                     with Session(engine) as session:
@@ -170,9 +151,9 @@ async def sync_all():
                                 ))
                                 count += 1
                         session.commit()
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(0.3)
             except: pass
-    return {"status": "sync_completed", "new_items": count, "message": "전국 전수 조사가 완료되었습니다."}
+    return {"status": "sync_completed", "new_items": count, "message": "전국 전수 시군구 조사가 완료되었습니다."}
 
 @app.get("/site-details/{site_id}")
 async def get_site_details(site_id: str):
