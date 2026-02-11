@@ -33,16 +33,14 @@ class Site(SQLModel, table=True):
     status: Optional[str] = None
     last_updated: datetime.datetime = Field(default_factory=datetime.datetime.now)
 
-# --- Initial Seed Data (전국구 스타터 팩) ---
+# --- Initial Seed Data (전국구 + 유형별 스타터 팩) ---
 MOCK_SITES = [
-    {"id": "s1", "name": "힐스테이트 회룡역 파크뷰", "address": "경기도 의정부시 호원동", "brand": "힐스테이트", "category": "아파트", "price": 2417, "target_price": 2750, "supply": 1816, "status": "선착순"},
-    {"id": "s12", "name": "의정부 롯데캐슬 나리벡시티", "address": "경기도 의정부시 금오동", "brand": "롯데캐슬", "category": "아파트", "price": 2100, "target_price": 2300, "supply": 671, "status": "미분양"},
-    {"id": "s13", "name": "GTX의정부역 호반써밋", "address": "경기도 의정부시 의정부동", "brand": "호반써밋", "category": "아파트", "price": 2300, "target_price": 2600, "supply": 400, "status": "민간임대"},
-    {"id": "s2", "name": "e편한세상 내포 퍼스트드림", "address": "충청남도 홍성군", "brand": "e편한세상", "category": "아파트", "price": 1100, "target_price": 1300, "supply": 600, "status": "분양중"},
-    {"id": "s5", "name": "송도 자이 풍경채 그라노블", "address": "인천광역시 연수구 송도동", "brand": "자이", "category": "아파트", "price": 2500, "target_price": 2800, "supply": 3270, "status": "선착순"},
-    {"id": "s8", "name": "평택 브레인시티 중흥S-클래스", "address": "경기도 평택시", "brand": "중흥S-클래스", "category": "아파트", "price": 1500, "target_price": 1800, "supply": 1980, "status": "분양중"},
+    {"id": "s1", "name": "힐스테이트 회룡역 파크뷰", "address": "경기도 의정부시 호원동", "brand": "힐스테이트", "category": "아파트", "price": 2417, "target_price": 2750, "supply": 1816, "status": "분양중"},
+    {"id": "s13", "name": "GTX의정부역 호반써밋", "address": "경기도 의정부시 의정부동", "brand": "호반써밋", "category": "민간임대", "price": 2300, "target_price": 2600, "supply": 400, "status": "임대분양"},
     {"id": "s14", "name": "김포 북변 우미린 파크리브", "address": "경기도 김포시 북변동", "brand": "우미린", "category": "아파트", "price": 1800, "target_price": 2100, "supply": 1200, "status": "모집공고"},
-    {"id": "s15", "name": "동탄역 대방 엘리움 더시그니처", "address": "경기도 화성시 오산동", "brand": "대방", "category": "아파트", "price": 2200, "target_price": 2600, "supply": 464, "status": "청약완료"}
+    {"id": "s16", "name": "검단신도시 아테라 자이", "address": "인천광역시 서구 불로동", "brand": "자이", "category": "아파트", "price": 1600, "target_price": 1850, "supply": 700, "status": "분양중"},
+    {"id": "s17", "name": "송도 더샵 타임스퀘어", "address": "인천광역시 연수구 송도동", "brand": "더샵", "category": "오피스텔", "price": 3500, "target_price": 4000, "supply": 250, "status": "잔여세대"},
+    {"id": "s18", "name": "동탄역 현대 위버포레", "address": "경기도 화성시 오산동", "brand": "현대", "category": "오피스텔", "price": 4200, "target_price": 4800, "supply": 300, "status": "분양완료"}
 ]
 
 def create_db_and_tables():
@@ -136,13 +134,19 @@ async def search_sites(q: str):
 
 @app.get("/sync-all")
 async def sync_all():
-    keywords = ["힐스테이트", "푸르지오", "자이", "롯데캐슬", "아이파크", "호반", "우미린", "김포", "동탄", "평택", "부산"]
+    keywords = ["힐스테이트", "푸르지오", "자이", "롯데캐슬", "아이파크", "호반", "우미린", "김포", "동탄", "평택", "검단", "부천", "의정부", "부산", "오피스텔", "민간임대"]
     count = 0
     async with httpx.AsyncClient() as client:
         for kw in keywords:
             try:
                 url = "https://isale.land.naver.com/iSale/api/complex/searchList"
-                params = {"keyword": kw, "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC:UR:HO:SH", "pageSize": "50"}
+                params = {
+                    "keyword": kw, 
+                    "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC:UR:HO:SH", 
+                    "salesType": "mng:pub:rent:sh:lh:etc", # 민간임대 및 임대주택 포함
+                    "salesStatus": "0:1:2:3:4:5:6",
+                    "pageSize": "50"
+                }
                 res = await client.get(url, params=params, timeout=10.0)
                 if res.status_code == 200:
                     items = res.json().get("result", {}).get("list", [])
@@ -152,7 +156,7 @@ async def sync_all():
                             if not session.get(Site, sid):
                                 session.add(Site(
                                     id=sid, name=it.get("complexName"), address=it.get("address"),
-                                    brand=it.get("h_name"), category=it.get("complexTypeName", "아파트"),
+                                    brand=it.get("h_name"), category=it.get("complexTypeName", "부동산"),
                                     price=2000.0, target_price=2300.0, supply=500, status=it.get("salesStatusName")
                                 ))
                                 count += 1
