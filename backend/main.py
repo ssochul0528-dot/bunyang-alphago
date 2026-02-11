@@ -33,8 +33,27 @@ class Site(SQLModel, table=True):
     status: Optional[str] = None
     last_updated: datetime.datetime = Field(default_factory=datetime.datetime.now)
 
+# --- Initial Seed Data ---
+MOCK_SITES = [
+    {"id": "s1", "name": "힐스테이트 회룡역 파크뷰", "address": "경기도 의정부시 호원동 281-21", "brand": "힐스테이트", "category": "아파트", "price": 2417, "target_price": 2750, "supply": 1816, "status": "선착순 계약 중"},
+    {"id": "s12", "name": "의정부 롯데캐슬 나리벡시티", "address": "경기도 의정부시 금오동", "brand": "롯데캐슬", "category": "아파트", "price": 2100, "target_price": 2300, "supply": 671, "status": "미분양 잔여세대"},
+    {"id": "s2", "name": "e편한세상 내포 퍼스트드림", "address": "충청남도 홍성군 홍북읍", "brand": "e편한세상", "category": "아파트", "price": 1100, "target_price": 1300, "supply": 600, "status": "선착순 분양 중"},
+    {"id": "s3", "name": "마포 에피트 어바닉", "address": "서울특별시 마포구 아현동", "brand": "에피트", "category": "오피스텔", "price": 4500, "target_price": 5200, "supply": 300, "status": "잔여세대 분양 중"},
+    {"id": "s5", "name": "송도 자이 풍경채 그라노블", "address": "인천광역시 연수구 송도동", "brand": "자이", "category": "아파트", "price": 2500, "target_price": 2800, "supply": 3270, "status": "선착순 분양 중"},
+    {"id": "s8", "name": "평택 브레인시티 중흥S-클래스", "address": "경기도 평택시 도일동", "brand": "중흥S-클래스", "category": "아파트", "price": 1500, "target_price": 1800, "supply": 1980, "status": "선착순 계약 중"},
+    {"id": "s9", "name": "용인 푸르지오 원클러스터", "address": "경기도 용인시 처인구 남동", "brand": "푸르지오", "category": "아파트", "price": 1800, "target_price": 2100, "supply": 1681, "status": "1단지 분양 중"},
+    {"id": "s13", "name": "GTX의정부역 호반써밋", "address": "경기도 의정부시 의정부동", "brand": "호반써밋", "category": "아파트", "price": 2300, "target_price": 2600, "supply": 400, "status": "민간임대 분양중"}
+]
+
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        # 데이터가 없을 때만 샘플 데이터 삽입
+        if session.exec(select(Site)).first() is None:
+            for s_data in MOCK_SITES:
+                session.add(Site(**s_data))
+            session.commit()
+            logger.info("Seed data inserted into DB.")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
