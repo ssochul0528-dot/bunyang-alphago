@@ -217,6 +217,96 @@ async def get_site_details(site_id: str):
         if site: return site
         return {"id": site_id, "name": "분양 분석 완료", "address": "지역 정보", "brand": "기타", "category": "부동산", "price": 2500, "target_price": 2800, "supply": 500, "status": "데이터 로드"}
 
+class AnalyzeRequest(BaseModel):
+    field_name: str
+    address: str
+    product_category: str
+    sales_stage: str
+    down_payment: int
+    interest_benefit: str
+    additional_benefits: str
+    main_concern: str
+    monthly_budget: int
+    existing_media: str
+    sales_price: float
+    target_area_price: float
+    down_payment_amount: int
+    supply_volume: int
+    field_keypoints: str
+    user_email: Optional[str] = None
+
+@app.post("/analyze")
+async def analyze_site(request: AnalyzeRequest):
+    """현장 분석 API"""
+    try:
+        # 간단한 점수 계산 로직
+        price_score = min(100, max(0, 100 - abs(request.sales_price - request.target_area_price) / request.target_area_price * 100))
+        location_score = 75 + random.randint(-10, 10)
+        benefit_score = 70 + random.randint(-10, 10)
+        total_score = int((price_score * 0.4 + location_score * 0.3 + benefit_score * 0.3))
+        
+        market_gap_percent = ((request.target_area_price - request.sales_price) / request.sales_price) * 100
+        
+        return {
+            "score": total_score,
+            "score_breakdown": {
+                "price_score": int(price_score),
+                "location_score": int(location_score),
+                "benefit_score": int(benefit_score),
+                "total_score": total_score
+            },
+            "market_diagnosis": f"{request.field_name} 현장은 주변 시세 대비 {abs(market_gap_percent):.1f}% {'저렴' if market_gap_percent > 0 else '높은'} 가격으로 {'경쟁력이 우수' if market_gap_percent > 0 else '프리미엄 전략 필요'}합니다.",
+            "market_gap_percent": round(market_gap_percent, 2),
+            "price_data": [
+                {"name": "우리 현장", "price": request.sales_price},
+                {"name": "주변 시세", "price": request.target_area_price},
+                {"name": "프리미엄", "price": request.target_area_price * 1.1}
+            ],
+            "radar_data": [
+                {"subject": "분양가", "A": int(price_score), "B": 70, "fullMark": 100},
+                {"subject": "브랜드", "A": 85, "B": 75, "fullMark": 100},
+                {"subject": "단지규모", "A": min(100, request.supply_volume // 10), "B": 60, "fullMark": 100},
+                {"subject": "입지", "A": int(location_score), "B": 65, "fullMark": 100},
+                {"subject": "분양조건", "A": min(100, request.down_payment), "B": 50, "fullMark": 100},
+                {"subject": "상품성", "A": int(benefit_score), "B": 70, "fullMark": 100}
+            ],
+            "ad_recommendation": "메타 광고 + 네이버 검색광고 병행 추천",
+            "media_mix": [
+                {
+                    "media": "메타 릴스",
+                    "feature": "인스타그램/페이스북 숏폼",
+                    "reason": "초기 인지도 확산 및 젊은 층 타겟팅",
+                    "strategy_example": f"{request.field_name}의 핵심 혜택({request.interest_benefit})을 강조한 15초 영상 광고"
+                },
+                {
+                    "media": "네이버 검색",
+                    "feature": "키워드 광고",
+                    "reason": "능동적 검색 고객 확보",
+                    "strategy_example": f"'{request.address} 분양', '{request.product_category}' 등 핵심 키워드 상위 노출"
+                },
+                {
+                    "media": "당근마켓",
+                    "feature": "지역 타겟팅",
+                    "reason": "실거주 수요 집중 공략",
+                    "strategy_example": f"{request.address} 인근 3km 주민 대상 타겟 광고"
+                }
+            ],
+            "target_audience": f"{request.main_concern}을 중시하는 {request.monthly_budget//10}만원대 예산의 실수요자",
+            "persona": {
+                "age": "30-40대",
+                "income": f"월 {request.monthly_budget//10}00만원",
+                "concern": request.main_concern,
+                "media_usage": "모바일 중심, SNS 활발"
+            },
+            "competitors": [
+                {"name": "인근 경쟁 단지 A", "price": request.target_area_price * 0.95, "distance": "1.2km"},
+                {"name": "인근 경쟁 단지 B", "price": request.target_area_price * 1.05, "distance": "2.5km"}
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Analyze error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/import-csv")
 async def import_csv_data():
     """CSV 파일에서 데이터를 import"""
