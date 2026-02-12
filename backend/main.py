@@ -320,6 +320,13 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 {"name": "인근 경쟁 단지 A", "price": target_price * 0.95, "distance": "1.2km"},
                 {"name": "인근 경쟁 단지 B", "price": target_price * 1.05, "distance": "2.5km"}
             ],
+            "keyword_strategy": [
+                f"{field_name} 분양",
+                f"{field_name} 청약",
+                f"{field_name} 모델하우스",
+                "신규 분양 아파트",
+                "분양가 낮은 아파트"
+            ],
             "weekly_plan": [
                 "1주차: 타겟 고객 DB 확보 및 초기 인지도 확산",
                 "2주차: 핵심 혜택 중심 집중 광고 캠페인",

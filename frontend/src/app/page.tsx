@@ -1347,7 +1347,7 @@ export default function BunyangAlphaGo() {
                   <div className="p-4 bg-slate-900 rounded-xl border border-slate-800">
                     <div className="text-[10px] font-bold text-slate-500 mb-2 uppercase">Keyword Group</div>
                     <div className="flex flex-wrap gap-2 mt-1">
-                      {result.keyword_strategy.slice(0, 3).map((kw: string) => (
+                      {(result.keyword_strategy || []).slice(0, 3).map((kw: string) => (
                         <span key={kw} className="text-[9px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded border border-blue-500/20">{kw}</span>
                       ))}
                     </div>
