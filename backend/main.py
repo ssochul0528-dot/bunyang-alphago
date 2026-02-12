@@ -61,6 +61,32 @@ def create_db_and_tables():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
+    # 서버 시작 시 CSV 데이터 자동 로드 (데이터 유실 방지)
+    try:
+        import csv
+        csv_file = "sites_data.csv"
+        if os.path.exists(csv_file):
+            with Session(engine) as session:
+                with open(csv_file, 'r', encoding='utf-8') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        site_id = row['id']
+                        if not session.get(Site, site_id):
+                            session.add(Site(
+                                id=site_id,
+                                name=row['name'],
+                                address=row['address'],
+                                brand=row['brand'] if row['brand'] else None,
+                                category=row['category'],
+                                price=float(row['price']),
+                                target_price=float(row['target_price']),
+                                supply=int(row['supply']),
+                                status=row['status'] if row['status'] else None
+                            ))
+                    session.commit()
+            logger.info("CSV data auto-imported on startup.")
+    except Exception as e:
+        logger.error(f"Startup data import error: {e}")
     yield
 
 app = FastAPI(lifespan=lifespan)
