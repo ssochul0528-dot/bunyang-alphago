@@ -22,6 +22,8 @@ sqlite_url = f"sqlite:///{sqlite_file_name}"
 engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
 
 class Site(SQLModel, table=True):
+    __table_args__ = {'extend_existing': True}
+    
     id: str = Field(primary_key=True)
     name: str
     address: str
@@ -38,6 +40,10 @@ MOCK_SITES = [
     {"id": "h_uj1", "name": "해링턴 플레이스 의정부역", "address": "경기도 의정부시", "brand": "해링턴", "category": "아파트", "price": 2300, "target_price": 2600, "supply": 612, "status": "공고종료"},
     {"id": "dj_doan1", "name": "힐스테이트 도안리버파크 1단지", "address": "대전광역시 유성구", "brand": "힐스테이트", "category": "아파트", "price": 1950, "target_price": 2200, "supply": 1124, "status": "분양중"},
     {"id": "jt1", "name": "의정부역 스마트시티(지역주택조합)", "address": "경기도 의정부시", "brand": "기타", "category": "지역주택조합", "price": 1500, "target_price": 1750, "supply": 1614, "status": "조합원모집"},
+    {"id": "uj_topseok1", "name": "의정부 탑석 센트럴파크 푸르지오", "address": "경기도 의정부시 탑석동", "brand": "푸르지오", "category": "아파트", "price": 2400, "target_price": 2700, "supply": 840, "status": "분양예정"},
+    {"id": "uj_hoeryong1", "name": "의정부 회룡 파크뷰 자이", "address": "경기도 의정부시 회룡동", "brand": "자이", "category": "아파트", "price": 2200, "target_price": 2500, "supply": 650, "status": "분양중"},
+    {"id": "uj_hoeryong2", "name": "회룡역 롯데캐슬", "address": "경기도 의정부시 회룡동", "brand": "롯데캐슬", "category": "아파트", "price": 2350, "target_price": 2650, "supply": 720, "status": "분양예정"},
+    {"id": "uj_topseok2", "name": "탑석역 힐스테이트", "address": "경기도 의정부시 탑석동", "brand": "힐스테이트", "category": "아파트", "price": 2450, "target_price": 2750, "supply": 890, "status": "분양중"},
 ]
 
 def create_db_and_tables():
@@ -73,6 +79,7 @@ class SiteSearchResponse(BaseModel):
     address: str
     status: Optional[str] = None
     brand: Optional[str] = None
+    category: Optional[str] = None
 
 @app.get("/search-sites", response_model=List[SiteSearchResponse])
 async def search_sites(q: str):
@@ -81,25 +88,45 @@ async def search_sites(q: str):
 
     results = []
     seen_ids = set()
+    q_lower = q.lower().strip()
 
     # 1. DB 검색 (분양 데이터베이스 우선)
     try:
         with Session(engine) as session:
+            # 대소문자 구분 없이 검색 (name, address, brand, category, status 모두 검색)
             statement = select(Site).where(
-                or_(col(Site.name).contains(q), col(Site.address).contains(q), col(Site.brand).contains(q))
+                or_(
+                    col(Site.name).ilike(f"%{q}%"), 
+                    col(Site.address).ilike(f"%{q}%"), 
+                    col(Site.brand).ilike(f"%{q}%"),
+                    col(Site.category).ilike(f"%{q}%"),
+                    col(Site.status).ilike(f"%{q}%")
+                )
             ).order_by(col(Site.last_updated).desc()).limit(100)
             db_sites = session.exec(statement).all()
             for s in db_sites:
                 if s.id not in seen_ids:
-                    results.append(SiteSearchResponse(id=s.id, name=s.name, address=s.address, status=s.status, brand=s.brand))
+                    results.append(SiteSearchResponse(id=s.id, name=s.name, address=s.address, status=s.status, brand=s.brand, category=s.category))
                     seen_ids.add(s.id)
-    except: pass
+    except Exception as e:
+        logger.error(f"DB search error: {e}")
 
     # 2. 실시간 분양 전문 API 검색 (구축 아파트를 원천 배제하기 위해 isale API만 사용)
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             fake_nnb = "".join(random.choices("0123456789ABCDEF", k=16))
-            h = {"User-Agent": "Mozilla/5.0", "Cookie": f"NNB={fake_nnb}", "Referer": "https://m.land.naver.com/"}
+            h = {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Referer": "https://m.land.naver.com/",
+                "Origin": "https://m.land.naver.com",
+                "Cookie": f"NNB={fake_nnb}",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-site"
+            }
             
             # 분양 정보가 있는 'isale' 데이터베이스만 조회 (오래된 기축 아파트는 여기서 걸러짐)
             url_isale = "https://isale.land.naver.com/iSale/api/complex/searchList"
@@ -109,26 +136,54 @@ async def search_sites(q: str):
                 "salesStatus": "0:1:2:3:4:5:6:7:8:9:10:11:12", 
                 "pageSize": "100"
             }
-            res_isale = await client.get(url_isale, params=params, headers=h, timeout=5.0)
+            res_isale = await client.get(url_isale, params=params, headers=h, timeout=10.0)
             if res_isale.status_code == 200:
-                for it in res_isale.json().get("result", {}).get("list", []):
+                data = res_isale.json()
+                for it in data.get("result", {}).get("list", []):
                     sid = f"extern_isale_{it.get('complexNo')}"
                     if sid not in seen_ids:
                         results.append(SiteSearchResponse(
                             id=sid, name=it.get('complexName'), address=it.get('address'), 
-                            status=it.get('salesStatusName'), brand=it.get('h_name')
+                            status=it.get('salesStatusName'), brand=it.get('h_name'),
+                            category=it.get('complexTypeName', '아파트')
                         ))
                         seen_ids.add(sid)
-    except: pass
+    except Exception as e:
+        logger.error(f"API search error: {e}")
 
-    # 검색 결과 정렬
-    results.sort(key=lambda x: (x.name.find(q) if x.name.find(q) != -1 else 999))
+    # 검색 결과 정렬 - 현장명에 검색어가 포함된 경우 우선 표시
+    def sort_key(x):
+        name_lower = x.name.lower() if x.name else ""
+        address_lower = x.address.lower() if x.address else ""
+        
+        # 정확히 일치하는 경우 최우선
+        if name_lower == q_lower:
+            return (0, 0)
+        # 현장명이 검색어로 시작하는 경우
+        if name_lower.startswith(q_lower):
+            return (1, name_lower.find(q_lower))
+        # 현장명에 검색어가 포함된 경우
+        if q_lower in name_lower:
+            return (2, name_lower.find(q_lower))
+        # 주소에 검색어가 포함된 경우
+        if q_lower in address_lower:
+            return (3, address_lower.find(q_lower))
+        # 그 외
+        return (999, 999)
+    
+    results.sort(key=sort_key)
+    logger.info(f"Search query: '{q}' returned {len(results)} results")
     return results[:100]
 
 @app.get("/sync-all")
 async def sync_all():
     # 구축을 제외한 전국의 '최근 5년 내' 분양/임대/지주택 리스트 퀀텀 동기화
-    keywords = ["해링턴", "써밋", "디에트르", "지역주택조합", "지주택", "미분양", "선착순", "대전", "의정부", "부산", "서울", "인천"]
+    keywords = [
+        "해링턴", "써밋", "디에트르", "지역주택조합", "지주택", "미분양", "선착순",
+        "대전", "의정부", "부산", "서울", "인천", "경기", "수원", "성남",
+        "탑석", "회룡", "파크뷰", "힐스테이트", "자이", "푸르지오", "e편한세상",
+        "롯데캐슬", "아이파크", "더샵", "센트럴", "포레스트", "레이크", "스카이"
+    ]
     count = 0
     async with httpx.AsyncClient() as client:
         for kw in keywords:
@@ -164,4 +219,4 @@ async def get_site_details(site_id: str):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main.py:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
