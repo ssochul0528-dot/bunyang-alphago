@@ -313,6 +313,18 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 {"media": "메타/인스타", "feature": "정밀 타켓팅", "reason": "관심사 기반 도달", "strategy_example": "혜택 강조 광고"},
                 {"media": "네이버", "feature": "검색 기반", "reason": "구매 의향 고객 확보", "strategy_example": "지역 키워드 점유"},
                 {"media": "로컬 매체", "feature": "지역 밀착", "reason": "실거주 수요 확보", "strategy_example": "인근 지역 타겟팅"}
+            ],
+            "target_audience": ["실수요자", "신혼부부", "자녀교육"],
+            "target_persona": "30-40대 실수요 중심의 안정적인 자산 형성을 원하는 고객",
+            "competitors": [
+                {"name": "인근 경쟁 단지 A", "price": target_price * 0.95, "distance": "1.2km"},
+                {"name": "인근 경쟁 단지 B", "price": target_price * 1.05, "distance": "2.5km"}
+            ],
+            "weekly_plan": [
+                "1주차: 타겟 고객 DB 확보 및 초기 인지도 확산",
+                "2주차: 핵심 혜택 중심 집중 광고 캠페인",
+                "3주차: 모델하우스 방문 유도 및 상담 전환",
+                "4주차: 계약 독려 및 마감 임박 메시지"
             ]
         }
     except Exception as e:
