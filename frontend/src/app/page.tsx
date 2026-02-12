@@ -186,7 +186,7 @@ export default function BunyangAlphaGo() {
       if (address.trim().length >= 1) {
         setIsSearching(true);
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15초로 증가
 
         try {
           console.log("🔍 Fetching from:", `${API_BASE_URL}/search-sites?q=${encodeURIComponent(address.trim())}`);

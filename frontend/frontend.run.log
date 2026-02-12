@@ -111,3 +111,4 @@ https://next-auth.js.org/warnings#no_secret
  GET /api/auth/session 200 in 1318ms (compile: 1275ms, render: 43ms)
  GET /api/auth/session 200 in 33ms (compile: 19ms, render: 15ms)
  GET /api/auth/session 200 in 18ms (compile: 5ms, render: 14ms)
+✓ Compiled in 1206ms

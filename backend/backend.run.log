@@ -107,3 +107,12 @@ INFO:main:CSV data auto-imported on startup.
 INFO:     Application startup complete.
 INFO:     127.0.0.1:57219 - "POST /analyze HTTP/1.1" 200 OK
 INFO:     127.0.0.1:57227 - "POST /analyze HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [8299]
+INFO:     Started server process [15108]
+INFO:     Waiting for application startup.
+INFO:main:CSV data auto-imported on startup.
+INFO:     Application startup complete.

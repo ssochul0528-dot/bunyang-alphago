@@ -164,7 +164,7 @@ async def search_sites(q: str):
                 "salesStatus": "0:1:2:3:4:5:6:7:8:9:10:11:12", 
                 "pageSize": "100"
             }
-            res_isale = await client.get(url_isale, params=params, headers=h, timeout=10.0)
+            res_isale = await client.get(url_isale, params=params, headers=h, timeout=3.0)
             if res_isale.status_code == 200:
                 data = res_isale.json()
                 for it in data.get("result", {}).get("list", []):
