@@ -217,6 +217,66 @@ async def get_site_details(site_id: str):
         if site: return site
         return {"id": site_id, "name": "분양 분석 완료", "address": "지역 정보", "brand": "기타", "category": "부동산", "price": 2500, "target_price": 2800, "supply": 500, "status": "데이터 로드"}
 
+@app.get("/import-csv")
+async def import_csv_data():
+    """CSV 파일에서 데이터를 import"""
+    import csv
+    
+    csv_file = "sites_data.csv"
+    if not os.path.exists(csv_file):
+        return {"status": "error", "message": "CSV 파일을 찾을 수 없습니다."}
+    
+    imported = 0
+    updated = 0
+    
+    try:
+        with open(csv_file, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            
+            with Session(engine) as session:
+                for row in reader:
+                    site_id = row['id']
+                    existing = session.get(Site, site_id)
+                    
+                    if existing:
+                        existing.name = row['name']
+                        existing.address = row['address']
+                        existing.brand = row['brand'] if row['brand'] else None
+                        existing.category = row['category']
+                        existing.price = float(row['price'])
+                        existing.target_price = float(row['target_price'])
+                        existing.supply = int(row['supply'])
+                        existing.status = row['status'] if row['status'] else None
+                        existing.last_updated = datetime.datetime.now()
+                        updated += 1
+                    else:
+                        new_site = Site(
+                            id=site_id,
+                            name=row['name'],
+                            address=row['address'],
+                            brand=row['brand'] if row['brand'] else None,
+                            category=row['category'],
+                            price=float(row['price']),
+                            target_price=float(row['target_price']),
+                            supply=int(row['supply']),
+                            status=row['status'] if row['status'] else None
+                        )
+                        session.add(new_site)
+                        imported += 1
+                
+                session.commit()
+        
+        return {
+            "status": "success",
+            "imported": imported,
+            "updated": updated,
+            "total": imported + updated,
+            "message": f"CSV import 완료: 신규 {imported}개, 업데이트 {updated}개"
+        }
+    except Exception as e:
+        logger.error(f"CSV import error: {e}")
+        return {"status": "error", "message": str(e)}
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
