@@ -280,28 +280,36 @@ export default function BunyangAlphaGo() {
     try {
       const response = await fetch(`${API_BASE_URL}/analyze`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        mode: 'cors', // CORS 명시
         body: JSON.stringify({
           field_name: fieldName,
           address: addressValue,
           product_category: productCategory,
           sales_stage: salesStage,
-          down_payment: downPayment,
+          down_payment: Number(downPayment),
           interest_benefit: interestBenefit,
-          additional_benefits: additionalBenefits,
+          additional_benefits: additional_benefits,
           main_concern: mainConcern,
-          monthly_budget: monthlyBudget,
+          monthly_budget: Number(monthlyBudget),
           existing_media: existingMedia,
-          sales_price: salesPrice,
-          target_area_price: targetPrice,
-          down_payment_amount: downPaymentAmount,
-          supply_volume: supply,
+          sales_price: Number(salesPrice),
+          target_area_price: Number(targetPrice),
+          down_payment_amount: Number(downPaymentAmount),
+          supply_volume: Number(supply),
           field_keypoints: [kpLocation, kpProduct, kpBenefit, kpGift, kpExtra].filter(v => v).join('\n'),
           user_email: user?.email
         })
       });
 
-      if (!response.ok) throw new Error("API Error");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Server Response Error:", response.status, errorData);
+        throw new Error(`API Error: ${response.status}`);
+      }
       const data = await response.json();
       setResult(data);
       setSimulationBudget(monthlyBudget);

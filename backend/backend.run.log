@@ -1,10 +1,89 @@
-INFO:     Started server process [39432]
-INFO:     Waiting for application startup.
-INFO:main:Initializing database...
-INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['/Users/soochulkim/분양알파고/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     127.0.0.1:54847 - "OPTIONS /search-sites?q=%EC%9D%98%EC%A0%95%EB%B6%80 HTTP/1.1" 200 OK
-INFO:httpx:HTTP Request: GET https://new.land.naver.com/api/search?keyword=%EC%9D%98%EC%A0%95%EB%B6%80 "HTTP/1.1 429 Too Many Requests"
-INFO:main:Naver Search [의정부] Response: 429
-WARNING:main:Naver sub-search failed: [Errno 8] nodename nor servname provided, or not known
-INFO:     127.0.0.1:54847 - "GET /search-sites?q=%EC%9D%98%EC%A0%95%EB%B6%80 HTTP/1.1" 200 OK
+INFO:     Started reloader process [99543] using StatReload
+INFO:     Started server process [99591]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:httpx:HTTP Request: GET https://isale.land.naver.com/iSale/api/complex/searchList?keyword=%EA%B0%95%EB%82%A8&complexType=APT%3AABYG%3AJGC%3AOR%3AOP%3AVL%3ADDD%3AABC%3AETC%3AUR%3AHO%3ASH&salesStatus=0%3A1%3A2%3A3%3A4%3A5%3A6%3A7%3A8%3A9%3A10%3A11%3A12&pageSize=100 "HTTP/1.1 302 Found"
+INFO:httpx:HTTP Request: GET https://new.land.naver.com/error "HTTP/1.1 200 OK"
+ERROR:main:API search error: Expecting value: line 1 column 1 (char 0)
+INFO:main:Search query: '강남' returned 2 results
+INFO:     127.0.0.1:54362 - "GET /search-sites?q=%EA%B0%95%EB%82%A8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54547 - "OPTIONS /search-sites?q=%EA%B0%95%EB%82%A8 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://isale.land.naver.com/iSale/api/complex/searchList?keyword=%EA%B0%95%EB%82%A8&complexType=APT%3AABYG%3AJGC%3AOR%3AOP%3AVL%3ADDD%3AABC%3AETC%3AUR%3AHO%3ASH&salesStatus=0%3A1%3A2%3A3%3A4%3A5%3A6%3A7%3A8%3A9%3A10%3A11%3A12&pageSize=100 "HTTP/1.1 302 Found"
+INFO:httpx:HTTP Request: GET https://new.land.naver.com/error "HTTP/1.1 200 OK"
+ERROR:main:API search error: Expecting value: line 1 column 1 (char 0)
+INFO:main:Search query: '강남' returned 2 results
+INFO:     127.0.0.1:54547 - "GET /search-sites?q=%EA%B0%95%EB%82%A8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54547 - "OPTIONS /search-sites?q=%EA%B0%95%EB%82%A8%20%EC%9E%90%EC%9D%B4 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://isale.land.naver.com/iSale/api/complex/searchList?keyword=%EA%B0%95%EB%82%A8+%EC%9E%90%EC%9D%B4&complexType=APT%3AABYG%3AJGC%3AOR%3AOP%3AVL%3ADDD%3AABC%3AETC%3AUR%3AHO%3ASH&salesStatus=0%3A1%3A2%3A3%3A4%3A5%3A6%3A7%3A8%3A9%3A10%3A11%3A12&pageSize=100 "HTTP/1.1 302 Found"
+INFO:httpx:HTTP Request: GET https://new.land.naver.com/error "HTTP/1.1 200 OK"
+ERROR:main:API search error: Expecting value: line 1 column 1 (char 0)
+INFO:main:Search query: '강남 자이' returned 1 results
+INFO:     127.0.0.1:54547 - "GET /search-sites?q=%EA%B0%95%EB%82%A8%20%EC%9E%90%EC%9D%B4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54547 - "OPTIONS /search-sites?q=%EC%9D%98%EC%A0%95%EB%B6%80 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://isale.land.naver.com/iSale/api/complex/searchList?keyword=%EC%9D%98%EC%A0%95%EB%B6%80&complexType=APT%3AABYG%3AJGC%3AOR%3AOP%3AVL%3ADDD%3AABC%3AETC%3AUR%3AHO%3ASH&salesStatus=0%3A1%3A2%3A3%3A4%3A5%3A6%3A7%3A8%3A9%3A10%3A11%3A12&pageSize=100 "HTTP/1.1 302 Found"
+INFO:httpx:HTTP Request: GET https://new.land.naver.com/error "HTTP/1.1 200 OK"
+ERROR:main:API search error: Expecting value: line 1 column 1 (char 0)
+INFO:main:Search query: '의정부' returned 7 results
+INFO:     127.0.0.1:54547 - "GET /search-sites?q=%EC%9D%98%EC%A0%95%EB%B6%80 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54557 - "OPTIONS /search-sites?q=%EC%A4%91 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54557 - "GET /search-sites?q=%EC%A4%91 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54557 - "OPTIONS /search-sites?q=%EC%A4%91%E3%84%B1 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://isale.land.naver.com/iSale/api/complex/searchList?keyword=%EC%A4%91%E3%84%B1&complexType=APT%3AABYG%3AJGC%3AOR%3AOP%3AVL%3ADDD%3AABC%3AETC%3AUR%3AHO%3ASH&salesStatus=0%3A1%3A2%3A3%3A4%3A5%3A6%3A7%3A8%3A9%3A10%3A11%3A12&pageSize=100 "HTTP/1.1 302 Found"
+INFO:httpx:HTTP Request: GET https://new.land.naver.com/error "HTTP/1.1 200 OK"
+ERROR:main:API search error: Expecting value: line 1 column 1 (char 0)
+INFO:main:Search query: '중ㄱ' returned 0 results
+INFO:     127.0.0.1:54557 - "GET /search-sites?q=%EC%A4%91%E3%84%B1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54557 - "OPTIONS /search-sites?q=%EC%A4%91%EA%B3%84 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://isale.land.naver.com/iSale/api/complex/searchList?keyword=%EC%A4%91%EA%B3%84&complexType=APT%3AABYG%3AJGC%3AOR%3AOP%3AVL%3ADDD%3AABC%3AETC%3AUR%3AHO%3ASH&salesStatus=0%3A1%3A2%3A3%3A4%3A5%3A6%3A7%3A8%3A9%3A10%3A11%3A12&pageSize=100 "HTTP/1.1 302 Found"
+INFO:httpx:HTTP Request: GET https://new.land.naver.com/error "HTTP/1.1 200 OK"
+ERROR:main:API search error: Expecting value: line 1 column 1 (char 0)
+INFO:main:Search query: '중계' returned 0 results
+INFO:     127.0.0.1:54557 - "GET /search-sites?q=%EC%A4%91%EA%B3%84 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54557 - "OPTIONS /search-sites?q=%EB%85%B8%EC%9B%90 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://isale.land.naver.com/iSale/api/complex/searchList?keyword=%EB%85%B8%EC%9B%90&complexType=APT%3AABYG%3AJGC%3AOR%3AOP%3AVL%3ADDD%3AABC%3AETC%3AUR%3AHO%3ASH&salesStatus=0%3A1%3A2%3A3%3A4%3A5%3A6%3A7%3A8%3A9%3A10%3A11%3A12&pageSize=100 "HTTP/1.1 302 Found"
+INFO:httpx:HTTP Request: GET https://new.land.naver.com/error "HTTP/1.1 200 OK"
+ERROR:main:API search error: Expecting value: line 1 column 1 (char 0)
+INFO:main:Search query: '노원' returned 1 results
+INFO:     127.0.0.1:54557 - "GET /search-sites?q=%EB%85%B8%EC%9B%90 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54557 - "OPTIONS /search-sites?q=%EB%8C%80%EA%B5%AC HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: GET https://isale.land.naver.com/iSale/api/complex/searchList?keyword=%EB%8C%80%EA%B5%AC&complexType=APT%3AABYG%3AJGC%3AOR%3AOP%3AVL%3ADDD%3AABC%3AETC%3AUR%3AHO%3ASH&salesStatus=0%3A1%3A2%3A3%3A4%3A5%3A6%3A7%3A8%3A9%3A10%3A11%3A12&pageSize=100 "HTTP/1.1 302 Found"
+INFO:httpx:HTTP Request: GET https://new.land.naver.com/error "HTTP/1.1 200 OK"
+ERROR:main:API search error: Expecting value: line 1 column 1 (char 0)
+INFO:main:Search query: '대구' returned 11 results
+INFO:     127.0.0.1:54557 - "GET /search-sites?q=%EB%8C%80%EA%B5%AC HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [99591]
+INFO:     Started server process [1638]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1638]
+INFO:     Started server process [3252]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [3252]
+INFO:     Started server process [6120]
+INFO:     Waiting for application startup.
+INFO:main:CSV data auto-imported on startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [6120]
+INFO:     Started server process [6467]
+INFO:     Waiting for application startup.
+INFO:main:CSV data auto-imported on startup.
+INFO:     Application startup complete.
