@@ -332,6 +332,22 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 "2주차: 핵심 혜택 중심 집중 광고 캠페인",
                 "3주차: 모델하우스 방문 유도 및 상담 전환",
                 "4주차: 계약 독려 및 마감 임박 메시지"
+            ],
+            "copywriting": f"{field_name}, 당신의 새로운 시작을 응원합니다",
+            "roi_forecast": {
+                "expected_leads": 150,
+                "expected_cpl": 50000,
+                "conversion_rate": 3.5
+            },
+            "lms_copy_samples": [
+                f"[{field_name}] 특별 분양 혜택 안내\n\n안녕하세요, {field_name}입니다.\n\n이번 분양에서만 누릴 수 있는 특별 혜택을 안내드립니다.",
+                f"[모델하우스 방문 예약] {field_name}\n\n{field_name} 모델하우스 방문을 환영합니다.\n\n상담 예약 시 특별 사은품을 드립니다.",
+                f"[계약 마감 임박] {field_name}\n\n{field_name} 분양이 곧 마감됩니다.\n\n지금 바로 상담 신청하세요."
+            ],
+            "channel_talk_samples": [
+                f"안녕하세요! {field_name}에 관심 가져주셔서 감사합니다. 어떤 부분이 궁금하신가요?",
+                f"{field_name}의 특별 혜택에 대해 안내드리겠습니다. 무이자 할부와 추가 옵션을 제공하고 있습니다.",
+                f"모델하우스 방문 일정을 안내해드릴까요? 평일/주말 모두 가능합니다."
             ]
         }
     except Exception as e:
