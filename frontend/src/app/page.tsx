@@ -106,11 +106,10 @@ const AnimatedNumber = ({ value, decimals = 0 }: { value: number, decimals?: num
   return <span>{displayValue.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</span>;
 };
 
-// --- Base URL - Auto-detect environment ---
-const RAW_API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+// --- Base URL - Force Production for stability in web ---
+const API_BASE_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
   ? "http://localhost:8000"
   : "https://bunyang-alphago-production-d17b.up.railway.app";
-const API_BASE_URL = RAW_API_URL.replace(/\/$/, "");
 
 export default function BunyangAlphaGo() {
   const [mounted, setMounted] = useState(false);
@@ -673,10 +672,10 @@ export default function BunyangAlphaGo() {
                           <div className="flex items-center gap-2 mb-1.5">
                             {site.category && (
                               <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${site.category === '민간임대'
-                                  ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
-                                  : site.category === '아파트'
-                                    ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
-                                    : 'bg-orange-500/20 text-orange-300 border-orange-500/40'
+                                ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                                : site.category === '아파트'
+                                  ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                                  : 'bg-orange-500/20 text-orange-300 border-orange-500/40'
                                 }`}>
                                 {site.category}
                               </span>
