@@ -106,10 +106,10 @@ const AnimatedNumber = ({ value, decimals = 0 }: { value: number, decimals?: num
   return <span>{displayValue.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</span>;
 };
 
-// --- Base URL - Force Production for stability in web ---
-const API_BASE_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-  ? "http://localhost:8000"
-  : "https://bunyang-alphago-production-d17b.up.railway.app";
+// --- Base URL - Production First for stability ---
+const API_BASE_URL = "https://bunyang-alphago-production-d17b.up.railway.app";
+// 로컬 테스트가 필요할 때만 아래 코드를 주석 해제하세요.
+// const API_BASE_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost' ? "http://localhost:8000" : "https://bunyang-alphago-production-d17b.up.railway.app";
 
 export default function BunyangAlphaGo() {
   const [mounted, setMounted] = useState(false);

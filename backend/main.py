@@ -264,16 +264,26 @@ class AnalyzeRequest(BaseModel):
     user_email: Optional[str] = None
 
 @app.post("/analyze")
-async def analyze_site(request: AnalyzeRequest):
+async def analyze_site(request: Optional[AnalyzeRequest] = None):
     """현장 분석 API"""
     try:
-        # 간단한 점수 계산 로직
-        price_score = min(100, max(0, 100 - abs(request.sales_price - request.target_area_price) / request.target_area_price * 100))
-        location_score = 75 + random.randint(-10, 10)
-        benefit_score = 70 + random.randint(-10, 10)
+        # 데이터가 아예 안 들어왔을 경우의 기본값 처리
+        req = request if request else AnalyzeRequest()
+        
+        # 필드 값 추출 (기본값 보장)
+        field_name = getattr(req, 'field_name', "분석 현장")
+        sales_price = float(getattr(req, 'sales_price', 0.0) or 0.0)
+        target_price = float(getattr(req, 'target_area_price', 0.0) or 0.0)
+        supply_volume = int(getattr(req, 'supply_volume', 0) or 0)
+        
+        # 로직 시작
+        price_score = min(100, max(0, 100 - abs(sales_price - target_price) / (target_price if target_price > 0 else 1) * 100))
+        location_score = 75 + random.randint(-5, 10)
+        benefit_score = 70 + random.randint(-5, 10)
         total_score = int((price_score * 0.4 + location_score * 0.3 + benefit_score * 0.3))
         
-        market_gap_percent = ((request.target_area_price - request.sales_price) / request.sales_price) * 100
+        market_gap = target_price - sales_price
+        market_gap_percent = (market_gap / (sales_price if sales_price > 0 else 1)) * 100
         
         return {
             "score": total_score,
@@ -283,52 +293,26 @@ async def analyze_site(request: AnalyzeRequest):
                 "benefit_score": int(benefit_score),
                 "total_score": total_score
             },
-            "market_diagnosis": f"{request.field_name} 현장은 주변 시세 대비 {abs(market_gap_percent):.1f}% {'저렴' if market_gap_percent > 0 else '높은'} 가격으로 {'경쟁력이 우수' if market_gap_percent > 0 else '프리미엄 전략 필요'}합니다.",
+            "market_diagnosis": f"{field_name}은 주변 시세 대비 {abs(market_gap_percent):.1f}% {'저렴' if market_gap_percent > 0 else '높은'} 수준으로 평가됩니다.",
             "market_gap_percent": round(market_gap_percent, 2),
             "price_data": [
-                {"name": "우리 현장", "price": request.sales_price},
-                {"name": "주변 시세", "price": request.target_area_price},
-                {"name": "프리미엄", "price": request.target_area_price * 1.1}
+                {"name": "우리 현장", "price": sales_price},
+                {"name": "주변 시세", "price": target_price},
+                {"name": "프리미엄", "price": target_price * 1.1}
             ],
             "radar_data": [
                 {"subject": "분양가", "A": int(price_score), "B": 70, "fullMark": 100},
                 {"subject": "브랜드", "A": 85, "B": 75, "fullMark": 100},
-                {"subject": "단지규모", "A": min(100, request.supply_volume // 10), "B": 60, "fullMark": 100},
+                {"subject": "단지규모", "A": min(100, supply_volume // 10), "B": 60, "fullMark": 100},
                 {"subject": "입지", "A": int(location_score), "B": 65, "fullMark": 100},
-                {"subject": "분양조건", "A": min(100, request.down_payment), "B": 50, "fullMark": 100},
+                {"subject": "분양조건", "A": 80, "B": 50, "fullMark": 100},
                 {"subject": "상품성", "A": int(benefit_score), "B": 70, "fullMark": 100}
             ],
-            "ad_recommendation": "메타 광고 + 네이버 검색광고 병행 추천",
+            "ad_recommendation": "전략적 통합 마케팅 믹스 추천",
             "media_mix": [
-                {
-                    "media": "메타 릴스",
-                    "feature": "인스타그램/페이스북 숏폼",
-                    "reason": "초기 인지도 확산 및 젊은 층 타겟팅",
-                    "strategy_example": f"{request.field_name}의 핵심 혜택({request.interest_benefit})을 강조한 15초 영상 광고"
-                },
-                {
-                    "media": "네이버 검색",
-                    "feature": "키워드 광고",
-                    "reason": "능동적 검색 고객 확보",
-                    "strategy_example": f"'{request.address} 분양', '{request.product_category}' 등 핵심 키워드 상위 노출"
-                },
-                {
-                    "media": "당근마켓",
-                    "feature": "지역 타겟팅",
-                    "reason": "실거주 수요 집중 공략",
-                    "strategy_example": f"{request.address} 인근 3km 주민 대상 타겟 광고"
-                }
-            ],
-            "target_audience": f"{request.main_concern}을 중시하는 {request.monthly_budget//10}만원대 예산의 실수요자",
-            "persona": {
-                "age": "30-40대",
-                "income": f"월 {request.monthly_budget//10}00만원",
-                "concern": request.main_concern,
-                "media_usage": "모바일 중심, SNS 활발"
-            },
-            "competitors": [
-                {"name": "인근 경쟁 단지 A", "price": request.target_area_price * 0.95, "distance": "1.2km"},
-                {"name": "인근 경쟁 단지 B", "price": request.target_area_price * 1.05, "distance": "2.5km"}
+                {"media": "메타/인스타", "feature": "정밀 타켓팅", "reason": "관심사 기반 도달", "strategy_example": "혜택 강조 광고"},
+                {"media": "네이버", "feature": "검색 기반", "reason": "구매 의향 고객 확보", "strategy_example": "지역 키워드 점유"},
+                {"media": "로컬 매체", "feature": "지역 밀착", "reason": "실거주 수요 확보", "strategy_example": "인근 지역 타겟팅"}
             ]
         }
     except Exception as e:
