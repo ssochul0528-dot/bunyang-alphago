@@ -290,12 +290,16 @@ export default function BunyangAlphaGo() {
           address: addressValue,
           product_category: productCategory,
           sales_stage: salesStage,
-          down_payment: Number(downPayment),
+          down_payment: Number(downPayment) || 10,
           interest_benefit: interestBenefit,
-          additional_benefits: additionalBenefits || "없음",
+          additional_benefits: Array.isArray(additionalBenefits)
+            ? additionalBenefits.join(', ')
+            : (additionalBenefits || "없음"),
           main_concern: mainConcern,
           monthly_budget: Number(monthlyBudget),
-          existing_media: existingMedia,
+          existing_media: Array.isArray(existingMedia)
+            ? existingMedia.join(', ')
+            : (existingMedia || "없음"),
           sales_price: Number(salesPrice),
           target_area_price: Number(targetPrice),
           down_payment_amount: Number(downPaymentAmount),
