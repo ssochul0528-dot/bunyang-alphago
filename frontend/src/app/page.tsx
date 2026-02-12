@@ -674,7 +674,7 @@ export default function BunyangAlphaGo() {
                       </div>
                     )}
 
-                    {!isSearching && searchResults.length > 0 && searchResults.map((site: any) => (
+                    {!isSearching && searchResults && searchResults.length > 0 && searchResults.map((site: any) => (
                       <button
                         key={site.id}
                         onClick={() => handleSelectSite(site)}
