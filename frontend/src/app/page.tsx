@@ -1313,7 +1313,7 @@ export default function BunyangAlphaGo() {
                   <p className="text-blue-200 text-sm font-medium leading-relaxed italic">"{result.target_persona}"</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {result.target_audience.map((tag: string) => (
+                  {(result.target_audience || []).map((tag: string) => (
                     <span key={tag} className="px-3 py-1.5 bg-slate-900 text-slate-400 text-[10px] font-bold rounded-lg border border-slate-800">#{tag}</span>
                   ))}
                 </div>
@@ -1322,7 +1322,7 @@ export default function BunyangAlphaGo() {
               <div className="lg:col-span-6 glass p-8 rounded-3xl">
                 <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><BarChart3 className="text-blue-500" size={18} /> 경쟁 단지 비교</h3>
                 <div className="space-y-4">
-                  {result.competitors.map((comp: any) => (
+                  {(result.competitors || []).map((comp: any) => (
                     <div key={comp.name} className="flex items-center justify-between p-4 bg-slate-900/50 rounded-xl border border-slate-800/50">
                       <div>
                         <div className="text-xs font-bold text-white mb-1">{comp.name}</div>
@@ -1703,7 +1703,7 @@ export default function BunyangAlphaGo() {
               <div className="lg:col-span-12 glass p-8 rounded-3xl mt-6">
                 <h3 className="text-lg font-bold mb-8 flex items-center gap-2"><Zap className="text-yellow-500" size={18} /> 4주 집중 마케팅 로드맵</h3>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  {result.weekly_plan.map((step: string, idx: number) => (
+                  {(result.weekly_plan || []).map((step: string, idx: number) => (
                     <div key={idx} className="relative p-6 bg-slate-900/30 rounded-2xl border border-slate-800 group hover:border-blue-500/30 transition-all">
                       <div className="absolute -top-3 left-6 px-3 py-1 bg-blue-600 text-[10px] font-black rounded-full shadow-lg">WEEK 0{idx + 1}</div>
                       <p className="text-xs text-slate-300 font-medium leading-relaxed mt-2">{step.includes(': ') ? step.split(': ')[1] : step}</p>
