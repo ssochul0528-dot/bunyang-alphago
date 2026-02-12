@@ -292,7 +292,7 @@ export default function BunyangAlphaGo() {
           sales_stage: salesStage,
           down_payment: Number(downPayment),
           interest_benefit: interestBenefit,
-          additional_benefits: additional_benefits,
+          additional_benefits: additionalBenefits || "없음",
           main_concern: mainConcern,
           monthly_budget: Number(monthlyBudget),
           existing_media: existingMedia,

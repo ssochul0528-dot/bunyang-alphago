@@ -60,3 +60,4 @@ https://next-auth.js.org/warnings#no_secret
  GET /api/auth/session 200 in 95ms (compile: 48ms, render: 47ms)
 ✓ Compiled in 2.2s
 ✓ Compiled in 3.1s
+✓ Compiled in 1420ms

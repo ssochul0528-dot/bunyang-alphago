@@ -246,21 +246,21 @@ async def get_site_details(site_id: str):
         return {"id": site_id, "name": "분양 분석 완료", "address": "지역 정보", "brand": "기타", "category": "부동산", "price": 2500, "target_price": 2800, "supply": 500, "status": "데이터 로드"}
 
 class AnalyzeRequest(BaseModel):
-    field_name: str
-    address: str
-    product_category: str
-    sales_stage: str
-    down_payment: int
-    interest_benefit: str
-    additional_benefits: str
-    main_concern: str
-    monthly_budget: int
-    existing_media: str
-    sales_price: float
-    target_area_price: float
-    down_payment_amount: int
-    supply_volume: int
-    field_keypoints: str
+    field_name: Optional[str] = "알 수 없는 현장"
+    address: Optional[str] = "지역 정보 없음"
+    product_category: Optional[str] = "아파트"
+    sales_stage: Optional[str] = "분양중"
+    down_payment: Optional[int] = 10
+    interest_benefit: Optional[str] = "없음"
+    additional_benefits: Optional[str] = "없음"
+    main_concern: Optional[str] = "기타"
+    monthly_budget: Optional[int] = 0
+    existing_media: Optional[str] = "없음"
+    sales_price: Optional[float] = 0.0
+    target_area_price: Optional[float] = 0.0
+    down_payment_amount: Optional[int] = 0
+    supply_volume: Optional[int] = 0
+    field_keypoints: Optional[str] = ""
     user_email: Optional[str] = None
 
 @app.post("/analyze")

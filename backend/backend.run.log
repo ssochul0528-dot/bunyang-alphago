@@ -87,3 +87,12 @@ INFO:     Started server process [6467]
 INFO:     Waiting for application startup.
 INFO:main:CSV data auto-imported on startup.
 INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [6467]
+INFO:     Started server process [8021]
+INFO:     Waiting for application startup.
+INFO:main:CSV data auto-imported on startup.
+INFO:     Application startup complete.
