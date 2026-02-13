@@ -398,7 +398,9 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             ]
         }
     except Exception as e:
-        logger.error(f"Analyze error: {e}")
+        import traceback
+        error_msg = traceback.format_exc()
+        logger.error(f"Critical analyze error: {e}\n{error_msg}")
         # 치명적 오류 시 기본값이라도 반환하여 프론트엔드 크래시 방지
         return {
             "score": 80,
@@ -408,7 +410,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 "benefit_score": 80,
                 "total_score": 80
             },
-            "market_diagnosis": "실시간 분석 중 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+            "market_diagnosis": f"분석 오류: {str(e)[:50]}...",
             "market_gap_percent": 0,
             "price_data": [
                 {"name": "우리 현장", "price": 0},
@@ -423,19 +425,18 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 {"subject": "분양조건", "A": 80, "B": 50, "fullMark": 100},
                 {"subject": "상품성", "A": 80, "B": 70, "fullMark": 100}
             ],
-            "target_persona": "분석 정보 로드 중...",
-            "target_audience": ["부동산"],
+            "target_persona": "오류 발생으로 정보를 불러올 수 없습니다.",
+            "target_audience": ["오류"],
             "competitors": [],
-            "ad_recommendation": "전략 수립 중...",
-            "copywriting": "분석 데이터를 불러오는 중입니다.",
+            "ad_recommendation": "잠시 후 다시 시도해주세요.",
+            "copywriting": "시스템 점검 중",
             "keyword_strategy": [],
-            "weekly_plan": ["종합 마케팅 전략 수립 중"],
+            "weekly_plan": ["분석 실패"],
             "roi_forecast": {"expected_leads": 0, "expected_cpl": 0, "conversion_rate": 0},
             "lms_copy_samples": [],
             "channel_talk_samples": [],
             "media_mix": [
-                {"media": "메타/인스타", "feature": "정밀 타켓팅", "reason": "관심사 기반 도달", "strategy_example": "혜택 강조 광고"},
-                {"media": "네이버", "feature": "검색 기반", "reason": "구매 의향 고객 확보", "strategy_example": "지역 키워드 점유"}
+                {"media": "오류", "feature": "-", "reason": "분석 실패", "strategy_example": "-"}
             ]
         }
 
