@@ -293,66 +293,62 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 search_url = "https://search.naver.com/search.naver"
                 search_params = {"query": f"{field_name} 분양가 모델하우스", "where": "view"}
                 h = {"User-Agent": "Mozilla/5.0"}
-                res = await client.get(search_url, params=search_params, headers=h, timeout=5.0)
+                res = await client.get(search_url, params=search_params, headers=h, timeout=4.0)
                 if res.status_code == 200:
-                    # 간단한 텍스트 추출 (여론 파악용)
-                    search_context = res.text[:5000] # 상단 데이터 위주로 참고
+                    search_context = res.text[:3000]
         except Exception as e:
-            logger.warning(f"Live search failed: {e}")
+            logger.warning(f"Live search skipped due to error: {e}")
 
-        # 2. AI 분석을 위한 프롬프트 작성 (검색 데이터 활용)
+        # 2. AI 분석을 위한 프롬프트 작성
         prompt = f"""
-        당신은 상위 1% 부동산 퍼포먼스 마케팅 전략가입니다. 
-        제공된 데이터와 검색된 시장 상황을 바탕으로 [{field_name}] 현장의 필승 마케팅 전략 리포트를 작성하십시오.
+        당신은 상위 1% 부동산 마케팅 전문가입니다. [{field_name}] 현장의 필승 전략을 JSON으로 작성하십시오.
         
-        [현장 기본 데이터]
-        - 현장명: {field_name} / 위치: {address}
-        - 상품: {product_category} / 규모: {supply_volume}세대
-        - 가격비교: 우리 현장 {sales_price}만원 VS 주변 시세 {target_price}만원
-        - 마케팅 고민: {main_concern} / 특징: {field_keypoints}
+        [현장 정보]
+        현장: {field_name} / 위치: {address} / 상품: {product_category}
+        가격: 우리 {sales_price} VS 주변 {target_price}
+        특징: {field_keypoints} / 고민: {main_concern}
         
-        [실시간 검색 맥락] (이 내용을 분석에 적극 반영할 것)
-        {search_context[:2000] if search_context else "실시간 검색 데이터를 읽어오는 중입니다. 기존 알고리즘으로 분석하세요."}
+        [검색참고] {search_context[:1000] if search_context else "검색 데이터 없음"}
         
-        [분석 가이드라인]
-        1. 단순 나열이 아닌, 검색된 실제 사용자 반응(블로그, 카페 등)을 유추하여 '시장 진단(market_diagnosis)'을 3문장 이상 상세히 작성하라.
-        2. '타겟 페르소나(target_persona)'는 이 현장의 입지와 가격에 가장 민감할 구체적 인물상을 제시하라.
-        3. '광고 카피(copywriting)'는 검색 결과에서 나타난 혜택이나 단점을 보완/강조하는 후킹 문구로 작성하라.
-        4. 매체 전략과 ROI 예측은 {sales_price}원대 분양가와 {supply_volume}세대 규모를 고려해 현실적으로 산출하라.
+        [출력 규격]
+        반드시 다음 JSON 형식을 유지하되, 내용은 실제 전문가처럼 아주 상세하게 작성하십시오. 
+        절대 "시장 경쟁력이 충분하다"는 식의 짧은 답변은 금지합니다.
         
-        [출력 JSON 스키마 - 엄격 준수]
         {{
-            "market_diagnosis": "심층 시장 진단 및 여론 분석 내용",
-            "target_persona": "구체적인 핵심 타겟 페르소나",
+            "market_diagnosis": "최소 3문장 이상의 심층 시장 분석",
+            "target_persona": "구체적인 타켓 고객 생활상 정의",
             "target_audience": ["#태그1", "#태그2", "#태그3", "#태그4", "#태그5"],
             "competitors": [
-                {{"name": "비교단지A", "price": {target_price}, "distance": "1.0km"}},
-                {{"name": "비교단지B", "price": {target_price if target_price > 0 else sales_price * 1.1:.0f}, "distance": "2.5km"}}
+                {{"name": "경쟁단지A", "price": {target_price}, "distance": "1.0km"}},
+                {{"name": "경쟁단지B", "price": {target_price * 1.1 if target_price > 0 else sales_price * 1.1:.0f}, "distance": "2.5km"}}
             ],
-            "ad_recommendation": "구체적인 매체 믹스 집행 전략",
-            "copywriting": "후킹 메인 카피 및 소구점",
-            "keyword_strategy": ["검색1", "검색2", "검색3", "검색4", "검색5"],
-            "weekly_plan": ["1주차: 액션", "2주차: 액션", "3주차: 액션", "4주차: 액션"],
-            "roi_forecast": {{
-                "expected_leads": 150,
-                "expected_cpl": 45000,
-                "conversion_rate": 3.2
-            }},
-            "lms_copy_samples": ["실제 발송할 만한 고퀄리티 LMS 샘플 1", "샘플 2", "샘플 3"],
-            "channel_talk_samples": ["상담용 시나리오 1", "시나리오 2", "시나리오 3"]
+            "ad_recommendation": "구체적인 매체 집행 비중과 이유",
+            "copywriting": "후킹 넘치는 메인 카피",
+            "keyword_strategy": ["키워드1", "2", "3", "4", "5"],
+            "weekly_plan": ["1주 액션", "2주 액션", "3주 액션", "4주 액션"],
+            "roi_forecast": {{"expected_leads": 130, "expected_cpl": 45000, "conversion_rate": 3.5}},
+            "lms_copy_samples": ["LMS 고퀄 샘플 1", "2", "3"],
+            "channel_talk_samples": ["상담 시나리오 1", "2", "3"]
         }}
         """
 
-        # 3. Gemini 모델 시도
+        # 3. Gemini 모델 시도 (호환성 높은 순)
         ai_data = None
-        for model_name in ['gemini-2.0-flash', 'gemini-1.5-flash']:
+        # gemini-1.5-flash 가 가장 안정적임
+        for model_name in ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash']:
             try:
                 model = genai.GenerativeModel(model_name)
+                # 안전을 위해 타임아웃 설정을 둔 모델 옵션이 있다면 좋으나 SDK 기본값 사용
                 response = model.generate_content(prompt)
-                ai_text = response.text.replace('```json', '').replace('```', '').strip()
-                ai_data = json.loads(ai_text)
-                if ai_data: break
-            except: continue
+                if response and response.text:
+                    ai_text = response.text.replace('```json', '').replace('```', '').strip()
+                    ai_data = json.loads(ai_text)
+                    if ai_data: 
+                        logger.info(f"Success with model: {model_name}")
+                        break
+            except Exception as e:
+                logger.error(f"Try model {model_name} failed: {e}")
+                continue
 
         if not ai_data:
             raise Exception("모든 AI 모델이 응답에 실패했습니다. (쿼터 초과 또는 API 오류)")
