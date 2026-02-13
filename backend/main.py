@@ -324,8 +324,8 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         }}
         """
         
-        # Gemini 호출
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Gemini 호출 (1.5-flash가 404 날 경우를 위해 2.0-flash 사용)
+        model = genai.GenerativeModel('gemini-2.0-flash')
         response = model.generate_content(prompt)
         ai_text = response.text.replace('```json', '').replace('```', '').strip()
         
