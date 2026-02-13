@@ -332,10 +332,9 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         }}
         """
 
-        # 3. Gemini 모델 시도 (호환성 높은 순)
+        # 3. Gemini 모델 시도 (명시적 모델 경로 사용)
         ai_data = None
-        # gemini-1.5-flash 가 가장 안정적임
-        for model_name in ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash']:
+        for model_name in ['models/gemini-1.5-flash', 'models/gemini-1.5-pro', 'models/gemini-2.0-flash']:
             try:
                 model = genai.GenerativeModel(model_name)
                 # 안전을 위해 타임아웃 설정을 둔 모델 옵션이 있다면 좋으나 SDK 기본값 사용
@@ -401,8 +400,9 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         }
     except Exception as e:
         import traceback
+        err_detail = str(e)
         logger.error(f"Critical analyze error: {e}\n{traceback.format_exc()}")
-        # 아주 치명적인 경우(AI 쿼터 초과 등)에도 화면이 깨지지 않도록 모든 필수 필드 포함
+        # 에러 내용을 사용자가 볼 수 있도록 market_diagnosis에 포함
         return {
             "score": 85,
             "score_breakdown": {
@@ -411,7 +411,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 "benefit_score": 90,
                 "total_score": 85
             },
-            "market_diagnosis": f"현재 AI 트래픽 증가로 상세 분석이 지연되고 있습니다. 입력하신 정보에 따르면 {field_name}은 시세 대비 경쟁력이 충분하여 긍정적인 퍼포먼스가 기대됩니다.",
+            "market_diagnosis": f"AI 분석 중 에러 발생: {err_detail[:100]}. 입력하신 {field_name}은 시세 대비 경쟁력이 충분하여 긍정적인 성과가 예상됩니다.",
             "market_gap_percent": round(((target_price - sales_price) / (sales_price if sales_price > 0 else 1)) * 100, 2),
             "price_data": [
                 {"name": "우리 현장", "price": sales_price},
@@ -426,17 +426,17 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 {"subject": "분양조건", "A": 80, "B": 50, "fullMark": 100},
                 {"subject": "상품성", "A": 90, "B": 70, "fullMark": 100}
             ],
-            "target_persona": "해당 지역 실거주 및 투자 목적의 3050 핵심 유효 고객군",
-            "target_audience": ["#내집마련", "#분양정보", "#재테크", "#의정부"],
+            "target_persona": f"에러코드({err_detail[:20]}) 발생. 잠시 후 시도.",
+            "target_audience": ["#에러처리", "#데이터체크"],
             "competitors": [],
-            "ad_recommendation": "네이버 검색 기반 마케팅 및 메타 정밀 타겟팅 광고 병행 권장",
-            "copywriting": f"{field_name}, 마지막 선착순 분양 특별 혜택을 놓치지 마세요!",
-            "keyword_strategy": [field_name, "신규분양", "아파트분양", "청약상담"],
-            "weekly_plan": ["1주: 인지도 확산 및 가망고객 DB 확보", "2주: 핵심 소구점 강조 2차 캠페인", "3주: 모델하우스 방문 유도 집중 기간", "4주: 상담 전환 및 계약 독려 마감 세일즈"],
-            "roi_forecast": {"expected_leads": 100, "expected_cpl": 45000, "conversion_rate": 3.0},
-            "lms_copy_samples": [f"[특별혜택] {field_name} 분양안내", "방문 예약 안내드립니다.", "선착순 마감 임박 메시지"],
-            "channel_talk_samples": ["궁금하신 정보를 알려드립니다.", "모델하우스 위치 안내", "분양가 상담 예약"],
-            "media_mix": [{"media": "메타", "feature": "타켓팅", "reason": "데이터확보", "strategy_example": "카드뉴스"}]
+            "ad_recommendation": f"AI 서버 응답 불가 ({err_detail[:30]})",
+            "copywriting": f"{field_name} 분양 특별 혜택 안내",
+            "keyword_strategy": ["데이터오류", "키워드재생성요망"],
+            "weekly_plan": ["시스템로그확인", "API쿼터체크", "모델명검증", "재호출시도"],
+            "roi_forecast": {"expected_leads": 0, "expected_cpl": 0, "conversion_rate": 0},
+            "lms_copy_samples": [f"에러발생: {err_detail[:50]}"],
+            "channel_talk_samples": ["상담 연결 시도 중"],
+            "media_mix": [{"media": "시스템", "feature": "에러", "reason": err_detail[:20], "strategy_example": "점검필요"}]
         }
 
 @app.get("/import-csv")
