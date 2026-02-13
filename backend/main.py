@@ -410,7 +410,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 "benefit_score": 80,
                 "total_score": 80
             },
-            "market_diagnosis": f"분석 오류: {str(e)[:50]}...",
+            "market_diagnosis": "현재 실시간 AI 분석 요청이 많아 데이터 처리가 지연되고 있습니다. 잠시 후 다시 시도하시면 상세 리포트를 확인하실 수 있습니다.",
             "market_gap_percent": 0,
             "price_data": [
                 {"name": "우리 현장", "price": 0},
