@@ -86,6 +86,7 @@ class Lead(SQLModel, table=True):
     phone: str
     rank: str
     site: str
+    source: Optional[str] = Field(default="알 수 없음")
     created_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
 
 # --- NATIONWIDE START DATA ---
@@ -656,6 +657,7 @@ class LeadSubmitRequest(BaseModel):
     phone: str
     rank: str
     site: str
+    source: Optional[str] = "알 수 없음"
 
 @app.post("/submit-lead")
 async def submit_lead(req: LeadSubmitRequest):
@@ -666,7 +668,8 @@ async def submit_lead(req: LeadSubmitRequest):
                 name=req.name,
                 phone=req.phone,
                 rank=req.rank,
-                site=req.site
+                site=req.site,
+                source=req.source
             )
             session.add(new_lead)
             session.commit()
@@ -682,7 +685,8 @@ async def submit_lead(req: LeadSubmitRequest):
                             "name": req.name,
                             "phone": req.phone,
                             "rank": req.rank,
-                            "site": req.site
+                            "site": req.site,
+                            "source": req.source
                         }
                         # 데이터가 확실히 전송될 때까지 기다립니다.
                         response = await client.post(GOOGLE_SHEET_WEBHOOK_URL, json=payload, timeout=8.0)

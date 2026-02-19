@@ -133,6 +133,7 @@ export default function BunyangAlphaGo() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [leadForm, setLeadForm] = useState({ name: "", phone: "", rank: "", site: "" });
+  const [leadSource, setLeadSource] = useState("");
   const [isSubmittingLead, setIsSubmittingLead] = useState(false);
 
   const [history, setHistory] = useState<AnalysisHistoryEntry[]>([]);
@@ -460,7 +461,7 @@ export default function BunyangAlphaGo() {
       const res = await fetch(`${API_BASE_URL}/submit-lead`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(leadForm)
+        body: JSON.stringify({ ...leadForm, source: leadSource })
       });
       if (res.ok) {
         alert("신청이 완료되었습니다. 담당자가 곧 연락드리겠습니다.");
@@ -1571,6 +1572,7 @@ export default function BunyangAlphaGo() {
                     whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       setLeadForm(prev => ({ ...prev, site: fieldName }));
+                      setLeadSource("ROI 시뮬레이션 하단");
                       setShowLeadModal(true);
                     }}
                     className="w-full py-6 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600 bg-[length:200%_auto] hover:bg-right text-white rounded-3xl font-black text-lg transition-all shadow-2xl flex items-center justify-center gap-4 relative overflow-hidden group"
@@ -1670,6 +1672,7 @@ export default function BunyangAlphaGo() {
                       whileTap={{ scale: 0.95 }}
                       onClick={() => {
                         setLeadForm(prev => ({ ...prev, site: fieldName }));
+                        setLeadSource(`LMS 카피 (${lmsTabs[activeLmsTab].label})`);
                         setShowLeadModal(true);
                       }}
                       className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl text-xs blue-glow transition-all flex items-center gap-2"
@@ -1761,6 +1764,7 @@ export default function BunyangAlphaGo() {
                       whileTap={{ scale: 0.95 }}
                       onClick={() => {
                         setLeadForm(prev => ({ ...prev, site: fieldName }));
+                        setLeadSource(`채널톡 카피 (${channelTabs[activeChannelTab].label})`);
                         setShowLeadModal(true);
                       }}
                       className="px-6 py-3 bg-orange-600 hover:bg-orange-500 text-white font-black rounded-xl text-xs shadow-lg shadow-orange-900/40 transition-all flex items-center gap-2"
@@ -1821,6 +1825,7 @@ export default function BunyangAlphaGo() {
                         whileTap={{ scale: 0.95 }}
                         onClick={() => {
                           setLeadForm(prev => ({ ...prev, site: fieldName }));
+                          setLeadSource("페이지 최하단 CTA");
                           setShowLeadModal(true);
                         }}
                         className="group relative inline-flex items-center justify-center px-10 py-6 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-xl transition-all blue-glow overflow-hidden"
