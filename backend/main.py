@@ -13,6 +13,7 @@ import logging
 import httpx
 import google.generativeai as genai
 import json
+from typing import List, Optional, Union, Any
 
 # Gemini API 설정
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyCpLoq9OIzHB5Z0xJyXbUrALsh4ePqgVV0")
@@ -275,16 +276,16 @@ class AnalyzeRequest(BaseModel):
     address: Optional[str] = "지역 정보 없음"
     product_category: Optional[str] = "아파트"
     sales_stage: Optional[str] = "분양중"
-    down_payment: Optional[str] = "10%"
+    down_payment: Optional[Union[int, str]] = "10%"
     interest_benefit: Optional[str] = "없음"
-    additional_benefits: Optional[List[str]] = []
+    additional_benefits: Optional[Union[List[str], str]] = []
     main_concern: Optional[str] = "기타"
-    monthly_budget: Optional[int] = 0
-    existing_media: Optional[List[str]] = []
+    monthly_budget: Optional[Union[int, float]] = 0
+    existing_media: Optional[Union[List[str], str]] = []
     sales_price: Optional[float] = 0.0
     target_area_price: Optional[float] = 0.0
-    down_payment_amount: Optional[int] = 0
-    supply_volume: Optional[int] = 0
+    down_payment_amount: Optional[Union[int, float]] = 0
+    supply_volume: Optional[Union[int, str]] = 0
     field_keypoints: Optional[str] = ""
     user_email: Optional[str] = None
 
@@ -297,21 +298,23 @@ async def regenerate_copy(req: AnalyzeRequest):
     """카피 재생성 전용 엔드포인트"""
     field_name = req.field_name or "분석 현장"
     address = req.address or "지역 정보"
-    gap = (req.target_area_price - req.sales_price) / (req.sales_price if req.sales_price > 0 else 1)
+    gap = (float(req.target_area_price or 0) - float(req.sales_price or 0)) / (float(req.sales_price or 1) if req.sales_price and req.sales_price > 0 else 1)
     gap_percent = round(gap * 100, 1)
-    down_payment = req.down_payment or "10%"
-    interest_benefit = req.interest_benefit or "무이자"
-    field_keypoints = req.field_keypoints or "탁월한 입지와 미래가치"
+    
+    # 데이터 안전하게 추출
+    dp = str(req.down_payment) if req.down_payment else "10%"
+    ib = req.interest_benefit or "무이자"
+    fkp = req.field_keypoints or "탁월한 입지와 미래가치"
 
     # 실전 레퍼런스 스타일의 3종 럭셔리 템플릿
     lms_samples = [
-        f"【{field_name}】\n\n🔥 파격조건변경!!\n☛ 계약금 {down_payment}\n☛ {interest_benefit} 파격 혜택\n☛ 실거주의무 및 청약통장 無\n\n■ 초현대적 입지+트리플 교통망\n🚅 GTX 및 주요 노선 연장 수혜(예정)\n🏫 단지 바로 앞 초·중·고 도보 학세권\n🏙️ {address} 핵심 인프라 원스톱 라이프\n\n■ 브랜드 & 자산 가치\n▶ 주변 시세 대비 {gap_percent}% 낮은 압도적 분양가\n▶ {field_keypoints} 특화 설계 적용\n▶ 대단지 프리미엄 랜드마크 스케일\n\n🎁 예약 후 방문 시 '신세계 상품권' 증정\n🎉 계약 시 '고급 가전 사은품' 특별 증정\n☎️ 문의 : 1600-0000",
-        f"[특별공식발송] {field_name} 관심고객 안내\n(전세대 선호도 높은 84㎡ 위주 구성)\n\n💰 강력한 금융 혜택\n✅ 계약금 {down_payment} (1차)\n✅ 중도금 60% {interest_benefit}\n✅ 무제한 전매 가능 단지\n\n🏡 현장 특장점\n- {address} 내 마지막 노다지 핵심 입지\n- {gap_percent}% 이상의 확실한 시세 차익 기대\n- {field_keypoints} 등 고품격 커뮤니티 시설\n- 도보권 명품 학원가 및 대형 마트 인접\n\n더 이상 망설이지 마세요. 마지막 로열층이 소진 중입니다.\n☎️ 상담문의: 010-0000-0000",
-        f"🚨 {field_name} 제로계약금 수준 마감 임박!\n\n🔥 전세대 영구 조망 및 프리미엄 특화 설계\n🔥 현재 인기 타입 완판 직전, 잔여 소수 분양\n🔥 {interest_benefit}, 주택수 미포함 수혜 단지\n\n🚗 사통팔달 교통망 확정 및 서울 접근성 혁신\n🏞️ 대형 공원과 수변 조망을 품은 숲세권/물세권\n🏗️ 인접 대규모 개발 호재로 인한 미래 가치 급상승\n\n🎁 선착순 계약축하 이벤트 진행 중\n예약 방문만 해도 '고급 와인 및 사은품' 증정\n📞 대표번호: 1811-0000"
+        f"【{field_name}】\n\n🔥 파격조건변경!!\n☛ 계약금 {dp}\n☛ {ib} 파격 혜택\n☛ 실거주의무 및 청약통장 無\n\n■ 초현대적 입지+트리플 교통망\n🚅 GTX 및 주요 노선 연장 수혜(예정)\n🏫 단지 바로 앞 초·중·고 도보 학세권\n🏙️ {address} 핵심 인프라 원스톱 라이프\n\n■ 브랜드 & 자산 가치\n▶ 주변 시세 대비 {gap_percent}% 낮은 압도적 분양가\n▶ {fkp} 특화 설계 적용\n▶ 대단지 프리미엄 랜드마크 스케일\n\n🎁 예약 후 방문 시 '신세계 상품권' 증정\n🎉 계약 시 '고급 가전 사은품' 특별 증정\n☎️ 문의 : 1600-0000",
+        f"[특별공식발송] {field_name} 관심고객 안내\n(전세대 선호도 높은 84㎡ 위주 구성)\n\n💰 강력한 금융 혜택\n✅ 계약금 {dp} (1차)\n✅ 중도금 60% {ib}\n✅ 무제한 전매 가능 단지\n\n🏡 현장 특장점\n- {address} 내 마지막 노다지 핵심 입지\n- {gap_percent}% 이상의 확실한 시세 차익 기대\n- {fkp} 등 고품격 커뮤니티 시설\n- 도보권 명품 학원가 및 대형 마트 인접\n\n더 이상 망설이지 마세요. 마지막 로열층이 소진 중입니다.\n☎️ 상담문의: 010-0000-0000",
+        f"🚨 {field_name} 제로계약금 수준 마감 임박!\n\n🔥 전세대 영구 조망 및 프리미엄 특화 설계\n🔥 현재 인기 타입 완판 직전, 잔여 소수 분양\n🔥 {ib}, 주택수 미포함 수혜 단지\n\n🚗 사통팔달 교통망 확정 및 서울 접근성 혁신\n🏞️ 대형 공원과 수변 조망을 품은 숲세권/물세권\n🏗️ 인접 대규모 개발 호재로 인한 미래 가치 급상승\n\n🎁 선착순 계약축하 이벤트 진행 중\n예약 방문만 해도 '고급 와인 및 사은품' 증정\n📞 대표번호: 1811-0000"
     ]
 
     channel_samples = [
-        f"🔥 [{field_name}] 파격 조건변경! 계약금 {down_payment} & {interest_benefit} 확정. 시세 대비 {gap_percent}% 저렴한 분양가로 지금 문의 폭주 중! 방문 전 꼭 잔여세대를 확인하세요! ☎️1600-0000",
+        f"🔥 [{field_name}] 파격 조건변경! 계약금 {dp} & {ib} 확정. 시세 대비 {gap_percent}% 저렴한 분양가로 지금 문의 폭주 중! 방문 전 꼭 잔여세대를 확인하세요! ☎️1600-0000",
         f"🚨 [{field_name}] 마감임박 안내! 로열층 남은 수량 단 3개. 정남향/학세권/GTX호재까지 다 갖춘 {address} 최고의 현장. 지금 상담 신청하고 '방문 사은품' 혜택까지 챙기세요!",
         f"💎 [{field_name}] 고관여 타겟 전용 리얼 데이터 공개! 시세차익 {gap_percent}%가 보이는 확실한 투자지. 학군, 상권, 미래가치 풀분석 리포트를 지금 채널톡으로 신청하고 바로 받아보세요."
     ]
@@ -331,10 +334,16 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         field_name = getattr(req, 'field_name', "분석 현장")
         address = getattr(req, 'address', "지역 정보 없음")
         product_category = getattr(req, 'product_category', "아파트")
-        sales_price = float(getattr(req, 'sales_price', 0.0) or 0.0)
-        target_price = float(getattr(req, 'target_area_price', 0.0) or 0.0)
-        supply_volume = int(getattr(req, 'supply_volume', 0) or 0)
-        main_concern = getattr(req, 'main_concern', "기타")
+        sales_price = float(req.sales_price or 0.0)
+        target_price = float(req.target_area_price or 0.0)
+        
+        # supply_volume 처리 (문자열로 올 수도 있음)
+        try:
+            supply_volume = int(req.supply_volume or 0)
+        except:
+            supply_volume = 0
+            
+        main_concern = req.main_concern or "기타"
         field_keypoints = getattr(req, 'field_keypoints', "")
         
         # 1. 실시간 여론 및 데이터 수집 (네이버 뉴스/블로그 검색)
