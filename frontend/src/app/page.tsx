@@ -106,10 +106,11 @@ const AnimatedNumber = ({ value, decimals = 0 }: { value: number, decimals?: num
   return <span>{displayValue.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</span>;
 };
 
-// --- Base URL - Production First for stability ---
-const API_BASE_URL = "https://bunyang-alphago-production-d17b.up.railway.app";
-// 로컬 테스트가 필요할 때만 아래 코드를 주석 해제하세요.
-// const API_BASE_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost' ? "http://localhost:8000" : "https://bunyang-alphago-production-d17b.up.railway.app";
+// --- Base URL - 환경에 따라 동적으로 설정 (로컬 개발 vs 배포 환경) ---
+const API_BASE_URL = typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? "http://localhost:8000"
+  : "https://bunyang-alphago-production-d17b.up.railway.app";
 
 export default function BunyangAlphaGo() {
   const [mounted, setMounted] = useState(false);
@@ -352,18 +353,14 @@ export default function BunyangAlphaGo() {
           "4주차: 잔여 물량 소진을 위한 마감 임박 메시지 전송"
         ],
         lms_copy_samples: [
-          "(광고) [신뢰/종합] 샘플 카피입니다.",
-          "(광고) [혜택집중] 샘플 카피입니다.",
-          "(광고) [마감임박] 샘플 카피입니다.",
-          "(광고) [투자전략] 샘플 카피입니다.",
-          "(광고) [거주안심] 샘플 카피입니다."
+          `【${fieldName}】\n\n🔥 파격조건변경!!\n☛ 계약금 10%\n☛ 중도금 무이자 확정 혜택\n☛ 실거주의무 및 청약통장 無\n\n■ 초현대적 입지+트리플 교통망\n🚅 GTX-D 고속철도 수혜(예정)\n🏫 단지 바로 앞 초·중·고 학세권\n🏙️ ${addressValue} 핵심 인프라 라이프\n\n🎁 예약 후 방문 시 '신세계 상품권' 증정\n☎️ 문의 : 1600-0000`,
+          `[특별공식발송] ${fieldName} 안내\n\n💰 강력한 금융 혜택\n✅ 계약금 1000만원 정액제\n✅ 중도금 60% 전액 무이자\n✅ 무제한 전매 가능 단지\n\n🏡 현장 특장점\n- 주변 시세 대비 낮은 분양가\n- 고품격 커뮤니티 시설 완비\n\n☎️ 상담문의: 010-0000-0000`,
+          `🚨 ${fieldName} 마감 임박 안내!\n\n🔥 인기 타입 완판 직전, 잔여 소수 분양\n🔥 주택수 미포함 세제 혜택 단지\n🏗️ 인근 대규모 개발 호재 수혜\n\n🎁 선착순 계약 시 '고급 가전 사은품' 증정\n📞 대표번호: 1811-0000`
         ],
         channel_talk_samples: [
-          "【종합】 샘플 카탈로그입니다. 💥",
-          "【혜택】 샘플 카탈로그입니다. 🔥",
-          "【긴급】 샘플 카탈로그입니다. 🚨",
-          "【교통】 샘플 카탈로그입니다. 🚅",
-          "【이벤트】 샘플 카탈로그입니다. 🎁"
+          `🔥 ${fieldName} | 파격 조건변경 소식!\n\n현재 호갱노노에서 가장 뜨거운 관심을 받는 이유, 드디어 공개합니다! 💎\n\n✅ 핵심 혜택:\n- 계약금 10% & 중도금 무이자 확정\n- 주변 시세 대비 압도적 저평가 단지\n\n📢 실시간 로열층 확인 👇\n☎️ 대표문의 : 1600-0000`,
+          `🚨 [긴급] ${fieldName} 로열층 마감 직전!\n\n망설이는 순간 기회는 지나갑니다. 현재 방문객 폭주로 인해 남은 물량이 실시간으로 소진되고 있습니다! 💨\n\n📞 긴급 상담: 010-0000-0000`,
+          `📊 ${fieldName} 입지 분석 보고서 배포\n\n호갱노노 유저분들이 주목하는 진짜 팩트를 분석했습니다. 🧐\n학군/상권/미래가치를 숫자로 증명한 정밀 리포트를 채널톡에서 바로 받아보세요. 💎`
         ]
       });
     } finally {

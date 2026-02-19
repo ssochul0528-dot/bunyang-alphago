@@ -327,6 +327,7 @@ async def regenerate_copy(req: AnalyzeRequest):
 @app.post("/analyze")
 async def analyze_site(request: Optional[AnalyzeRequest] = None):
     """Gemini AI를 사용한 현장 정밀 분석 API (고도화 버전)"""
+    logger.info(f">>> Analyze request received: {request.field_name if request else 'No request body'}")
     try:
         req = request if request else AnalyzeRequest()
         
