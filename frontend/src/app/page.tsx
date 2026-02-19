@@ -617,117 +617,145 @@ export default function BunyangAlphaGo() {
           </div>
 
           {!showConfig && !result && (
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="relative w-full max-w-3xl"
-            >
-              <div className="glass-panel p-3 rounded-[3rem] flex flex-col md:flex-row items-center gap-3 blue-glow-border group border-white/20">
-                <div className="flex-1 flex items-center gap-4 pl-6 w-full">
-                  <MapPin className="text-blue-500 group-focus-within:scale-110 transition-transform" size={24} />
-                  <input
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="현장 이름 또는 주소를 입력하세요"
-                    className="flex-1 bg-transparent border-none outline-none py-5 text-xl text-white font-bold placeholder:text-slate-600"
-                    onKeyPress={(e) => e.key === 'Enter' && handleManualScan()}
-                  />
-                </div>
-                <button
-                  onClick={handleManualScan}
-                  disabled={isScanning}
-                  className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 px-10 py-5 rounded-[2.2rem] font-black text-lg transition-all flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:shadow-[0_0_60px_rgba(59,130,246,0.5)] transform hover:scale-[1.02] active:scale-95"
-                >
-                  {isScanning ? <RefreshCw className="animate-spin" size={20} /> : <Zap size={20} fill="currentColor" />}
-                  시작하기
-                </button>
-                {isSearching && (
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    <RefreshCw size={14} className="animate-spin text-blue-500" />
-                    <span className="text-[10px] text-slate-500 font-bold uppercase">Searching</span>
+            <div className="w-full max-w-3xl flex flex-col items-center">
+              {/* Guidance Text */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                className="mb-4 flex items-center gap-2 text-slate-500 font-bold"
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                <span className="text-[11px] uppercase tracking-[0.2em]">분석할 현장명 또는 주소를 입력하면 실시간 분석이 시작됩니다.</span>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="relative w-full"
+              >
+                <div className={`glass-panel p-3 rounded-[3rem] flex flex-col md:flex-row items-center gap-3 transition-all duration-500 ${isSearching ? 'blue-glow border-blue-500/50 scale-[1.01]' : 'blue-glow-border border-white/20'}`}>
+                  <div className="flex-1 flex items-center gap-4 pl-6 w-full">
+                    <MapPin className={`${isSearching ? 'text-blue-400 animate-bounce' : 'text-blue-500'} transition-all`} size={24} />
+                    <input
+                      type="text"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="예) 마포역 에테르노, 의정부 해링턴 플레이스..."
+                      className="flex-1 bg-transparent border-none outline-none py-5 text-xl text-white font-bold placeholder:text-slate-700"
+                      onKeyPress={(e) => e.key === 'Enter' && handleManualScan()}
+                    />
                   </div>
-                )}
-              </div>
-
-              {/* Search Results Dropdown - Forced Opaque for Visibility */}
-              <AnimatePresence>
-                {(isSearching || (address.trim().length >= 1 && searchResults.length > 0) || (!isSearching && searchResults.length === 0 && address.trim().length >= 1)) && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    style={{ backgroundColor: '#020617', opacity: 1 }}
-                    className="absolute left-0 right-0 mt-3 border border-slate-800 rounded-2xl overflow-hidden z-[9999] shadow-[0_20px_60px_rgba(0,0,0,1)]"
+                  <button
+                    onClick={handleManualScan}
+                    disabled={isScanning || !address.trim()}
+                    className={`w-full md:w-auto px-10 py-5 rounded-[2.2rem] font-black text-lg transition-all flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(59,130,246,0.3)] transform active:scale-95 ${isSearching
+                      ? 'bg-blue-600/50 text-blue-200 cursor-wait'
+                      : 'bg-blue-600 hover:bg-blue-500 text-white hover:shadow-[0_0_60px_rgba(59,130,246,0.5)] hover:scale-[1.02]'
+                      }`}
                   >
-                    {isSearching && (
-                      <div className="px-6 py-12 text-center flex flex-col items-center gap-3">
-                        <RefreshCw size={24} className="animate-spin text-blue-500" />
-                        <p className="text-sm text-slate-300 font-medium">실시간 데이터베이스 조회 중...</p>
-                      </div>
+                    {isScanning || isSearching ? (
+                      <RefreshCw className="animate-spin" size={20} />
+                    ) : (
+                      <Zap size={20} fill="currentColor" />
                     )}
+                    {isSearching ? '데이터 검색 중...' : '정밀 분석 시작'}
+                  </button>
+                </div>
 
-                    {!isSearching && searchResults && searchResults.length > 0 && searchResults.map((site: any) => (
-                      <button
-                        key={site.id}
-                        onClick={() => handleSelectSite(site)}
-                        className="w-full px-6 py-5 text-left hover:bg-white/10 transition-all border-b border-white/5 last:border-0 flex justify-between items-center group"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            {site.category && (
-                              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${site.category === '민간임대'
-                                ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
-                                : site.category === '아파트'
-                                  ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
-                                  : 'bg-orange-500/20 text-orange-300 border-orange-500/40'
-                                }`}>
-                                {site.category}
-                              </span>
-                            )}
-                            {site.brand && site.brand !== "기타" && (
-                              <span className="text-[10px] font-black bg-slate-700/50 text-slate-300 px-1.5 py-0.5 rounded border border-slate-600/40">
-                                {site.brand}
-                              </span>
-                            )}
-                            <div className="text-white font-extrabold text-base group-hover:text-blue-400 transition-colors">{site.name}</div>
-                            {site.status && (
-                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${site.status.includes('미분양') || site.status.includes('할인') || site.status.includes('잔여')
-                                ? 'bg-red-500/30 text-red-300 border border-red-500/40'
-                                : 'bg-green-500/30 text-green-300 border border-green-500/40'
-                                }`}>
-                                {site.status}
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm text-white flex items-center gap-1.5 font-medium">
-                            <MapPin className="w-3.5 h-3.5 text-blue-400" />
-                            {site.address}
-                          </div>
-                        </div>
-                        <ShieldCheck className="text-slate-700 group-hover:text-blue-500 transition-all transform group-hover:scale-110" size={24} />
-                      </button>
-                    ))}
+                {/* Search Examples / Tags */}
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
+                  <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest mt-1.5 mr-2">인기 검색어:</span>
+                  {["의정부역 해링턴", "동탄 푸르지오", "수지구청역", "반포 자이"].map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => setAddress(tag)}
+                      className="px-4 py-2 rounded-full bg-slate-900/50 border border-slate-800 text-[11px] text-slate-400 hover:text-blue-400 hover:border-blue-500/30 transition-all font-bold"
+                    >
+                      # {tag}
+                    </button>
+                  ))}
+                </div>
 
-                    {!isSearching && searchResults.length === 0 && address.trim().length >= 1 && (
-                      <div className="px-6 py-10 text-center">
-                        <div className="text-slate-500 mb-4 flex flex-col items-center gap-2">
-                          <MapPin size={32} className="opacity-20" />
-                          <p className="text-sm">검색 결과가 없습니다.</p>
+                {/* Search Results Dropdown - Forced Opaque for Visibility */}
+                <AnimatePresence>
+                  {(isSearching || (address.trim().length >= 1 && searchResults.length > 0) || (!isSearching && searchResults.length === 0 && address.trim().length >= 1)) && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      style={{ backgroundColor: '#020617', opacity: 1 }}
+                      className="absolute left-0 right-0 mt-3 border border-slate-800 rounded-2xl overflow-hidden z-[9999] shadow-[0_20px_60px_rgba(0,0,0,1)]"
+                    >
+                      {isSearching && (
+                        <div className="px-6 py-12 text-center flex flex-col items-center gap-3">
+                          <RefreshCw size={24} className="animate-spin text-blue-500" />
+                          <p className="text-sm text-slate-300 font-medium">실시간 데이터베이스 조회 중...</p>
                         </div>
+                      )}
+
+                      {!isSearching && searchResults && searchResults.length > 0 && searchResults.map((site: any) => (
                         <button
-                          onClick={handleManualScan}
-                          className="text-xs font-bold text-blue-500 hover:text-blue-400 underline decoration-blue-500/30 underline-offset-4"
+                          key={site.id}
+                          onClick={() => handleSelectSite(site)}
+                          className="w-full px-6 py-5 text-left hover:bg-white/10 transition-all border-b border-white/5 last:border-0 flex justify-between items-center group"
                         >
-                          새로운 현장으로 직접 등록하기
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              {site.category && (
+                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${site.category === '민간임대'
+                                  ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                                  : site.category === '아파트'
+                                    ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                                    : 'bg-orange-500/20 text-orange-300 border-orange-500/40'
+                                  }`}>
+                                  {site.category}
+                                </span>
+                              )}
+                              {site.brand && site.brand !== "기타" && (
+                                <span className="text-[10px] font-black bg-slate-700/50 text-slate-300 px-1.5 py-0.5 rounded border border-slate-600/40">
+                                  {site.brand}
+                                </span>
+                              )}
+                              <div className="text-white font-extrabold text-base group-hover:text-blue-400 transition-colors">{site.name}</div>
+                              {site.status && (
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${site.status.includes('미분양') || site.status.includes('할인') || site.status.includes('잔여')
+                                  ? 'bg-red-500/30 text-red-300 border border-red-500/40'
+                                  : 'bg-green-500/30 text-green-300 border border-green-500/40'
+                                  }`}>
+                                  {site.status}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-sm text-white flex items-center gap-1.5 font-medium">
+                              <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                              {site.address}
+                            </div>
+                          </div>
+                          <ShieldCheck className="text-slate-700 group-hover:text-blue-500 transition-all transform group-hover:scale-110" size={24} />
                         </button>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+                      ))}
+
+                      {!isSearching && searchResults.length === 0 && address.trim().length >= 1 && (
+                        <div className="px-6 py-10 text-center">
+                          <div className="text-slate-500 mb-4 flex flex-col items-center gap-2">
+                            <MapPin size={32} className="opacity-20" />
+                            <p className="text-sm">검색 결과가 없습니다.</p>
+                          </div>
+                          <button
+                            onClick={handleManualScan}
+                            className="text-xs font-bold text-blue-500 hover:text-blue-400 underline decoration-blue-500/30 underline-offset-4"
+                          >
+                            새로운 현장으로 직접 등록하기
+                          </button>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </div>
           )}
 
           {/* New: Detailed Introduction Section */}
