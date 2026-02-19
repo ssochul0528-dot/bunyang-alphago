@@ -19,27 +19,44 @@ from typing import List, Optional, Union, Any
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyCpLoq9OIzHB5Z0xJyXbUrALsh4ePqgVV0")
 genai.configure(api_key=GEMINI_API_KEY)
 
+import logging
+import re
+
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def extract_json(text: str):
-    """문자열에서 JSON 블록만 추출하는 함수"""
+    """문자열에서 JSON 블록만 추출하는 고도화된 함수 (RegEx 사용)"""
+    if not text:
+        return None
+    
+    # 1. ```json 블록 추출 시도
+    match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(1).strip())
+        except: pass
+        
+    # 2. 일반 ``` 블록 추출 시도
+    match = re.search(r"```\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(1).strip())
+        except: pass
+
+    # 3. 텍스트 내의 첫 번째 { 와 마지막 } 사이 추출 시도
+    match = re.search(r"(\{.*\})", text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(1).strip())
+        except: pass
+        
+    # 4. 전체 텍스트 시도
     try:
-        # ```json ... ``` 형식 추출
-        if "```json" in text:
-            start = text.find("```json") + 7
-            end = text.find("```", start)
-            return json.loads(text[start:end].strip())
-        # ``` ... ``` 형식 추출
-        elif "```" in text:
-            start = text.find("```") + 3
-            end = text.find("```", start)
-            return json.loads(text[start:end].strip())
-        # 전체가 JSON인 경우
         return json.loads(text.strip())
-    except Exception as e:
-        logger.error(f"JSON extraction failed: {e}")
+    except:
+        logger.error(f"Failed to parse AI JSON response: {text[:200]}...")
         return None
 
 # --- Database Setup ---
@@ -428,7 +445,23 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 continue
 
         if not ai_data:
-            raise Exception("모든 AI 모델이 응답에 실패했거나 올바른 JSON 형식이 아닙니다.")
+            logger.warning("AI model failed to provide valid JSON. Triggering Smart Local Engine.")
+            raise Exception("AI Response Parsing Failed")
+
+        # 필수 필드 누락 방지 및 기본값 보정
+        safe_data = {
+            "market_diagnosis": ai_data.get("market_diagnosis") or "데이터 분석 중입니다.",
+            "target_audience": ai_data.get("target_audience") or ["실거주자", "투자자"],
+            "target_persona": ai_data.get("target_persona") or "안정적 자산 증식을 노리는 수요자",
+            "competitors": ai_data.get("competitors") or [],
+            "ad_recommendation": ai_data.get("ad_recommendation") or "메타 및 네이버 광고 집행 권장",
+            "copywriting": ai_data.get("copywriting") or f"[{field_name}] 지금 바로 만나보세요.",
+            "keyword_strategy": ai_data.get("keyword_strategy") or [field_name, "분양정보"],
+            "weekly_plan": ai_data.get("weekly_plan") or ["1주차: 마케팅 기획"],
+            "roi_forecast": ai_data.get("roi_forecast") or {"expected_leads": 100, "expected_cpl": 50000, "conversion_rate": 2.5},
+            "lms_copy_samples": ai_data.get("lms_copy_samples") or [],
+            "channel_talk_samples": ai_data.get("channel_talk_samples") or []
+        }
 
         # 점수 계산 logic
         price_score = min(100, max(0, 100 - abs(sales_price - target_price) / (target_price if target_price > 0 else 1) * 100))
@@ -438,14 +471,14 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         market_gap_percent = ((target_price - sales_price) / (sales_price if sales_price > 0 else 1)) * 100
 
         return {
-            "score": total_score,
+            "score": int(total_score),
             "score_breakdown": {
                 "price_score": int(price_score),
                 "location_score": int(location_score),
                 "benefit_score": int(benefit_score),
-                "total_score": total_score
+                "total_score": int(total_score)
             },
-            "market_diagnosis": ai_data.get("market_diagnosis"),
+            "market_diagnosis": safe_data["market_diagnosis"],
             "market_gap_percent": round(market_gap_percent, 2),
             "price_data": [
                 {"name": "우리 현장", "price": sales_price},
@@ -460,16 +493,16 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 {"subject": "분양조건", "A": 80, "B": 50, "fullMark": 100},
                 {"subject": "상품성", "A": int(benefit_score), "B": 70, "fullMark": 100}
             ],
-            "target_persona": ai_data.get("target_persona"),
-            "target_audience": ai_data.get("target_audience"),
-            "competitors": ai_data.get("competitors"),
-            "ad_recommendation": ai_data.get("ad_recommendation"),
-            "copywriting": ai_data.get("copywriting"),
-            "keyword_strategy": ai_data.get("keyword_strategy"),
-            "weekly_plan": ai_data.get("weekly_plan"),
-            "roi_forecast": ai_data.get("roi_forecast"),
-            "lms_copy_samples": ai_data.get("lms_copy_samples"),
-            "channel_talk_samples": ai_data.get("channel_talk_samples"),
+            "target_persona": safe_data["target_persona"],
+            "target_audience": safe_data["target_audience"],
+            "competitors": safe_data["competitors"],
+            "ad_recommendation": safe_data["ad_recommendation"],
+            "copywriting": safe_data["copywriting"],
+            "keyword_strategy": safe_data["keyword_strategy"],
+            "weekly_plan": safe_data["weekly_plan"],
+            "roi_forecast": safe_data["roi_forecast"],
+            "lms_copy_samples": safe_data["lms_copy_samples"],
+            "channel_talk_samples": safe_data["channel_talk_samples"],
             "media_mix": [
                 {"media": "메타/인스타", "feature": "정밀 타켓팅", "reason": "관심사 기반 도달", "strategy_example": "혜택 강조 광고"},
                 {"media": "네이버", "feature": "검색 기반", "reason": "구매 의향 고객 확보", "strategy_example": "지역 키워드 점유"},

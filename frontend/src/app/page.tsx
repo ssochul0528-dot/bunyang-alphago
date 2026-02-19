@@ -287,33 +287,29 @@ export default function BunyangAlphaGo() {
         },
         mode: 'cors', // CORS 명시
         body: JSON.stringify({
-          field_name: fieldName,
-          address: addressValue,
-          product_category: productCategory,
-          sales_stage: salesStage,
-          down_payment: Number(downPayment) || 10,
-          interest_benefit: interestBenefit,
-          additional_benefits: Array.isArray(additionalBenefits)
-            ? additionalBenefits.join(', ')
-            : (additionalBenefits || "없음"),
-          main_concern: mainConcern,
-          monthly_budget: Number(monthlyBudget),
-          existing_media: Array.isArray(existingMedia)
-            ? existingMedia.join(', ')
-            : (existingMedia || "없음"),
-          sales_price: Number(salesPrice),
-          target_area_price: Number(targetPrice),
-          down_payment_amount: Number(downPaymentAmount),
-          supply_volume: Number(supply),
+          field_name: fieldName || "알 수 없는 현장",
+          address: addressValue || "지역 정보 없음",
+          product_category: productCategory || "아파트",
+          sales_stage: salesStage || "분양중",
+          down_payment: downPayment || "10%",
+          interest_benefit: interestBenefit || "무이자",
+          additional_benefits: Array.isArray(additionalBenefits) ? additionalBenefits.join(', ') : "없음",
+          main_concern: mainConcern || "기타",
+          monthly_budget: Number(monthlyBudget) || 0,
+          existing_media: Array.isArray(existingMedia) ? existingMedia.join(', ') : "없음",
+          sales_price: Number(salesPrice) || 0,
+          target_area_price: Number(targetPrice) || 0,
+          down_payment_amount: Number(downPaymentAmount) || 0,
+          supply_volume: Number(supply) || 0,
           field_keypoints: [kpLocation, kpProduct, kpBenefit, kpGift, kpExtra].filter(v => v).join('\n'),
-          user_email: user?.email
+          user_email: user?.email || ""
         })
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("Server Response Error:", response.status, errorData);
-        throw new Error(`API Error: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`API Analysis Error (${response.status}):`, errorText);
+        throw new Error(`Server Error ${response.status}`);
       }
       const data = await response.json();
       setResult(data);
