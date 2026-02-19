@@ -327,8 +327,20 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             "keyword_strategy": ["키워드1", "2", "3", "4", "5"],
             "weekly_plan": ["1주 액션", "2주 액션", "3주 액션", "4주 액션"],
             "roi_forecast": {{"expected_leads": 130, "expected_cpl": 45000, "conversion_rate": 3.5}},
-            "lms_copy_samples": ["LMS 고퀄 샘플 1", "2", "3"],
-            "channel_talk_samples": ["상담 시나리오 1", "2", "3"]
+            "lms_copy_samples": [
+                "LMS 샘플1 (신뢰/종합)", 
+                "LMS 샘플2 (혜택강조)", 
+                "LMS 샘플3 (마감임박)",
+                "LMS 샘플4 (투자전략)",
+                "LMS 샘플5 (거주안심)"
+            ],
+            "channel_talk_samples": [
+                "상담 시나리오1 (종합 안내)", 
+                "상담 시나리오2 (혜택/이벤트)", 
+                "상담 시나리오3 (호갱노노 대응)",
+                "상담 시나리오4 (입지/교통)",
+                "상담 시나리오5 (방문예약)"
+            ]
         }}
         """
 
@@ -458,11 +470,19 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             ],
             "roi_forecast": {"expected_leads": 120, "expected_cpl": 48000, "conversion_rate": 3.2},
             "lms_copy_samples": [
-                f"[혜택안내] {field_name} 분양가 확정! 주변 시세 대비 {gap_percent}% 낮은 합리적 가격을 확인하세요.",
-                f"[방문예약] {field_name} 모델하우스 오늘 오픈! 상담 예약 시 특별 사은품 증정.",
-                f"[마감임박] {field_name} 잔여세대 선착순 모집. 지금 바로 전화주세요."
+                f"(광고) [신뢰/종합] {field_name} 핵심 정보 요약 및 분양 안내",
+                f"(광고) [혜택집중] {field_name}만의 특별한 금융 혜택 및 무상 옵션 공개",
+                f"(광고) [마감임박] {field_name} 잔여 세대 선착순 마감 임박! 지금 바로 확인",
+                f"(광고) [투자전략] {gap_percent}% 시세 차익이 보이는 {field_name} 투자 분석",
+                f"(광고) [거주안심] 온 가족이 행복한 {field_name}만의 프리미엄 라이프 테마"
             ],
-            "channel_talk_samples": ["분양가 상세 안내", "모델하우스 위치 정보", "실시간 청약 경쟁률 문의"],
+            "channel_talk_samples": [
+                "【현장종합】 현장의 모든 정보를 한눈에 확인하세요. 💥",
+                "【특별혜택】 지금 신청 시 제공되는 특별한 혜택 모음. 🔥",
+                "【긴급마감】 잔여 물량이 얼마 남지 않았습니다. 서두르세요! 🚨",
+                "【호갱노노】 실거주자들의 리얼한 반응과 입지 분석 데이터. 📊",
+                "【방문예약】 기다림 없는 모델하우스 방문, 지금 바로 예약하세요. 🎁"
+            ],
             "media_mix": [
                 {"media": "메타/인스타", "feature": "정밀 타켓팅", "reason": "관심사 기반 도달", "strategy_example": "혜택 강조 광고"},
                 {"media": "네이버", "feature": "검색 기반", "reason": "구매 의향 고객 확보", "strategy_example": "지역 키워드 점유"},
