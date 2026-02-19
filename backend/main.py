@@ -22,7 +22,8 @@ genai.configure(api_key=GEMINI_API_KEY)
 import logging
 import re
 
-# 로깅 설정
+# 구글 시트 웹훅 URL (사용자가 설정한 URL)
+GOOGLE_SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzZLa5HVuEdHpoD3ip6908XGyagJFsfsfJAmlfxLOekrqad0625QbYV4TLai4xHswwDfw/exec"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -667,6 +668,24 @@ async def submit_lead(req: LeadSubmitRequest):
             session.add(new_lead)
             session.commit()
             logger.info(f"New lead submitted: {req.name} ({req.site})")
+            
+            # 구글 시트 연동 (웹훅 URL이 설정된 경우)
+            if GOOGLE_SHEET_WEBHOOK_URL:
+                try:
+                    async with httpx.AsyncClient() as client:
+                        payload = {
+                            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "name": req.name,
+                            "phone": req.phone,
+                            "rank": req.rank,
+                            "site": req.site
+                        }
+                        # 비동기로 전송하지만 결과 대기는 하지 않음 (성능 최적화)
+                        asyncio.create_task(client.post(GOOGLE_SHEET_WEBHOOK_URL, json=payload, timeout=5.0))
+                        logger.info("Google Sheet webhook triggered")
+                except Exception as ex:
+                    logger.error(f"Google Sheet sync error: {ex}")
+
         return {"status": "success", "message": "Lead submitted successfully"}
     except Exception as e:
         logger.error(f"Lead submission error: {e}")
