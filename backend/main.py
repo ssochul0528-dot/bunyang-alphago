@@ -672,7 +672,8 @@ async def submit_lead(req: LeadSubmitRequest):
             # 구글 시트 연동 (웹훅 URL이 설정된 경우)
             if GOOGLE_SHEET_WEBHOOK_URL:
                 try:
-                    async with httpx.AsyncClient() as client:
+                    # 구글 매크로는 리디렉션을 사용하므로 follow_redirects=True가 필수입니다.
+                    async with httpx.AsyncClient(follow_redirects=True) as client:
                         payload = {
                             "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                             "name": req.name,
@@ -680,9 +681,9 @@ async def submit_lead(req: LeadSubmitRequest):
                             "rank": req.rank,
                             "site": req.site
                         }
-                        # 비동기로 전송하지만 결과 대기는 하지 않음 (성능 최적화)
-                        asyncio.create_task(client.post(GOOGLE_SHEET_WEBHOOK_URL, json=payload, timeout=5.0))
-                        logger.info("Google Sheet webhook triggered")
+                        # 데이터가 확실히 전송될 때까지 기다립니다.
+                        response = await client.post(GOOGLE_SHEET_WEBHOOK_URL, json=payload, timeout=8.0)
+                        logger.info(f"Google Sheet webhook triggered. Status: {response.status_code}")
                 except Exception as ex:
                     logger.error(f"Google Sheet sync error: {ex}")
 
