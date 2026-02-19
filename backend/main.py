@@ -348,14 +348,18 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
     try:
         req = request if request else AnalyzeRequest()
         
-        # 정보 추출
         field_name = getattr(req, 'field_name', "분석 현장")
         address = getattr(req, 'address', "지역 정보 없음")
         product_category = getattr(req, 'product_category', "아파트")
         sales_price = float(req.sales_price or 0.0)
         target_price = float(req.target_area_price or 0.0)
         
-        # supply_volume 처리 (문자열로 올 수도 있음)
+        # 기본 변수 미리 계산 (프롬프트 및 Fallback 공용)
+        market_gap = target_price - sales_price
+        gap_status = "저렴" if market_gap > 0 else "높은"
+        gap_percent = abs(round((market_gap / (sales_price if sales_price > 0 else 1)) * 100, 1))
+        
+        # supply_volume 처리
         try:
             supply_volume = int(req.supply_volume or 0)
         except:
@@ -363,12 +367,14 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             
         main_concern = req.main_concern or "기타"
         field_keypoints = getattr(req, 'field_keypoints', "")
+        dp = str(req.down_payment) if req.down_payment else "10%"
+        ib = req.interest_benefit or "무이자"
+        fkp = field_keypoints if field_keypoints else "탁월한 입지와 미래가치"
         
-        # 1. 실시간 여론 및 데이터 수집 (네이버 뉴스/블로그 검색)
+        # 1. 실시간 여론 및 데이터 수집
         search_context = ""
         try:
             async with httpx.AsyncClient() as client:
-                # 현장명으로 최신 정보 검색
                 search_url = "https://search.naver.com/search.naver"
                 search_params = {"query": f"{field_name} 분양가 모델하우스", "where": "view"}
                 h = {"User-Agent": "Mozilla/5.0"}
@@ -376,7 +382,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 if res.status_code == 200:
                     search_context = res.text[:3000]
         except Exception as e:
-            logger.warning(f"Live search skipped due to error: {e}")
+            logger.warning(f"Live search skipped: {e}")
 
         # 2. AI 분석을 위한 프롬프트 작성
         prompt = f"""
@@ -468,7 +474,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         location_score = 75 + random.randint(-5, 10)
         benefit_score = 70 + random.randint(-5, 10)
         total_score = int((price_score * 0.4 + location_score * 0.3 + benefit_score * 0.3))
-        market_gap_percent = ((target_price - sales_price) / (sales_price if sales_price > 0 else 1)) * 100
+        # gap_percent는 위에서 미리 계산됨
 
         return {
             "score": int(total_score),
@@ -514,10 +520,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         err_detail = str(e)
         logger.error(f"Critical analyze error: {e}\n{traceback.format_exc()}")
         
-        # [Smart Local Engine] AI 응답 실패 시 작동하는 지능형 분석 로직
-        market_gap = target_price - sales_price
-        gap_status = "저렴" if market_gap > 0 else "높은"
-        gap_percent = abs(round((market_gap / (sales_price if sales_price > 0 else 1)) * 100, 1))
+        # Fallback 변수 (이미 함수 상단에서 계산됨)
         
         # 상품군별 특화 멘트
         cat_msg = "주거 선호도가 높은 아파트" if "아파트" in product_category else "수익형 부동산으로서 가치가 높은 상품"
