@@ -78,6 +78,15 @@ class Site(SQLModel, table=True):
     status: Optional[str] = None
     last_updated: datetime.datetime = Field(default_factory=datetime.datetime.now)
 
+class Lead(SQLModel, table=True):
+    __table_args__ = {'extend_existing': True}
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    phone: str
+    rank: str
+    site: str
+    created_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
+
 # --- NATIONWIDE START DATA ---
 MOCK_SITES = [
     {"id": "h_uj1", "name": "해링턴 플레이스 의정부역", "address": "경기도 의정부시", "brand": "해링턴", "category": "아파트", "price": 2300, "target_price": 2600, "supply": 612, "status": "공고종료"},
@@ -618,10 +627,9 @@ async def import_csv_data():
                         existing.target_price = float(row['target_price'])
                         existing.supply = int(row['supply'])
                         existing.status = row['status'] if row['status'] else None
-                        existing.last_updated = datetime.datetime.now()
                         updated += 1
                     else:
-                        new_site = Site(
+                        session.add(Site(
                             id=site_id,
                             name=row['name'],
                             address=row['address'],
@@ -631,23 +639,43 @@ async def import_csv_data():
                             target_price=float(row['target_price']),
                             supply=int(row['supply']),
                             status=row['status'] if row['status'] else None
-                        )
-                        session.add(new_site)
+                        ))
                         imported += 1
-                
                 session.commit()
-        
-        return {
-            "status": "success",
-            "imported": imported,
-            "updated": updated,
-            "total": imported + updated,
-            "message": f"CSV import 완료: 신규 {imported}개, 업데이트 {updated}개"
-        }
+        return {"status": "success", "imported": imported, "updated": updated}
     except Exception as e:
         logger.error(f"CSV import error: {e}")
         return {"status": "error", "message": str(e)}
 
+class LeadSubmitRequest(BaseModel):
+    name: str
+    phone: str
+    rank: str
+    site: str
+
+@app.post("/submit-lead")
+async def submit_lead(req: LeadSubmitRequest):
+    """모수 신청(리드) 제출 API"""
+    try:
+        with Session(engine) as session:
+            new_lead = Lead(
+                name=req.name,
+                phone=req.phone,
+                rank=req.rank,
+                site=req.site
+            )
+            session.add(new_lead)
+            session.commit()
+            logger.info(f"New lead submitted: {req.name} ({req.site})")
+        return {"status": "success", "message": "Lead submitted successfully"}
+    except Exception as e:
+        logger.error(f"Lead submission error: {e}")
+        raise HTTPException(status_code=500, detail="리드 제출 중 서버 오류가 발생했습니다.")
+@app.get("/")
+async def root():
+    return {"message": "Bunyang AlphaGo API is running"}
+
 if __name__ == "__main__":
+    create_db_and_tables()
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
