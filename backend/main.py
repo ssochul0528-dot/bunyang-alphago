@@ -22,6 +22,25 @@ genai.configure(api_key=GEMINI_API_KEY)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def extract_json(text: str):
+    """문자열에서 JSON 블록만 추출하는 함수"""
+    try:
+        # ```json ... ``` 형식 추출
+        if "```json" in text:
+            start = text.find("```json") + 7
+            end = text.find("```", start)
+            return json.loads(text[start:end].strip())
+        # ``` ... ``` 형식 추출
+        elif "```" in text:
+            start = text.find("```") + 3
+            end = text.find("```", start)
+            return json.loads(text[start:end].strip())
+        # 전체가 JSON인 경우
+        return json.loads(text.strip())
+    except Exception as e:
+        logger.error(f"JSON extraction failed: {e}")
+        return None
+
 # --- Database Setup ---
 sqlite_file_name = "database.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
@@ -373,25 +392,33 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         }}
         """
 
-        # 3. Gemini 모델 시도 (명시적 모델 경로 사용)
+        # 3. Gemini 모델 시도 (유료 키 가용 모델 우선 순위 조정)
         ai_data = None
-        for model_name in ['models/gemini-1.5-flash', 'models/gemini-1.5-pro', 'models/gemini-2.0-flash']:
+        # 유료 계정에서 선호되는 2.0 및 latest 모델 우선 시도
+        model_candidates = [
+            'models/gemini-2.0-flash', 
+            'models/gemini-1.5-flash', 
+            'models/gemini-flash-latest',
+            'models/gemini-1.5-pro',
+            'models/gemini-pro-latest'
+        ]
+        
+        for model_name in model_candidates:
             try:
+                logger.info(f"Attempting AI analysis with model: {model_name}")
                 model = genai.GenerativeModel(model_name)
-                # 안전을 위해 타임아웃 설정을 둔 모델 옵션이 있다면 좋으나 SDK 기본값 사용
                 response = model.generate_content(prompt)
                 if response and response.text:
-                    ai_text = response.text.replace('```json', '').replace('```', '').strip()
-                    ai_data = json.loads(ai_text)
+                    ai_data = extract_json(response.text)
                     if ai_data: 
                         logger.info(f"Success with model: {model_name}")
                         break
             except Exception as e:
-                logger.error(f"Try model {model_name} failed: {e}")
+                logger.error(f"Model {model_name} failed: {e}")
                 continue
 
         if not ai_data:
-            raise Exception("모든 AI 모델이 응답에 실패했습니다. (쿼터 초과 또는 API 오류)")
+            raise Exception("모든 AI 모델이 응답에 실패했거나 올바른 JSON 형식이 아닙니다.")
 
         # 점수 계산 logic
         price_score = min(100, max(0, 100 - abs(sales_price - target_price) / (target_price if target_price > 0 else 1) * 100))
@@ -483,7 +510,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 {"subject": "상품성", "A": 90, "B": 70, "fullMark": 100}
             ],
             "target_persona": f"{address} 인근 실거주를 희망하는 3040 맞벌이 부부 및 안정적 자산 증식을 노리는 50대 투자자",
-            "target_audience": ["#내집마련", "#실수요자", f"#{address.split()[0]}", "#프리미엄", "#분양정보"],
+            "target_audience": ["#내집마련", "#실수요자", f"#{address.split()[0] if address and address.split() else '분양'}", "#프리미엄", "#분양정보"],
             "competitors": [
                 {"name": "인근 비교 단지 A", "price": target_price, "distance": "1.1km"},
                 {"name": "인근 비교 단지 B", "price": round(target_price * 1.05), "distance": "2.3km"}
