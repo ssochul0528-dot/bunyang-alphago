@@ -27,7 +27,8 @@ import {
   User,
   LogOut,
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  FileText
 } from "lucide-react";
 import {
   RadarChart,
@@ -59,7 +60,7 @@ interface AnalysisResult {
   target_audience: string[];
   target_persona: string;
   competitors: { name: string; price: number; gap_label: string }[];
-  roi_forecast: { expected_leads: number; expected_cpl: number; conversion_rate: number };
+  roi_forecast: { expected_leads: number; expected_cpl: number; expected_ctr: number; conversion_rate: number };
   keyword_strategy: string[];
   weekly_plan: string[];
   lms_copy_samples: string[];
@@ -340,7 +341,7 @@ export default function BunyangAlphaGo() {
         target_audience: ["실거주자", "투자자"],
         target_persona: "수도권 거주 3040 세대",
         competitors: [{ name: "A단지", price: targetPrice, gap_label: "비슷함" }],
-        roi_forecast: { expected_leads: 50, expected_cpl: 45000, conversion_rate: 2.1 },
+        roi_forecast: { expected_leads: 50, expected_cpl: 45000, expected_ctr: 1.5, conversion_rate: 2.1 },
         keyword_strategy: ["분양", "신축", "역세권"],
         weekly_plan: [
           "1주차: 타겟 분석 및 광고 소재 기획",
@@ -1363,7 +1364,7 @@ export default function BunyangAlphaGo() {
                   <div className="flex flex-col gap-2">
                     <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">현재 현장의 가장 큰 고민 선택</label>
                     <div className="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
-                      {["DB 수량 부족", "DB 질 저하", "방문객 없음"].map(v => (
+                      {["DB 수량 부족", "DB 질 저하", "낮은 클릭률(CTR)", "방문객 없음"].map(v => (
                         <button
                           key={v}
                           onClick={() => {
@@ -1435,10 +1436,15 @@ export default function BunyangAlphaGo() {
 
                     <div className="mb-6 invisible h-0" />
 
-                    <div className="mb-8 p-4 bg-slate-950/50 rounded-2xl border border-slate-800">
-                      <div className="flex justify-between items-center mb-4">
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">실시간 예산 조정</span>
-                        <span className="text-sm font-black text-white">{simulationBudget.toLocaleString()}만원</span>
+                    <div className="mb-10 p-6 bg-slate-950/70 rounded-[2rem] border border-blue-500/30 shadow-2xl">
+                      <div className="flex justify-between items-center mb-6">
+                        <span className="text-sm font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                          <Zap size={16} className="fill-blue-400" />
+                          실시간 예산 조정
+                        </span>
+                        <span className="text-2xl font-black text-white bg-blue-600/20 px-4 py-1.5 rounded-xl border border-blue-500/30">
+                          {simulationBudget.toLocaleString()}<span className="text-xs ml-1 text-slate-400">만원</span>
+                        </span>
                       </div>
                       <input
                         type="range"
@@ -1447,67 +1453,102 @@ export default function BunyangAlphaGo() {
                         step="100"
                         value={simulationBudget}
                         onChange={(e) => setSimulationBudget(Number(e.target.value))}
-                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                        className="w-full h-3 bg-slate-800 rounded-xl appearance-none cursor-pointer accent-blue-500 mb-4"
                       />
-                      <div className="flex justify-between mt-2">
-                        <span className="text-[9px] text-slate-600">100만원</span>
-                        <span className="text-[9px] text-slate-600">1억원</span>
+                      <div className="flex justify-between">
+                        <span className="text-xs font-bold text-slate-600">100만원</span>
+                        <span className="text-xs font-bold text-slate-600">1억원</span>
                       </div>
                     </div>
 
-                    <div className="p-6 bg-indigo-600 rounded-2xl shadow-xl shadow-indigo-900/40 border border-indigo-400/30">
-                      <div className="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-2">AI Performance Advice</div>
-                      <p className="text-xs font-bold leading-relaxed">{result.ad_recommendation}</p>
+                    <div className="p-8 bg-indigo-600 rounded-[2rem] shadow-2xl shadow-indigo-900/40 border border-indigo-400/30">
+                      <div className="text-xs font-black text-indigo-100 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <Cpu size={14} /> AI Performance Advice
+                      </div>
+                      <p className="text-sm font-bold leading-relaxed">{result.ad_recommendation}</p>
                     </div>
                   </div>
 
-                  <div className="w-full lg:w-2/3 grid grid-cols-1 md:grid-cols-3 gap-6 relative">
-                    {/* Pipeline Connectors (desktop only) */}
-                    <div className="hidden md:block absolute top-1/2 left-[30%] w-[10%] h-px bg-gradient-to-r from-blue-500/50 to-transparent -translate-y-1/2" />
-                    <div className="hidden md:block absolute top-1/2 left-[63%] w-[10%] h-px bg-gradient-to-r from-blue-500/50 to-transparent -translate-y-1/2" />
-
+                  <div className="w-full lg:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-6 relative">
                     {/* Step 1: Budget */}
-                    <div className="p-8 bg-slate-950/50 rounded-3xl border border-slate-800 text-center flex flex-col items-center group hover:border-blue-500/50 transition-all">
-                      <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center mb-4 text-slate-500 group-hover:text-blue-400 transition-colors">
-                        <TrendingUp size={20} />
+                    <div className="p-8 bg-slate-950/50 rounded-[2.5rem] border border-slate-800 text-center flex flex-col items-center justify-center group hover:border-blue-500/50 transition-all hover:bg-slate-900/50">
+                      <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mb-5 text-slate-500 group-hover:text-blue-400 transition-colors shadow-inner">
+                        <TrendingUp size={32} />
                       </div>
-                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">집행 예산 설정</div>
-                      <div className="text-2xl font-black text-white">
+                      <div className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">집행 예산</div>
+                      <div className="text-4xl font-black text-white">
                         <AnimatedNumber value={simulationBudget} />
-                        <span className="text-xs text-slate-500 ml-1">만원</span>
+                        <span className="text-sm text-slate-500 ml-1">만원</span>
                       </div>
                     </div>
 
-                    {/* Step 2: Leads */}
-                    <div className="p-8 bg-blue-900/10 rounded-3xl border border-blue-500/30 text-center flex flex-col items-center relative blue-shadow">
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-blue-600 text-[10px] font-black rounded-lg">LIVE ESTIMATE</div>
-                      <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-4 text-white shadow-lg shadow-blue-900/40">
-                        <Target size={20} />
+                    {/* Step 2: CTR */}
+                    <div className="p-8 bg-slate-950/50 rounded-[2.5rem] border border-slate-800 text-center flex flex-col items-center justify-center group hover:border-orange-500/50 transition-all hover:bg-slate-900/50">
+                      <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mb-5 text-slate-500 group-hover:text-orange-400 transition-colors shadow-inner">
+                        <Target size={32} />
                       </div>
-                      <div className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-2">예상 DB 확보량</div>
-                      <div className="text-3xl font-black text-white">
-                        <AnimatedNumber value={(result.roi_forecast.expected_leads / monthlyBudget) * simulationBudget} />
-                        <span className="text-xs text-blue-400 ml-1">개</span>
-                      </div>
-                      <div className="mt-4 text-[11px] font-bold text-slate-500">
-                        CPL: <AnimatedNumber value={result.roi_forecast.expected_cpl || 0} />원
+                      <div className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">예상 클릭률(CTR)</div>
+                      <div className="text-4xl font-black text-white">
+                        <AnimatedNumber value={result.roi_forecast.expected_ctr || 1.8} decimals={1} />
+                        <span className="text-sm text-slate-500 ml-1">%</span>
                       </div>
                     </div>
 
-                    {/* Step 3: Conversion */}
-                    <div className="p-8 bg-emerald-900/10 rounded-3xl border border-emerald-500/20 text-center flex flex-col items-center group hover:border-emerald-500/50 transition-all">
-                      <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center mb-4 text-slate-500 group-hover:text-emerald-400 transition-colors">
-                        <Zap size={20} />
+                    {/* Step 3: Leads */}
+                    <div className="p-8 bg-blue-900/10 rounded-[2.5rem] border border-blue-500/30 text-center flex flex-col items-center justify-center relative shadow-[0_20px_40px_-15px_rgba(59,130,246,0.3)] hover:bg-blue-900/20 transition-all">
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-blue-600 text-[10px] font-black rounded-full shadow-lg border border-blue-400/30 tracking-widest">LIVE ESTIMATE</div>
+                      <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-5 text-white shadow-xl shadow-blue-900/40">
+                        <ShieldCheck size={32} />
                       </div>
-                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">예상 상담/방문</div>
-                      <div className="text-2xl font-black text-white">
-                        <AnimatedNumber value={((result.roi_forecast.expected_leads / monthlyBudget) * simulationBudget) * result.roi_forecast.conversion_rate / 100} decimals={1} />
-                        <span className="text-xs text-slate-500 ml-1">명</span>
+                      <div className="text-[11px] font-black text-blue-300 uppercase tracking-[0.2em] mb-3">예상 DB 확보</div>
+                      <div className="text-5xl font-black text-white">
+                        <AnimatedNumber value={(result.roi_forecast.expected_leads / (Number(monthlyBudget) || 1)) * simulationBudget} />
+                        <span className="text-sm text-blue-400 ml-1">개</span>
                       </div>
-                      <div className="mt-4 text-[11px] font-bold text-emerald-400/70">전환율: {result.roi_forecast.conversion_rate}%</div>
+                    </div>
+
+                    {/* Step 4: Conversion */}
+                    <div className="p-8 bg-emerald-900/10 rounded-[2.5rem] border border-emerald-500/20 text-center flex flex-col items-center justify-center group hover:border-emerald-500/50 transition-all hover:bg-emerald-900/20">
+                      <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mb-5 text-slate-500 group-hover:text-emerald-400 transition-colors shadow-inner">
+                        <Zap size={32} />
+                      </div>
+                      <div className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">예상 방문/전환</div>
+                      <div className="text-4xl font-black text-white">
+                        <AnimatedNumber value={((result.roi_forecast.expected_leads / (Number(monthlyBudget) || 1)) * simulationBudget) * result.roi_forecast.conversion_rate / 100} decimals={1} />
+                        <span className="text-sm text-slate-500 ml-1">명</span>
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {/* 추가된 강력한 CTA 버튼 */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="mt-12 w-full"
+                >
+                  <motion.button
+                    whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(79, 70, 229, 0.4)" }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setLeadForm(prev => ({ ...prev, site: fieldName }));
+                      setShowLeadModal(true);
+                    }}
+                    className="w-full py-6 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600 bg-[length:200%_auto] hover:bg-right text-white rounded-3xl font-black text-lg transition-all shadow-2xl flex items-center justify-center gap-4 relative overflow-hidden group"
+                  >
+                    <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
+                    <FileText className="text-white group-hover:rotate-12 transition-transform" size={24} />
+                    <span className="tracking-tight">현장 정밀 진단 리포트 무료받기</span>
+                    <div className="flex items-center gap-1 bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold">
+                      <Zap size={10} className="fill-white" /> 신청폭주
+                    </div>
+                    <ChevronRight className="group-hover:translate-x-2 transition-transform" size={24} />
+                  </motion.button>
+                  <p className="text-center text-[11px] text-slate-500 mt-4 font-bold italic">
+                    * 리포트 신청 시 담당자가 24시간 이내에 정밀 분석 자료를 송부해 드립니다.
+                  </p>
+                </motion.div>
               </div>
 
               {/* Dashboard Row 5: LMS Copy Sample with Tabs */}
@@ -1694,7 +1735,9 @@ export default function BunyangAlphaGo() {
 
               {/* Dashboard Row 7: Weekly Roadmap */}
               <div className="lg:col-span-12 glass p-8 rounded-3xl mt-6">
-                <h3 className="text-lg font-bold mb-8 flex items-center gap-2"><Zap className="text-yellow-500" size={18} /> 4주 집중 마케팅 로드맵</h3>
+                <h3 className="text-lg font-bold mb-8 flex items-center gap-2">
+                  <Zap className="text-yellow-500" size={18} /> 4주 집중 마케팅 로드맵
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   {(result.weekly_plan || []).map((step: string, idx: number) => (
                     <div key={idx} className="relative p-6 bg-slate-900/30 rounded-2xl border border-slate-800 group hover:border-blue-500/30 transition-all">
@@ -1704,10 +1747,69 @@ export default function BunyangAlphaGo() {
                   ))}
                 </div>
               </div>
+
+              {/* 최하단 강력한 CTA 버튼 섹션 */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                className="lg:col-span-12 mt-12 mb-12"
+              >
+                <div className="relative p-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 rounded-[2.5rem] shadow-[0_20px_50px_-15px_rgba(59,130,246,0.5)]">
+                  <div className="bg-slate-950 rounded-[2.3rem] p-10 md:p-14 text-center overflow-hidden relative">
+                    {/* 데코레이션 배경 */}
+                    <div className="absolute top-0 left-0 w-full h-full bg-blue-600/5 pointer-events-none" />
+                    <div className="absolute -top-24 -left-24 w-64 h-64 bg-blue-600/10 rounded-full blur-[80px]" />
+                    <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-indigo-600/10 rounded-full blur-[80px]" />
+
+                    <div className="relative z-10 max-w-2xl mx-auto">
+                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/20 rounded-full border border-blue-500/30 mb-8">
+                        <Zap size={14} className="text-blue-400 fill-blue-400" />
+                        <span className="text-[11px] font-black text-blue-300 uppercase tracking-widest">Premium Analysis Report</span>
+                      </div>
+
+                      <h2 className="text-3xl md:text-4xl font-black text-white mb-6 leading-tight">
+                        데이터로 증명된 <span className="text-blue-500">필승 전략</span>,<br />
+                        상세 리포트로 지금 바로 받으시겠습니까?
+                      </h2>
+
+                      <p className="text-slate-400 text-sm md:text-base mb-10 leading-relaxed font-medium">
+                        단순한 요약 분석을 넘어, 지역별 수급 현황부터 매체별 예상 성과까지<br className="hidden md:block" />
+                        전문가가 직접 검수한 <span className="text-white">실전용 정밀 대외비 리포트</span>를 보내드립니다.
+                      </p>
+
+                      <motion.button
+                        whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(59, 130, 246, 0.4)" }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          setLeadForm(prev => ({ ...prev, site: fieldName }));
+                          setShowLeadModal(true);
+                        }}
+                        className="group relative inline-flex items-center justify-center px-10 py-6 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-xl transition-all blue-glow overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
+                        <FileText className="mr-3" size={24} />
+                        현장 정밀 진단 리포트 무료받기
+                        <ChevronRight className="ml-3 group-hover:translate-x-2 transition-transform" size={24} />
+                      </motion.button>
+
+                      <div className="mt-8 flex items-center justify-center gap-6">
+                        <div className="flex -space-x-3">
+                          {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="w-8 h-8 rounded-full border-2 border-slate-950 bg-slate-800 flex items-center justify-center overflow-hidden">
+                              <img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="user" />
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-bold">방금 전 <span className="text-slate-300 underline">서울 마포구 현장</span> 리포트 신청 완료</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             </motion.div>
-          )
-        }
-      </main >
+          )}
+      </main>
 
       {/* Success Notification Modal */}
       <AnimatePresence>
@@ -2036,6 +2138,6 @@ export default function BunyangAlphaGo() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </div >
   );
 }

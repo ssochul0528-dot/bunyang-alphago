@@ -474,10 +474,13 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             "copywriting": ai_data.get("copywriting") or f"[{field_name}] 지금 바로 만나보세요.",
             "keyword_strategy": ai_data.get("keyword_strategy") or [field_name, "분양정보"],
             "weekly_plan": ai_data.get("weekly_plan") or ["1주차: 마케팅 기획"],
-            "roi_forecast": ai_data.get("roi_forecast") or {"expected_leads": 100, "expected_cpl": 50000, "conversion_rate": 2.5},
+            "roi_forecast": ai_data.get("roi_forecast") or {"expected_leads": 100, "expected_cpl": 50000, "conversion_rate": 2.5, "expected_ctr": 1.8},
             "lms_copy_samples": ai_data.get("lms_copy_samples") or [],
             "channel_talk_samples": ai_data.get("channel_talk_samples") or []
         }
+        # Ensure expected_ctr is present if roi_forecast was provided by AI but missing this field
+        if "expected_ctr" not in safe_data["roi_forecast"]:
+            safe_data["roi_forecast"]["expected_ctr"] = 1.8
 
         # 점수 계산 logic
         price_score = min(100, max(0, 100 - abs(sales_price - target_price) / (target_price if target_price > 0 else 1) * 100))
@@ -580,7 +583,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 "3주: 모델하우스 방문 예약 이벤트 및 집중 DB 관리",
                 "4주: 청약 전 마감 입박 메시지 및 최종 상담 전환 활동"
             ],
-            "roi_forecast": {"expected_leads": 120, "expected_cpl": 48000, "conversion_rate": 3.2},
+            "roi_forecast": {"expected_leads": 120, "expected_cpl": 48000, "expected_ctr": 1.7, "conversion_rate": 3.2},
             "lms_copy_samples": [
                 f"【{field_name}】\n\n🔥 파격조건변경!!\n☛ 계약금 10%\n☛ 중도금 무이자 혜택 확정\n☛ 실거주의무 및 전매제한 해제\n\n■ 초특급 입지+광역 교통망 확보\n🚅 GTX 수혜 및 지하철 연장(예정) 수혜지\n🏫 단지 바로 앞 초·중·고 학세권\n🏙️ {address} 중심 상권 및 생활 인프라 완비\n\n■ 브랜드 & 자산 가치\n▶ 주변 시세 대비 {gap_percent}% 낮은 압도적 분양가\n▶ {field_keypoints if field_keypoints else '프리미엄 특화 설계'} 적용\n▶ {supply_volume}세대 랜드마크 스케일\n\n🎁 예약 방문 시 '신세계 상품권' 증정\n🎉 계약 시 '고급 가전 사은품' 특별 증정\n☎️ 공식문의 : 1600-0000",
                 f"[공식본부발송] {field_name} 로열층 선착순 안내\n(전세대 선호도 높은 {product_category} 구성)\n\n💰 강력한 금융 혜택\n✅ 계약금 정액제 실시\n✅ 중도금 60% 전액 무이자\n✅ 실거주의무 無 / 무제한 전매 가능\n\n🏡 현장 특장점\n- {address} 내 마지막 노다지 핵심 황금 자리\n- 시세 차익만 약 {abs(market_gap):.0f}만원의 강력한 가치\n- 도보권 명품 학군 및 대단지 프리미엄 커뮤니티\n- {field_keypoints if field_keypoints else '입주민 전용 특화 서비스'}\n\n고민하시는 사이 마지막 로열층이 빠르게 소진 중입니다.\n☎️ 대표번호: 010-0000-0000",
