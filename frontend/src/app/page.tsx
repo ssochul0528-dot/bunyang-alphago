@@ -229,9 +229,9 @@ export default function BunyangAlphaGo() {
   // Helper styles applied via standard HTML classes
   const inputClass = "w-full bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-all";
 
-  // Manual San fallback
+  // Manual Scan fallback
   const handleManualScan = () => {
-    if (!address) return;
+    if (!address || isSearching || isScanning) return;
     setIsScanning(true);
     setSearchResults([]);
     setFieldName(address + " (신규 등록)");
@@ -241,6 +241,16 @@ export default function BunyangAlphaGo() {
       setIsScanning(false);
       setShowConfig(true);
     }, 1500);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      if (!isSearching && searchResults.length > 0) {
+        handleSelectSite(searchResults[0]);
+      } else {
+        handleManualScan();
+      }
+    }
   };
 
   const handleSelectSite = async (site: { id: string, name: string, address: string }) => {
@@ -644,7 +654,7 @@ export default function BunyangAlphaGo() {
                       onChange={(e) => setAddress(e.target.value)}
                       placeholder="예) 마포역 에테르노, 의정부 해링턴 플레이스..."
                       className="flex-1 bg-transparent border-none outline-none py-5 text-xl text-white font-bold placeholder:text-slate-700"
-                      onKeyPress={(e) => e.key === 'Enter' && handleManualScan()}
+                      onKeyPress={handleKeyPress}
                     />
                   </div>
                   <button
