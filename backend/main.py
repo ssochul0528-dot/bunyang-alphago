@@ -15,7 +15,7 @@ import google.generativeai as genai
 import json
 
 # Gemini API 설정
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyBlZMZOEpfCkXiRWjfUADR_nVmyZdsTBRE")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyCpLoq9OIzHB5Z0xJyXbUrALsh4ePqgVV0")
 genai.configure(api_key=GEMINI_API_KEY)
 
 # 로깅 설정
