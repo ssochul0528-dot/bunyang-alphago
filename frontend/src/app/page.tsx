@@ -132,6 +132,7 @@ export default function BunyangAlphaGo() {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showLeadModal, setShowLeadModal] = useState(false);
+  const [showLeadSuccess, setShowLeadSuccess] = useState(false);
   const [leadForm, setLeadForm] = useState({ name: "", phone: "", rank: "", site: "" });
   const [leadSource, setLeadSource] = useState("");
   const [isSubmittingLead, setIsSubmittingLead] = useState(false);
@@ -464,8 +465,8 @@ export default function BunyangAlphaGo() {
         body: JSON.stringify({ ...leadForm, source: leadSource })
       });
       if (res.ok) {
-        alert("신청이 완료되었습니다. 담당자가 곧 연락드리겠습니다.");
         setShowLeadModal(false);
+        setShowLeadSuccess(true);
         setLeadForm({ name: "", phone: "", rank: "", site: "" });
       } else {
         alert("신청 중 오류가 발생했습니다.");
@@ -2181,6 +2182,59 @@ export default function BunyangAlphaGo() {
           </div>
         )}
       </AnimatePresence>
-    </div >
+
+      {/* Lead Success Modal */}
+      <AnimatePresence>
+        {showLeadSuccess && (
+          <div className="fixed inset-0 z-[130] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLeadSuccess(false)}
+              className="absolute inset-0 bg-slate-950/90 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm bg-gradient-to-b from-emerald-900/20 to-slate-900 border border-emerald-500/50 rounded-[2.5rem] p-10 overflow-hidden text-center shadow-[0_0_50px_-12px_rgba(16,185,129,0.5)]"
+            >
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 animate-pulse" />
+
+              <div className="mb-6 relative">
+                <div className="w-20 h-20 bg-emerald-600/20 rounded-3xl flex items-center justify-center mx-auto border border-emerald-500/30">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", damping: 10, stiffness: 100, delay: 0.2 }}
+                  >
+                    <CheckCircle2 className="text-emerald-500" size={48} />
+                  </motion.div>
+                </div>
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-emerald-500 rounded-full blur-xl opacity-50" />
+              </div>
+
+              <h2 className="text-2xl font-black text-white mb-4">신청 완료!</h2>
+              <p className="text-sm text-slate-400 mb-8 leading-relaxed">
+                성공적으로 접수되었습니다.<br />
+                담당 전문가가 <span className="text-emerald-400 font-bold">24시간 이내</span>에<br />
+                정밀 분석 리포트를 송부해 드립니다.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setShowLeadSuccess(false)}
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black text-sm transition-all shadow-lg flex items-center justify-center group"
+              >
+                닫기
+                <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" size={16} />
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
+

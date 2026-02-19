@@ -102,6 +102,20 @@ MOCK_SITES = [
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+    
+    # Migration: Add source column to lead table if it doesn't exist
+    from sqlalchemy import text
+    try:
+        with engine.connect() as conn:
+            # PRAGMA table_info returns (id, name, type, notnull, dflt_value, pk)
+            columns = [row[1] for row in conn.execute(text("PRAGMA table_info(lead)")).fetchall()]
+            if columns and 'source' not in columns:
+                conn.execute(text("ALTER TABLE lead ADD COLUMN source TEXT DEFAULT '알 수 없음'"))
+                conn.commit()
+                logger.info("Database migration: Added 'source' column to 'lead' table.")
+    except Exception as e:
+        logger.error(f"Migration error: {e}")
+
     with Session(engine) as session:
         for s_data in MOCK_SITES:
             existing = session.get(Site, s_data["id"])
