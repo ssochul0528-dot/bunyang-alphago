@@ -463,7 +463,11 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 f"[마감임박] {field_name} 잔여세대 선착순 모집. 지금 바로 전화주세요."
             ],
             "channel_talk_samples": ["분양가 상세 안내", "모델하우스 위치 정보", "실시간 청약 경쟁률 문의"],
-            "media_mix": [{"media": "메타/인스타", "feature": "정밀타겟", "reason": "높은도달률", "strategy_example": "영상광고"}]
+            "media_mix": [
+                {"media": "메타/인스타", "feature": "정밀 타켓팅", "reason": "관심사 기반 도달", "strategy_example": "혜택 강조 광고"},
+                {"media": "네이버", "feature": "검색 기반", "reason": "구매 의향 고객 확보", "strategy_example": "지역 키워드 점유"},
+                {"media": "카카오", "feature": "모먼트 타겟", "reason": "지역 기반 노출", "strategy_example": "방문 유도"}
+            ]
         }
 
 @app.get("/import-csv")
