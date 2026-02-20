@@ -443,11 +443,16 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 "🚨 {{field_name}} 제로계약금 수준 마감 임박!\\n\\n🔥 전세대 영구 조망 및 프리미엄 특화 설계\\n🔥 현재 84타입 완판 직전, 잔여 소수 분양\\n🔥 {{interest_benefit}}, 주택수 미포함 수혜 단지\\n\\n🚗 사통팔달 교통망 확정 및 서울 접근성 혁신\\n🏞️ 대형 공원과 수변 조망을 품은 숲세권/물세권\\n🏗️ 인접 대규모 개발 호재로 인한 미래 가치 급상승\\n\\n🎁 선착순 계약축하 이벤트 진행 중\\n예약 방문만 해도 '고급 와인 및 사은품' 증정\\n📞 대표번호: 1811-0000"
             ],
             "channel_talk_samples": [
-                "🔥 {{field_name}} | 파격 조건변경 소식!\\n\\n현재 호갱노노에서 가장 뜨거운 관심을 받는 이유, 드디어 공개합니다! 💎\\n\\n✅ 핵심 혜택 요약:\\n- 계약금 {{down_payment}} (입주 전 전매 가능)\\n- 금리 걱정 없는 {{interest_benefit}} 혜택 확정\\n- 인근 시세 대비 {gap_percent}% 낮은 압도적 경쟁력\\n\\n'이 가격에 이 교통망이 정말인가요?' 라는 문의가 빗발치고 있습니다. 🚅 GTX-D 등 광역 교통망의 최중심, {{address}}의 자존심을 지금 바로 선점하십시오.\\n\\n📢 실시간 로열층 잔여 수량 확인 및 입지 분석 리포트 신청하기 👇\\n☎️ 대표문의 : 1600-0000",
-                "🚨 [긴급] {{field_name}} 로열층 선착순 마감 직전!\\n\\n망설이는 순간 기회는 지나갑니다. 현재 {{field_name}} 현장은 방문객 폭주로 인해 남은 물량이 실시간으로 지워지고 있습니다! 💨\\n\\n💎 왜 지금 {{field_name}}인가?\\n1. {{address}} 내 마지막 프리미엄 입지\\n2. 시세 차익만 {gap_percent}% 예상되는 확실한 투자가치\\n3. {{field_keypoints}} 등 단지 내 고품격 특화 시설\\n\\n지금 바로 상담 예약하시면 모델하우스 대기 없는 '우선 입장권'과 '특별 사은품'을 함께 보내드립니다. 🎁\\n\\n📞 긴급 상담 및 방문예약: 010-0000-0000",
-                "📊 {{field_name}} 고관여 유저 전용 [입지 분석 보고서] 배포\\n\\n호갱노노 실수요자분들이 주목하는 진짜 팩트를 분석했습니다. 🧐\\n단순 홍보물이 아닌, 학군/상권/미래가치를 숫자로 증명한 유료급 정밀 리포트를 무료로 제공합니다.\\n\\n✨ 리포트 주요 내용:\\n- {{address}} 권역 향후 5년 내 수급 분석\\n- {gap_percent}% 시세 차익이 발생하는 구체적 근거\\n- 실거주자가 극찬한 {{field_keypoints}} 분석\\n\\n데이터로 증명된 현장, 직접 비교해 보시고 결정하십시오. 오직 채널톡 유입 고객님께만 우선 공개합니다. 💎\\n\\n▶ 리포트 신청: [상담예약신청]"
+                "채널톡용 후킹 문구 3종"
+            ],
+            "media_mix": [
+                {"media": "매체명", "feature": "강점", "reason": "이유", "strategy_example": "실행 예시"},
+                {"media": "매체명", "feature": "강점", "reason": "이유", "strategy_example": "실행 예시"},
+                {"media": "매체명", "feature": "강점", "reason": "이유", "strategy_example": "실행 예시"}
             ]
         }}
+        
+        특히 현재 현장의 가장 큰 고민인 [{main_concern}]을 해결하기 위한 매체 채택 이유와 구체적 실행 전략을 'media_mix' 섹션에 상세히 제안하십시오.
         """
 
         # 3. Gemini 모델 시도 (유료 키 가용 모델 우선 순위 조정)
@@ -491,7 +496,8 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             "weekly_plan": ai_data.get("weekly_plan") or ["1주차: 마케팅 기획"],
             "roi_forecast": ai_data.get("roi_forecast") or {"expected_leads": 100, "expected_cpl": 50000, "conversion_rate": 2.5, "expected_ctr": 1.8},
             "lms_copy_samples": ai_data.get("lms_copy_samples") or [],
-            "channel_talk_samples": ai_data.get("channel_talk_samples") or []
+            "channel_talk_samples": ai_data.get("channel_talk_samples") or [],
+            "media_mix": ai_data.get("media_mix") or []
         }
         # Ensure expected_ctr is present if roi_forecast was provided by AI but missing this field
         if "expected_ctr" not in safe_data["roi_forecast"]:
@@ -537,7 +543,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             "roi_forecast": safe_data["roi_forecast"],
             "lms_copy_samples": safe_data["lms_copy_samples"],
             "channel_talk_samples": safe_data["channel_talk_samples"],
-            "media_mix": [
+            "media_mix": safe_data["media_mix"] if safe_data["media_mix"] else [
                 {"media": "메타/인스타", "feature": "정밀 타켓팅", "reason": "관심사 기반 도달", "strategy_example": "혜택 강조 광고"},
                 {"media": "네이버", "feature": "검색 기반", "reason": "구매 의향 고객 확보", "strategy_example": "지역 키워드 점유"},
                 {"media": "카카오", "feature": "모먼트 타겟", "reason": "지역 기반 노출", "strategy_example": "방문 유도"}
@@ -609,11 +615,29 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 f"🚨 [긴급] {field_name} 로열층 선착순 마감 5분 전!\n\n망설이는 순간 사라집니다. 현재 {field_name} 현장은 실시간 계약 폭주로 로열층 수량이 급격히 소진 중입니다! 💨\n\n💎 투자/실거주 포인트:\n1. {address} 권역 최상위 랜드마크 입지\n2. 시세 차익만 {gap_percent}% 이상 예상되는 수익성\n3. {field_keypoints if field_keypoints else '프리미엄 주거 라이프'} 실현\n\n지금 예약 방문 시 대기 없이 관람 가능한 '우선 입장권'과 '사은품 증정권'을 즉시 발급해 드립니다. 🎁\n\n📞 긴급 상담 문의: 010-0000-0000",
                 f"📊 {field_name} 고관여 타겟 전용 [팩트 체크 리포트]\n\n호갱노노에서 찾을 수 없는 진짜 입지 데이터를 정리했습니다. 🧐\n학군, 상권, 미래 교통 호재를 수치로 증명한 유료급 정밀 리포트 배포 중!\n\n✨ 리포트 수록 내용:\n- {address} 권역 5년 내 공급 총량 분석\n- 인근 대비 {gap_percent}% 더 가벼운 분양가 분석 데이터\n- 자산 가치를 높이는 {field_keypoints if field_keypoints else '입지적 희소성'} 근거\n\n오직 위 리포트를 신청하신 분께만 비공개 잔여 물량 정보를 우선 제공합니다. 💎\n\n▶ 리포트 신청: [상담예약신청]"
             ],
-            "media_mix": [
-                {"media": "메타/인스타", "feature": "정밀 타켓팅", "reason": "관심사 기반 도달", "strategy_example": "혜택 강조 광고"},
-                {"media": "네이버", "feature": "검색 기반", "reason": "구매 의향 고객 확보", "strategy_example": "지역 키워드 점유"},
-                {"media": "카카오", "feature": "모먼트 타겟", "reason": "지역 기반 노출", "strategy_example": "방문 유도"}
-            ]
+            "media_mix": (
+                [
+                    {"media": "메타/인스타 리드광고", "feature": "DB 수량 극대화", "reason": "관심사 기반 대량 노출", "strategy_example": "혜택 위주 소재 10종 교차 테스트"},
+                    {"media": "틱톡/유튜브 숏츠", "feature": "저비용 고노출", "reason": "영상 기반 관심 유도", "strategy_example": "바이럴 영상 중심 대량 도달"},
+                    {"media": "네이버 GFA", "feature": "광범위한 도달", "reason": "국내 최대 매체 파워", "strategy_example": "성별/연령별 맞춤 배너 노출"}
+                ] if main_concern == "DB 수량 부족" else [
+                    {"media": "네이버 브랜드검색", "feature": "신뢰도 극대화", "reason": "의도 검색자 선점", "strategy_example": "공식 채널 강조 및 리포트 제공"},
+                    {"media": "구글 검색광고", "feature": "고관여 고객 확보", "reason": "구매 의사 직접 반영", "strategy_example": "경쟁 단지 키워드 타겟팅"},
+                    {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": "실시간 데이터 기반", "strategy_example": "입지 분석 리포트 중심 상담 유도"}
+                ] if main_concern == "DB 질 저하" else [
+                    {"media": "유튜브 인스트림", "feature": "비주얼 임팩트", "reason": "압도적 주목도", "strategy_example": "현장 드론 영상 및 특화 설계 부각"},
+                    {"media": "메타 카탈로그 광고", "feature": "동적 소재 구성", "reason": "클릭 유도 최적화", "strategy_example": "평면도 및 타입별 가격 정보 노출"},
+                    {"media": "당근마켓 로컬광고", "feature": "초지역 밀착", "reason": "인근 거주자 타겟팅", "strategy_example": "현장 인근 5km 타겟 마케팅"}
+                ] if main_concern == "낮은 클릭률(CTR)" else [
+                    {"media": "카카오 톡캘린더", "feature": "방문 예약 자동화", "reason": "재방문/리마인드 효과", "strategy_example": "방문 예약 버튼 커스텀 연동"},
+                    {"media": "네이버 플레이스", "feature": "지도 기반 유입", "reason": "물리적 거리 인지", "strategy_example": "모델하우스 위치 알림 캠페인"},
+                    {"media": "T-Map 내비게이션", "feature": "실제 이동 타겟팅", "reason": "주말 방문 수요 선점", "strategy_example": "모델하우스 검색 시 팝업 노출"}
+                ] if main_concern == "방문객 없음" else [
+                    {"media": "메타/인스타", "feature": "정밀 타켓팅", "reason": "관심사 기반 도달", "strategy_example": "혜택 강조 광고"},
+                    {"media": "네이버", "feature": "검색 기반", "reason": "구매 의향 고객 확보", "strategy_example": "지역 키워드 점유"},
+                    {"media": "카카오", "feature": "모먼트 타겟", "reason": "지역 기반 노출", "strategy_example": "방문 유도"}
+                ]
+            )
         }
 
 @app.get("/import-csv")
