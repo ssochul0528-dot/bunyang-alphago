@@ -755,6 +755,23 @@ async def submit_lead(req: LeadSubmitRequest):
     except Exception as e:
         logger.error(f"Lead submission error: {e}")
         raise HTTPException(status_code=500, detail="리드 제출 중 서버 오류가 발생했습니다.")
+@app.get("/force-maintenance-sync")
+async def force_maintenance_sync():
+    """임시 점검용: DB를 비우고 CSV 기준으로 다시 동기화합니다."""
+    from sqlmodel import delete
+    try:
+        with Session(engine) as session:
+            # Site 테이블 비우기
+            session.exec(delete(Site))
+            session.commit()
+            
+        # 다시 생성 및 CSV 임포트
+        create_db_and_tables()
+        result = await import_csv_data()
+        return {"status": "success", "result": result}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 @app.get("/")
 async def root():
     return {"message": "Bunyang AlphaGo API is running"}
