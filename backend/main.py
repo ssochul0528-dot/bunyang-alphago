@@ -352,34 +352,64 @@ class RegenerateCopyResponse(BaseModel):
 
 @app.post("/regenerate-copy", response_model=RegenerateCopyResponse)
 async def regenerate_copy(req: AnalyzeRequest):
-    """카피 재생성 전용 엔드포인트"""
+    """Gemini AI를 사용하여 카피만 정밀하게 다시 생성합니다."""
     field_name = req.field_name or "분석 현장"
     address = req.address or "지역 정보"
-    gap = (float(req.target_area_price or 0) - float(req.sales_price or 0)) / (float(req.sales_price or 1) if req.sales_price and req.sales_price > 0 else 1)
-    gap_percent = round(gap * 100, 1)
-    
-    # 데이터 안전하게 추출
     dp = str(req.down_payment) if req.down_payment else "10%"
     ib = req.interest_benefit or "무이자"
     fkp = req.field_keypoints or "탁월한 입지와 미래가치"
+    
+    prompt = f"""
+    당신은 대한민국 상위 0.1% 부동산 퍼포먼스 마케팅 전문가입니다. 
+    [{field_name}] 현장의 신규 고객 유입을 극대화하기 위한 LMS(문자) 및 채널톡 카피를 작성하십시오.
 
-    # 실전 레퍼런스 스타일의 3종 럭셔리 템플릿
+    [현장 핵심 데이터]
+    - 현장명: {field_name}
+    - 위치: {address}
+    - 핵심 특장점: {fkp}
+    - 금융 혜택: 계약금 {dp}, {ib}
+    
+    [작성 가이드라인]
+    1. LMS (3종 세트):
+       - 1안(신뢰/브랜드): 장문의 전문성 있는 톤앤매너, 입지 가치와 브랜드 신뢰도 강조.
+       - 2안(금융/수익): 실투자금, 시세차익, 중도금 혜택 등 철저히 '돈'이 되는 정보 중심.
+       - 3안(긴급/후킹): "마지막 로열층", "오늘까지만" 등 심리적 압박과 즉각적인 행동 유도.
+    2. 채널톡 (3종 세트):
+       - 호갱노노/직방 등 부동산 앱 사용자를 위한 짧고 강렬한 모바일 최적화 문구.
+       - 이모지를 적절히 사용하여 가독성을 높이고 채널톡 버튼 클릭율(CTR) 극대화.
+
+    [출력 포맷: JSON]
+    {{
+        "lms_copy_samples": ["LMS 1안", "LMS 2안", "LMS 3안"],
+        "channel_talk_samples": ["채널톡 1안", "채널톡 2안", "채널톡 3안"]
+    }}
+    """
+    
+    try:
+        model = genai.GenerativeModel('models/gemini-2.0-flash')
+        response = model.generate_content(prompt)
+        ai_data = extract_json(response.text)
+        if ai_data:
+            return RegenerateCopyResponse(
+                lms_copy_samples=ai_data.get("lms_copy_samples", []),
+                channel_talk_samples=ai_data.get("channel_talk_samples", [])
+            )
+    except Exception as e:
+        logger.error(f"Regenerate copy AI error: {e}")
+    
+    # Fallback to smart templates if AI fails
+    gap_percent = 15 # Default fallback
     lms_samples = [
         f"【{field_name}】\n\n🔥 파격조건변경!!\n☛ 계약금 {dp}\n☛ {ib} 파격 혜택\n☛ 실거주의무 및 청약통장 無\n\n■ 초현대적 입지+트리플 교통망\n🚅 GTX 및 주요 노선 연장 수혜(예정)\n🏫 단지 바로 앞 초·중·고 도보 학세권\n🏙️ {address} 핵심 인프라 원스톱 라이프\n\n■ 브랜드 & 자산 가치\n▶ 주변 시세 대비 {gap_percent}% 낮은 압도적 분양가\n▶ {fkp} 특화 설계 적용\n▶ 대단지 프리미엄 랜드마크 스케일\n\n🎁 예약 후 방문 시 '신세계 상품권' 증정\n🎉 계약 시 '고급 가전 사은품' 특별 증정\n☎️ 문의 : 1600-0000",
-        f"[특별공식발송] {field_name} 관심고객 안내\n(전세대 선호도 높은 84㎡ 위주 구성)\n\n💰 강력한 금융 혜택\n✅ 계약금 {dp} (1차)\n✅ 중도금 60% {ib}\n✅ 무제한 전매 가능 단지\n\n🏡 현장 특장점\n- {address} 내 마지막 노다지 핵심 입지\n- {gap_percent}% 이상의 확실한 시세 차익 기대\n- {fkp} 등 고품격 커뮤니티 시설\n- 도보권 명품 학원가 및 대형 마트 인접\n\n더 이상 망설이지 마세요. 마지막 로열층이 소진 중입니다.\n☎️ 상담문의: 010-0000-0000",
-        f"🚨 {field_name} 제로계약금 수준 마감 임박!\n\n🔥 전세대 영구 조망 및 프리미엄 특화 설계\n🔥 현재 인기 타입 완판 직전, 잔여 소수 분양\n🔥 {ib}, 주택수 미포함 수혜 단지\n\n🚗 사통팔달 교통망 확정 및 서울 접근성 혁신\n🏞️ 대형 공원과 수변 조망을 품은 숲세권/물세권\n🏗️ 인접 대규모 개발 호재로 인한 미래 가치 급상승\n\n🎁 선착순 계약축하 이벤트 진행 중\n예약 방문만 해도 '고급 와인 및 사은품' 증정\n📞 대표번호: 1811-0000"
+        f"[특별공식발송] {field_name} 관심고객 안내\n\n💰 강력한 금융 혜택\n✅ 계약금 {dp}\n✅ 중도금 {ib}\n✅ 무제한 전매 가능 단지\n\n🏡 현장 특장점\n- {address} 내 마지막 노다지 핵심 입지\n- {fkp} 등 고품격 커뮤니티 시설\n\n더 이상 망설이지 마세요. 마지막 로열층이 소진 중입니다.\n☎️ 상담문의: 010-0000-0000",
+        f"🚨 {field_name} 제로계약금 수준 마감 임박!\n\n🔥 인기 타입 완판 직전, 잔여 소수 분양\n🔥 {ib}, 주택수 미포함 수혜 단지\n🏗️ 인접 대규모 개발 호재로 인한 미래 가치 급상승\n\n🎁 선착순 계약축하 이벤트 진행 중\n📞 대표번호: 1811-0000"
     ]
-
     channel_samples = [
-        f"🔥 {field_name} | 파격 조건변경 소식!\n\n현재 호갱노노에서 가장 뜨거운 관심을 받는 이유, 드디어 공개합니다! 💎\n\n✅ 핵심 혜택 요약:\n- 계약금 {dp} (입주 전 전매 가능)\n- 이자 부담 제로! {ib} 혜택 확정\n- 인근 시세 대비 {gap_percent}% 낮은 압도적 저평가 단지\n\n'이 가격에 이 인프라가 정말인가요?' 라는 문의가 빗발치고 있습니다. 🚅 광역 교통망의 최중심, {address}의 랜드마크를 지금 바로 선점하십시오.\n\n📢 실시간 로열층 잔여 수량 확인 및 정밀 입지 리포트 신청하기 👇\n☎️ 대표문의 : 1600-0000",
-        f"🚨 [긴급] {field_name} 로열층 선착순 마감 직전!\n\n망설이는 순간 기회는 지나갑니다. 현재 {field_name} 현장은 실시간 예약 폭주로 로열층 물량이 쾌속 소진되고 있습니다! 💨\n\n💎 왜 지금 {field_name}인가?\n1. {address} 내 마지막 노다지 황금 입지\n2. 시세 차익만 {gap_percent}%가 예상되는 투자가치\n3. {fkp} 등 브랜드만의 고품격 특화 설계\n\n지금 바로 상담 예약 시 '모델하우스 하이패스 우선 입장'과 '특별 사은품' 혜택을 챙겨드립니다. 🎁\n\n📞 긴급 상담 및 방문예약: 010-0000-0000",
-        f"📊 {field_name} 고관여 실거주용 [정밀 분석 리포트] 배포\n\n호갱노노 유저분들이 주목하는 진짜 정보를 분석했습니다. 🧐\n단순 광고가 아닌, 학군/상권/교통 호재를 팩트로 정리한 유료급 리포트를 무료 제공합니다.\n\n✨ 리포트 주요 포인트:\n- {address} 권역 향후 수급 및 시세 전망\n- 인근 대비 {gap_percent}% 저렴한 분양가 분석 근거\n- {fkp} 등 주거 만족도 1위의 진짜 이유\n\n데이터는 거짓말을 하지 않습니다. 직접 확인해 보시고 가치를 판단하십시오. 💎\n\n▶ 리포트 신청: [상담예약신청]"
+        f"🔥 {field_name} | 파격 조건변경 소식!\n\n현재 호갱노노에서 가장 뜨거운 관심을 받는 이유! 💎\n\n✅ 핵심 혜택 요약:\n- 계약금 {dp}\n- 이자 부담 제로! {ib} 확정\n\n🚅 {address}의 랜드마크를 지금 바로 선점하십시오.\n\n📢 실시간 로열층 확인 👇",
+        f"🚨 [긴급] {field_name} 로열층 선착순 마감 직전!\n\n망설이는 순간 기회는 지나갑니다. 현재 {field_name} 현장은 실시간 예약 폭주 중! 💨\n\n📞 긴급 상담 및 방문예약: 010-0000-0000",
+        f"📊 {field_name} 고관여 실거주용 [정밀 분석 리포트]\n\n호갱노노 유저들이 주목하는 진짜 정보를 분석했습니다. 🧐\n{fkp} 등 주거 만족도 1위의 진짜 이유를 리포트로 확인하세요. 💎"
     ]
-
-    return RegenerateCopyResponse(
-        lms_copy_samples=lms_samples,
-        channel_talk_samples=channel_samples
-    )
+    return RegenerateCopyResponse(lms_copy_samples=lms_samples, channel_talk_samples=channel_samples)
 
 @app.post("/analyze")
 async def analyze_site(request: Optional[AnalyzeRequest] = None):
@@ -424,50 +454,54 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         except Exception as e:
             logger.warning(f"Live search skipped: {e}")
 
-        # 2. AI 분석을 위한 프롬프트 작성
+        # 2. AI 분석을 위한 프롬프트 작성 (고도화 버전)
         prompt = f"""
-        당신은 상위 1% 부동산 마케팅 전문가입니다. [{field_name}] 현장의 필승 전략을 JSON으로 작성하십시오.
+        당신은 대한민국 부동산 분양 마케팅 상위 0.1% 전문가이자 퍼포먼스 마케팅 디렉터입니다. 
+        [{field_name}] 현장의 성공적인 분양을 위한 '정밀 시장 분석' 및 '특화 마케팅 가이드'를 전문 용어를 사용하여 아주 상세하게 JSON으로 작성하십시오.
+
+        [데이터 세트]
+        - 현장명: {field_name} / 위치: {address} / 상품군: {product_category}
+        - 프라이싱: 공급가 {sales_price} VS 주변 시세 {target_price}
+        - 공급 규모: {supply_volume}세대
+        - 금융 조건: 계약금 {dp}, {ib}
+        - 핵심 특장점: {fkp}
+        - 현재 마케팅 고민: {main_concern}
         
-        [현장 정보]
-        현장: {field_name} / 위치: {address} / 상품: {product_category}
-        가격: 우리 {sales_price} VS 주변 {target_price}
-        특징: {field_keypoints} / 고민: {main_concern}
-        
-        [검색참고] {search_context[:1000] if search_context else "검색 데이터 없음"}
-        
-        [출력 규격]
-        반드시 다음 JSON 형식을 유지하되, 내용은 실제 전문가처럼 아주 상세하게 작성하십시오. 
-        절대 "시장 경쟁력이 충분하다"는 식의 짧은 답변은 금지합니다.
-        
+        [검색참고 데이터] 
+        {search_context[:1000] if search_context else "최신 검색 트렌드 기반 분석 필요"}
+
+        [미션 및 출력 요구사항]
+        1. market_diagnosis: 단순히 상황 나열이 아닌, 현 지역 부동산 흐름과 연계된 날카로운 통찰력을 제공하십시오. (최소 4-5문장)
+        2. target_persona: 소득 수준, 라이프스타일, 주거 목적(실거주 vs 갭투자)을 포함한 입체적인 페르소나를 정의하십시오.
+        3. media_mix: 고민사항인 [{main_concern}]을 즉각 해결할 수 있는 매체 3종을 선정하고, 각 매체별 '운영 전략'과 '소재 제작 포인트'를 전문가 수준으로 서술하십시오.
+        4. lms_copy_samples (3종): 
+           - 1안(신뢰): 브랜드/입지 중심의 묵직한 가치 전달.
+           - 2안(수익): 철저하게 데이터와 돈 기반의 분석형 멘트.
+           - 3안(긴급): 트리거를 자극하는 강력한 마감 임박 멘트.
+        5. channel_talk_samples (3종): 모바일 사용자의 직관적 클릭을 유도하는 트렌디하고 가독성 높은 문구.
+
+        [JSON Output Structure]
         {{
-            "market_diagnosis": "최소 3문장 이상의 심층 시장 분석",
-            "target_persona": "구체적인 타켓 고객 생활상 정의",
+            "market_diagnosis": "...",
+            "target_persona": "...",
             "target_audience": ["#태그1", "#태그2", "#태그3", "#태그4", "#태그5"],
             "competitors": [
-                {{"name": "경쟁단지A", "price": {target_price}, "distance": "1.0km"}},
-                {{"name": "경쟁단지B", "price": {target_price * 1.1 if target_price > 0 else sales_price * 1.1:.0f}, "distance": "2.5km"}}
+                {{"name": "인근 비교 단지 A", "price": {target_price or 0}, "distance": "800m"}},
+                {{"name": "인근 비교 단지 B", "price": {(target_price or sales_price) * 1.05:.0f}, "distance": "1.5km"}}
             ],
-            "ad_recommendation": "구체적인 매체 집행 비중과 이유",
-            "copywriting": "후킹 넘치는 메인 카피",
+            "ad_recommendation": "...",
+            "copywriting": "...",
             "keyword_strategy": ["키워드1", "2", "3", "4", "5"],
-            "weekly_plan": ["1주 액션", "2주 액션", "3주 액션", "4주 액션"],
-            "roi_forecast": {{"expected_leads": 130, "expected_cpl": 45000, "conversion_rate": 3.5}},
-            "lms_copy_samples": [
-                "【{{field_name}}】\\n\\n🔥 파격조건변경!!\\n☛ 계약금 {{down_payment}}\\n☛ {{interest_benefit}} 파격 혜택\\n☛ 실거주의무 및 청약통장 無\\n\\n■ 초현대적 입지+트리플 교통망\\n🚅 GTX 및 주요 노선 연장 수혜(예정)\\n🏫 단지 바로 앞 초·중·고 도보 학세권\\n🏙️ {{address}} 핵심 인프라 원스톱 라이프\\n\\n■ 브랜드 & 자산 가치\\n▶ 주변 시세 대비 {gap_percent}% 낮은 압도적 분양가\\n▶ {{field_keypoints}} 특화 설계 적용\\n▶ 대단지 프리미엄 랜드마크 스케일\\n\\n🎁 예약 후 방문 시 '신세계 상품권' 증정\\n🎉 계약 시 '고급 가전 사은품' 특별 증정\\n☎️ 문의 : 1600-0000",
-                "[특별공식발송] {{field_name}} 관심고객 안내\\n(전세대 선호도 높은 84㎡ 위주 구성)\\n\\n💰 강력한 금융 혜택\\n✅ 계약금 {{down_payment}} (1차)\\n✅ 중도금 60% {{interest_benefit}}\\n✅ 무제한 전매 가능 단지\\n\\n🏡 현장 특장점\\n- {{address}} 내 마지막 노다지 핵심 입지\\n- {gap_percent}% 이상의 확실한 시세 차익 기대\\n- {{field_keypoints}} 등 고품격 커뮤니티 시설\\n- 도보권 명품 학원가 및 대형 마트 인접\\n\\n더 이상 망설이지 마세요. 마지막 로열층이 소진 중입니다.\\n☎️ 상담문의: 010-0000-0000",
-                "🚨 {{field_name}} 제로계약금 수준 마감 임박!\\n\\n🔥 전세대 영구 조망 및 프리미엄 특화 설계\\n🔥 현재 84타입 완판 직전, 잔여 소수 분양\\n🔥 {{interest_benefit}}, 주택수 미포함 수혜 단지\\n\\n🚗 사통팔달 교통망 확정 및 서울 접근성 혁신\\n🏞️ 대형 공원과 수변 조망을 품은 숲세권/물세권\\n🏗️ 인접 대규모 개발 호재로 인한 미래 가치 급상승\\n\\n🎁 선착순 계약축하 이벤트 진행 중\\n예약 방문만 해도 '고급 와인 및 사은품' 증정\\n📞 대표번호: 1811-0000"
-            ],
-            "channel_talk_samples": [
-                "채널톡용 후킹 문구 3종"
-            ],
+            "weekly_plan": ["1주차 세부 액션", "2주차 세부 액션", "3주차 세부 액션", "4주차 세부 액션"],
+            "roi_forecast": {{"expected_leads": 150, "expected_cpl": 42000, "conversion_rate": 3.8, "expected_ctr": 1.9}},
+            "lms_copy_samples": ["...", "...", "..."],
+            "channel_talk_samples": ["...", "...", "..."],
             "media_mix": [
-                {"media": "매체명", "feature": "강점", "reason": "이유", "strategy_example": "실행 예시"},
-                {"media": "매체명", "feature": "강점", "reason": "이유", "strategy_example": "실행 예시"},
-                {"media": "매체명", "feature": "강점", "reason": "이유", "strategy_example": "실행 예시"}
+                {{"media": "매체명", "feature": "강점", "reason": "고민 해결 이유", "strategy_example": "실행 전략"}},
+                {{"media": "...", "feature": "...", "reason": "...", "strategy_example": "..."}},
+                {{"media": "...", "feature": "...", "reason": "...", "strategy_example": "..."}}
             ]
         }}
-        
-        특히 현재 현장의 가장 큰 고민인 [{main_concern}]을 해결하기 위한 매체 채택 이유와 구체적 실행 전략을 'media_mix' 섹션에 상세히 제안하십시오.
         """
 
         # 3. Gemini 모델 시도 (유료 키 가용 모델 우선 순위 조정)
