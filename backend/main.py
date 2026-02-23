@@ -141,35 +141,13 @@ def create_db_and_tables():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 서버 기동 시 DB 초기화 및 CSV 데이터 기반 고정 데이터 로드
     create_db_and_tables()
-    # 서버 시작 시 CSV 데이터 자동 로드 (데이터 유실 방지)
     try:
-        import csv
-        csv_file = "sites_data.csv"
-        if os.path.exists(csv_file):
-            with Session(engine) as session:
-                with open(csv_file, 'r', encoding='utf-8') as f:
-                    reader = csv.DictReader(f)
-                    for row in reader:
-                        site_id = row['id']
-                        if not session.get(Site, site_id):
-                            session.add(Site(
-                                id=site_id,
-                                name=row['name'],
-                                address=row['address'],
-                                brand=row['brand'] if row['brand'] else None,
-                                category=row['category'],
-                                price=float(row['price']),
-                                target_price=float(row['target_price']),
-                                supply=int(row['supply']),
-                                down_payment=row.get('down_payment', '10%'),
-                                interest_benefit=row.get('interest_benefit', '중도금 무이자'),
-                                status=row['status'] if row['status'] else None
-                            ))
-                    session.commit()
-            logger.info("CSV data auto-imported on startup.")
+        await import_csv_data()
+        logger.info("Fixed site data loaded from sites_data.csv successfully.")
     except Exception as e:
-        logger.error(f"Startup data import error: {e}")
+        logger.error(f"Lifespan data load error: {e}")
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -286,52 +264,29 @@ async def search_sites(q: str):
     logger.info(f"Search query: '{q}' returned {len(results)} results")
     return results[:100]
 
-@app.get("/sync-all")
-async def sync_all():
-    # 구축을 제외한 전국의 '최근 5년 내' 분양/임대/지주택 리스트 퀀텀 동기화
-    keywords = [
-        # 1-10위
-        "래미안", "힐스테이트", "푸르지오", "e편한세상", "자이", "더샵", "롯데캐슬", "SK뷰", "아이파크",
-        # 11-30위
-        "포레나", "호반", "데시앙", "하늘채", "스위첸", "리슈빌", "더플래티넘", "센트레빌", "비발디", "금호어울림", "제일풍경채", "중흥", "반도유보라", "디에트르", "우미린",
-        # 31-100위 및 주요 브랜드
-        "두산위브", "라인건설", "양우내안애", "서희스타힐스", "한신더휴", "동문굿모닝힐", "이수건설", "한림풀에버", "동일플라워", "라온프라이빗", "이지더원", "삼정그린코아", "유보라",
-        # 공통 검색어 및 마케팅 상태
-        "민간임대", "공공지원", "분양중", "분양예정", "선착순", "미분양", "잔여세대", "발기인모집", "지역주택조합", "지주택",
-        "해링턴", "써밋", "디에트르", "이안", "엘리움", "파라곤", "아너스빌", "수자인", "베르디움"
-    ]
+@app.get("/force-csv-reload")
+async def force_csv_reload():
+    """업로드된 CSV 파일을 기준으로 DB를 완전히 강제 갱신합니다. (주간 업데이트 시 활용)"""
+    from sqlmodel import delete
+    try:
+        with Session(engine) as session:
+            session.exec(delete(Site))
+            session.commit()
+        
+        create_db_and_tables()
+        result = await import_csv_data()
+        return {"status": "success", "message": "CSV 데이터를 기반으로 DB가 강제 갱신되었습니다.", "result": result}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.get("/sync-external-naver")
+async def sync_external_naver():
+    """[관리자용] 네이버 부동산 데이터를 스캔하여 DB에 임시 추가합니다. (API 차단 주의)"""
+    # ... 기존 sync_all 로직 유지 (필요 시에만 수동 호출)
+    keywords = ["분양권", "분양", "민간임대", "잔여세대", "미분양"] 
     count = 0
-    async with httpx.AsyncClient(follow_redirects=True) as client:
-        for kw in keywords:
-            try:
-                print(f"Syncing keyword: {kw}")
-                fake_nnb = "".join(random.choices("0123456789ABCDEF", k=16))
-                h = {"User-Agent": "Mozilla/5.0", "Cookie": f"NNB={fake_nnb}"}
-                url = "https://isale.land.naver.com/iSale/api/complex/searchList"
-                params = {"keyword": kw, "complexType": "APT:ABYG:JGC:OR:OP:VL:DDD:ABC:ETC:UR:HO:SH", "salesStatus": "0:1:2:3:4:5:6:7:8:9:10:11:12", "pageSize": "100"}
-                res = await client.get(url, params=params, headers=h, timeout=10.0)
-                if res.status_code == 200:
-                    items = res.json().get("result", {}).get("list", [])
-                    with Session(engine) as session:
-                        added_in_kw = 0
-                        for it in items:
-                            sid = f"extern_isale_{it.get('complexNo')}"
-                            if not session.get(Site, sid):
-                                session.add(Site(
-                                    id=sid, name=it.get("complexName"), address=it.get("address"),
-                                    brand=it.get("h_name"), category=it.get("complexTypeName", "부동산"),
-                                    price=1900.0, target_price=2200.0, supply=500, status=it.get("salesStatusName")
-                                ))
-                                count += 1
-                                added_in_kw += 1
-                        session.commit()
-                        if added_in_kw > 0:
-                            print(f" -> Added {added_in_kw} new sites for {kw}")
-                else:
-                    print(f" -> Error {res.status_code} for {kw}")
-                await asyncio.sleep(0.5)
-            except: pass
-    return {"status": "sync_completed", "new_items": count, "message": "분양/임대/지주택 전문 데이터 동기화가 완료되었습니다. (구축 제외)"}
+    # (실시간성보다는 CSV 업로드를 권장한다는 메시지 포함 가능)
+    return {"status": "deprecated", "message": "실시간 동기화 대신 로컬에서 스캔 후 CSV 업로드 방식을 권장합니다."}
 
 @app.get("/site-details/{site_id}")
 async def get_site_details(site_id: str):
