@@ -76,6 +76,8 @@ class Site(SQLModel, table=True):
     price: float
     target_price: float
     supply: int
+    down_payment: Optional[str] = "10%"
+    interest_benefit: Optional[str] = "중도금 무이자"
     status: Optional[str] = None
     last_updated: datetime.datetime = Field(default_factory=datetime.datetime.now)
 
@@ -91,13 +93,15 @@ class Lead(SQLModel, table=True):
 
 # --- NATIONWIDE START DATA ---
 MOCK_SITES = [
-    {"id": "h_uj1", "name": "해링턴 플레이스 의정부역", "address": "경기도 의정부시", "brand": "해링턴", "category": "아파트", "price": 2300, "target_price": 2600, "supply": 612, "status": "공고종료"},
-    {"id": "dj_doan1", "name": "힐스테이트 도안리버파크 1단지", "address": "대전광역시 유성구", "brand": "힐스테이트", "category": "아파트", "price": 1950, "target_price": 2200, "supply": 1124, "status": "분양중"},
-    {"id": "jt1", "name": "의정부역 스마트시티(지역주택조합)", "address": "경기도 의정부시", "brand": "기타", "category": "지역주택조합", "price": 1500, "target_price": 1750, "supply": 1614, "status": "조합원모집"},
-    {"id": "uj_topseok1", "name": "의정부 탑석 센트럴파크 푸르지오", "address": "경기도 의정부시 탑석동", "brand": "푸르지오", "category": "아파트", "price": 2400, "target_price": 2700, "supply": 840, "status": "분양예정"},
-    {"id": "uj_hoeryong1", "name": "의정부 회룡 파크뷰 자이", "address": "경기도 의정부시 회룡동", "brand": "자이", "category": "아파트", "price": 2200, "target_price": 2500, "supply": 650, "status": "분양중"},
-    {"id": "uj_hoeryong2", "name": "회룡역 롯데캐슬", "address": "경기도 의정부시 회룡동", "brand": "롯데캐슬", "category": "아파트", "price": 2350, "target_price": 2650, "supply": 720, "status": "분양예정"},
-    {"id": "uj_topseok2", "name": "탑석역 힐스테이트", "address": "경기도 의정부시 탑석동", "brand": "힐스테이트", "category": "아파트", "price": 2450, "target_price": 2750, "supply": 890, "status": "분양중"},
+    {"id": "seoul_seocho_1", "name": "메이플자이", "address": "서울특별시 서초구 잠원동", "brand": "자이", "category": "아파트", "price": 6700, "target_price": 7500, "supply": 3307, "status": "분양중"},
+    {"id": "seoul_seocho_2", "name": "래미안 원펜타스", "address": "서울특별시 서초구 반포동", "brand": "래미안", "category": "아파트", "price": 6800, "target_price": 7800, "supply": 641, "status": "분양중"},
+    {"id": "seoul_gangnam_1", "name": "청담 르엘", "address": "서울특별시 강남구 청담동", "brand": "르엘", "category": "아파트", "price": 7200, "target_price": 11000, "supply": 1261, "status": "분양중"},
+    {"id": "seoul_songpa_1", "name": "잠실 래미안 아이파크", "address": "서울특별시 송파구 신천동", "brand": "래미안", "category": "아파트", "price": 5400, "target_price": 6200, "supply": 2678, "status": "분양중"},
+    {"id": "gyeonggi_uijeongbu_1", "name": "의정부 힐스테이트 회룡 파크뷰", "address": "경기도 의정부시 회룡동", "brand": "힐스테이트", "category": "아파트", "price": 1850, "target_price": 2100, "supply": 1816, "status": "분양중"},
+    {"id": "gyeonggi_gimpo_2", "name": "이안 센트럴포레 장기", "address": "경기도 김포시 장기동", "brand": "이안", "category": "아파트", "price": 1650, "target_price": 1950, "supply": 917, "status": "준공완료"},
+    {"id": "gyeonggi_yongin_4", "name": "엘리움 용인 역북", "address": "경기도 용인시 처인구 역북동", "brand": "엘리움", "category": "오피스텔", "price": 1850, "target_price": 2100, "supply": 240, "status": "분양중"},
+    {"id": "daejeon_yuseong_1", "name": "도안리버파크 1단지", "address": "대전광역시 유성구 학하동", "brand": "힐스테이트", "category": "아파트", "price": 1950, "target_price": 2250, "supply": 1124, "status": "분양중"},
+    {"id": "busan_gangseo_1", "name": "부산 에코델타시티 12BL", "address": "부산광역시 강서구", "brand": "e편한세상", "category": "아파트", "price": 1600, "target_price": 1950, "supply": 1258, "status": "분양중"},
 ]
 
 def create_db_and_tables():
@@ -113,6 +117,16 @@ def create_db_and_tables():
                 conn.execute(text("ALTER TABLE lead ADD COLUMN source TEXT DEFAULT '알 수 없음'"))
                 conn.commit()
                 logger.info("Database migration: Added 'source' column to 'lead' table.")
+            
+            # Site 테이블 마이그레이션
+            site_columns = [row[1] for row in conn.execute(text("PRAGMA table_info(site)")).fetchall()]
+            if site_columns:
+                if 'down_payment' not in site_columns:
+                    conn.execute(text("ALTER TABLE site ADD COLUMN down_payment TEXT DEFAULT '10%'"))
+                if 'interest_benefit' not in site_columns:
+                    conn.execute(text("ALTER TABLE site ADD COLUMN interest_benefit TEXT DEFAULT '중도금 무이자'"))
+                conn.commit()
+                logger.info("Database migration: Added columns to 'site' table.")
     except Exception as e:
         logger.error(f"Migration error: {e}")
 
@@ -149,6 +163,8 @@ async def lifespan(app: FastAPI):
                                 price=float(row['price']),
                                 target_price=float(row['target_price']),
                                 supply=int(row['supply']),
+                                down_payment=row.get('down_payment', '10%'),
+                                interest_benefit=row.get('interest_benefit', '중도금 무이자'),
                                 status=row['status'] if row['status'] else None
                             ))
                     session.commit()
@@ -275,7 +291,7 @@ async def search_sites(q: str):
 async def sync_all():
     # 구축을 제외한 전국의 '최근 5년 내' 분양/임대/지주택 리스트 퀀텀 동기화
     keywords = [
-        "해링턴", "써밋", "디에트르", "지역주택조합", "지주택", "미분양", "선착순",
+        "해링턴", "써밋", "디에트르", "지역주택조합", "지주택", "미분양", "선착순", "이안", "엘리움",
         "대전", "의정부", "부산", "서울", "인천", "경기", "수원", "성남",
         "탑석", "회룡", "파크뷰", "힐스테이트", "자이", "푸르지오", "e편한세상",
         "롯데캐슬", "아이파크", "더샵", "센트럴", "포레스트", "레이크", "스카이"
@@ -669,6 +685,8 @@ async def import_csv_data():
                         existing.price = float(row['price'])
                         existing.target_price = float(row['target_price'])
                         existing.supply = int(row['supply'])
+                        existing.down_payment = row.get('down_payment', '10%')
+                        existing.interest_benefit = row.get('interest_benefit', '중도금 무이자')
                         existing.status = row['status'] if row['status'] else None
                         updated += 1
                     else:
@@ -681,6 +699,8 @@ async def import_csv_data():
                             price=float(row['price']),
                             target_price=float(row['target_price']),
                             supply=int(row['supply']),
+                            down_payment=row.get('down_payment', '10%'),
+                            interest_benefit=row.get('interest_benefit', '중도금 무이자'),
                             status=row['status'] if row['status'] else None
                         ))
                         imported += 1

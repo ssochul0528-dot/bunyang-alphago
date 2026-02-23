@@ -270,6 +270,8 @@ export default function BunyangAlphaGo() {
         setSalesPrice(details.price || 2800);
         setTargetPrice(details.target_price || 3200);
         setSupply(details.supply || 300);
+        setDownPayment(details.down_payment || "10%");
+        setInterestBenefit(details.interest_benefit || "중도금 무이자");
 
         setTimeout(() => {
           setIsScanning(false);

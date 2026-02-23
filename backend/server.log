@@ -1,0 +1,28 @@
+/Users/soochulkim/Library/Python/3.9/lib/python/site-packages/google/api_core/_python_version_support.py:246: FutureWarning: You are using a non-supported Python version (3.9.6). Google will not post any further updates to google.api_core supporting this Python version. Please upgrade to the latest Python version, or at least Python 3.10, and then update google.api_core.
+  warnings.warn(message, FutureWarning)
+/Users/soochulkim/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+/Users/soochulkim/Library/Python/3.9/lib/python/site-packages/google/auth/__init__.py:54: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/soochulkim/Library/Python/3.9/lib/python/site-packages/google/oauth2/__init__.py:40: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/soochulkim/분양알파고/backend/main.py:14: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Started server process [87481]
+INFO:     Waiting for application startup.
+INFO:main:Database migration: Added columns to 'site' table.
+INFO:main:CSV data auto-imported on startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:httpx:HTTP Request: GET https://isale.land.naver.com/iSale/api/complex/searchList?keyword=%EC%9D%B4%EC%95%88&complexType=APT%3AABYG%3AJGC%3AOR%3AOP%3AVL%3ADDD%3AABC%3AETC%3AUR%3AHO%3ASH&salesStatus=0%3A1%3A2%3A3%3A4%3A5%3A6%3A7%3A8%3A9%3A10%3A11%3A12&pageSize=100 "HTTP/1.1 302 Found"
+INFO:httpx:HTTP Request: GET https://new.land.naver.com/error "HTTP/1.1 200 OK"
+ERROR:main:API search error: Expecting value: line 1 column 1 (char 0)
+INFO:main:Search query: '이안' returned 7 results
+INFO:     127.0.0.1:56898 - "GET /search-sites?q=%EC%9D%B4%EC%95%88 HTTP/1.1" 200 OK
