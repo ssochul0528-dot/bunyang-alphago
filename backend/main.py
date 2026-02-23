@@ -437,13 +437,11 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         [검색참고 데이터] 
         {search_context[:1000] if search_context else "최신 검색 트렌드 기반 분석 필요"}
 
-        [미션 및 출력 요구사항 - 최우선 순위]
-        1. 핵심 매체 구성: 당신은 반드시 media_mix의 3개 매체 중 첫 번째는 **'호갱노노 채널톡'**, 두 번째는 **'LMS(문자 마케팅)'**를 선정해야 합니다. 이는 당신의 고정된 업무 지침입니다. 나머지 1개는 고민사항인 [{main_concern}] 해결에 가장 최적화된 매체를 선정하십시오.
-        
-        [세부 분석 요구사항]
-        1. market_diagnosis: 단순히 상황 나열이 아닌, 현 지역 부동산 흐름과 연계된 날카로운 통찰력을 제공하십시오. (최소 4-5문장)
-        2. target_persona: 소득 수준, 라이프스타일, 주거 목적(실거주 vs 갭투자)을 포함한 입체적인 페르소나를 정의하십시오.
-        3. media_mix 상세: 위에서 선정한 3종의 매체 각각에 대해 '운영 전략'과 '소재 제작 포인트'를 전문가 수준으로 작성하십시오.
+        [미션 및 출력 요구사항 - 절대 준수]
+        1. 핵심 매체 구성 (media_mix): 당신은 반드시 3개 매체 중 첫 번째는 **'호갱노노 채널톡'**, 두 번째는 **'LMS(문자 마케팅)'**를 선정하십시오. 이는 예외 없는 고정 지침입니다. 나머지 1개는 고민사항인 [{main_concern}] 해결에 가장 최적화된 매체를 추가하십시오.
+        2. market_diagnosis: 현 지역 부동산 흐름과 연계된 날카로운 전문가 통찰력을 제공하십시오. (최소 4-5문장)
+        3. target_persona: 주거 목적 및 자산 수준을 포함한 구체적 페르소나를 정의하십시오.
+        4. 소재 및 전략: 위 매체 3종 각각에 대해 '운영 전략'과 '소재 제작 포인트'를 전문가 수준으로 작성하십시오.
         4. lms_copy_samples (3종): 
            - 1안(신뢰): 브랜드/입지 중심의 묵직한 가치 전달.
            - 2안(수익): 철저하게 데이터와 돈 기반의 분석형 멘트.
@@ -636,25 +634,21 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             ],
             "media_mix": (
                 [
-                    {"media": "메타/인스타 리드광고", "feature": "DB 수량 극대화", "reason": "관심사 기반 대량 노출", "strategy_example": "혜택 위주 소재 10종 교차 테스트"},
-                    {"media": "틱톡/유튜브 숏츠", "feature": "저비용 고노출", "reason": "영상 기반 관심 유도", "strategy_example": "바이럴 영상 중심 대량 도달"},
-                    {"media": "네이버 GFA", "feature": "광범위한 도달", "reason": "국내 최대 매체 파워", "strategy_example": "성별/연령별 맞춤 배너 노출"}
+                    {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": "실시간 데이터 기반", "strategy_example": "입지 분석 리포트 중심 상담 유도"},
+                    {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "높은 인지 및 확인율", "strategy_example": "혜택 강조 및 방문 예약 유도"},
+                    {"media": "메타/인스타 리드광고", "feature": "DB 수량 극대화", "reason": "관심사 기반 대량 노출", "strategy_example": "혜택 위주 소재 10종 교차 테스트"}
                 ] if main_concern == "DB 수량 부족" else [
-                    {"media": "네이버 브랜드검색", "feature": "신뢰도 극대화", "reason": "의도 검색자 선점", "strategy_example": "공식 채널 강조 및 리포트 제공"},
-                    {"media": "구글 검색광고", "feature": "고관여 고객 확보", "reason": "구매 의사 직접 반영", "strategy_example": "경쟁 단지 키워드 타겟팅"},
-                    {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": "실시간 데이터 기반", "strategy_example": "입지 분석 리포트 중심 상담 유도"}
+                    {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": "실시간 데이터 기반", "strategy_example": "입지 분석 리포트 중심 상담 유도"},
+                    {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "높은 인지 및 확인율", "strategy_example": "혜택 강조 및 방문 예약 유도"},
+                    {"media": "네이버 브랜드검색", "feature": "신뢰도 극대화", "reason": "의도 검색자 선점", "strategy_example": "공식 채널 강조 및 리포트 제공"}
                 ] if main_concern == "DB 질 저하" else [
-                    {"media": "유튜브 인스트림", "feature": "비주얼 임팩트", "reason": "압도적 주목도", "strategy_example": "현장 드론 영상 및 특화 설계 부각"},
-                    {"media": "메타 카탈로그 광고", "feature": "동적 소재 구성", "reason": "클릭 유도 최적화", "strategy_example": "평면도 및 타입별 가격 정보 노출"},
-                    {"media": "당근마켓 로컬광고", "feature": "초지역 밀착", "reason": "인근 거주자 타겟팅", "strategy_example": "현장 인근 5km 타겟 마케팅"}
+                    {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": "실시간 데이터 기반", "strategy_example": "입지 분석 리포트 중심 상담 유도"},
+                    {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "높은 인지 및 확인율", "strategy_example": "혜택 강조 및 방문 예약 유도"},
+                    {"media": "유튜브 인스트림", "feature": "비주얼 임팩트", "reason": "압도적 주목도", "strategy_example": "현장 드론 영상 및 특화 설계 부각"}
                 ] if main_concern == "낮은 클릭률(CTR)" else [
-                    {"media": "카카오 톡캘린더", "feature": "방문 예약 자동화", "reason": "재방문/리마인드 효과", "strategy_example": "방문 예약 버튼 커스텀 연동"},
-                    {"media": "네이버 플레이스", "feature": "지도 기반 유입", "reason": "물리적 거리 인지", "strategy_example": "모델하우스 위치 알림 캠페인"},
-                    {"media": "T-Map 내비게이션", "feature": "실제 이동 타겟팅", "reason": "주말 방문 수요 선점", "strategy_example": "모델하우스 검색 시 팝업 노출"}
-                ] if main_concern == "방문객 없음" else [
-                    {"media": "메타/인스타", "feature": "정밀 타켓팅", "reason": "관심사 기반 도달", "strategy_example": "혜택 강조 광고"},
-                    {"media": "네이버", "feature": "검색 기반", "reason": "구매 의향 고객 확보", "strategy_example": "지역 키워드 점유"},
-                    {"media": "카카오", "feature": "모먼트 타겟", "reason": "지역 기반 노출", "strategy_example": "방문 유도"}
+                    {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": "실시간 데이터 기반", "strategy_example": "입지 분석 리포트 중심 상담 유도"},
+                    {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "높은 인지 및 확인율", "strategy_example": "혜택 강조 및 방문 예약 유도"},
+                    {"media": "카카오 톡캘린더", "feature": "방문 예약 자동화", "reason": "재방문/리마인드 효과", "strategy_example": "방문 예약 버튼 커스텀 연동"}
                 ]
             )
         }
