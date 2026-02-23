@@ -1,7 +1,7 @@
 "use client";
 // Force rebuild for deployment fix
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -140,6 +140,49 @@ export default function BunyangAlphaGo() {
   const [history, setHistory] = useState<AnalysisHistoryEntry[]>([]);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [isFetchingHistory, setIsFetchingHistory] = useState(false);
+
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    if (!reportRef.current) return;
+    setIsDownloading(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const jsPDF = (await import('jspdf')).jsPDF;
+
+      const element = reportRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#020617',
+        logging: false,
+        onclone: (doc) => {
+          const el = doc.getElementById('pdf-report-container');
+          if (el) {
+            el.style.backgroundColor = '#020617';
+            el.style.padding = '40px';
+          }
+        }
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      const imgWidth = pdfWidth - 20; // 10mm margin
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      pdf.save(`${fieldName || '부동산'}_알파고_분석리포트.pdf`);
+    } catch (e) {
+      console.error("PDF generation failed:", e);
+      alert("리포트 생성 중 오류가 발생했습니다.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const lmsTabs = [
     { label: "신뢰/종합", desc: "공식 브랜드 가치 및 시세차익 강조" },
@@ -1257,11 +1300,50 @@ export default function BunyangAlphaGo() {
         {
           result && !isScanning && (
             <motion.div
+              ref={reportRef}
+              id="pdf-report-container"
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-6"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative p-8 rounded-[3rem] bg-slate-950/20"
             >
+              {/* Internal Dashboard Header & Integrated Download Button */}
+              <div className="lg:col-span-12 glass p-8 rounded-3xl border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 mb-2">
+                <div className="flex items-center gap-6">
+                  <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center blue-glow shadow-xl">
+                    <ShieldCheck className="text-white" size={32} />
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-black text-white flex items-center gap-3">
+                      {fieldName} <span className="text-sm font-bold text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">AI 정밀 분석 완료</span>
+                    </h2>
+                    <p className="text-slate-400 text-sm font-medium flex items-center gap-2 mt-1">
+                      <MapPin size={14} className="text-blue-500" /> {addressValue} | <Target size={14} className="text-indigo-500" /> {result.target_persona}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 no-print" data-html2canvas-ignore="true">
+                  <button
+                    onClick={handleDownloadPDF}
+                    disabled={isDownloading}
+                    className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl font-black text-base shadow-[0_15px_30px_rgba(59,130,246,0.4)] transition-all transform hover:-translate-y-1 active:translate-y-0 disabled:grayscale disabled:cursor-not-allowed flex items-center gap-3"
+                  >
+                    {isDownloading ? (
+                      <>
+                        <RefreshCw size={20} className="animate-spin" /> 리포트 생성 중...
+                      </>
+                    ) : (
+                      <>
+                        <Download size={20} className="group-hover:animate-bounce" />
+                        PDF 리포트 다운로드
+                      </>
+                    )}
+                    <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
+                  </button>
+                </div>
+              </div>
+
               {/* Dashboard Row 1: Score & Chart */}
               <div className="lg:col-span-4 glass p-8 rounded-3xl flex flex-col items-center justify-center relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-5"><ShieldCheck size={120} /></div>

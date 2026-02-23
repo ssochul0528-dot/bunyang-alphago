@@ -127,3 +127,21 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(59, 130, 246, 0.5);
 }
+/* Print Enhancements */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: #020617 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  .glass, .glass-card, .glass-panel {
+    background: rgba(30, 41, 59, 0.8) !important;
+    backdrop-filter: none !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+}
