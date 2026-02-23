@@ -546,12 +546,15 @@ export default function BunyangAlphaGo() {
       {/* Header */}
       <header className="fixed top-0 left-0 w-full z-50 glass-panel border-b border-white/5 h-20">
         <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center blue-glow-border shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+          <div
+            className="flex items-center gap-3 cursor-pointer group"
+            onClick={() => window.location.href = "/"}
+          >
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center blue-glow-border shadow-[0_0_20px_rgba(59,130,246,0.5)] group-hover:scale-110 transition-transform">
               <Cpu className="text-white" size={24} />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tighter leading-none">분양알파고</span>
+              <span className="text-xl font-black tracking-tighter leading-none group-hover:text-blue-400 transition-colors">분양알파고</span>
               <span className="text-[10px] uppercase tracking-[0.2em] text-blue-400 font-bold">Marketing AI Engine</span>
             </div>
           </div>
@@ -1914,7 +1917,10 @@ export default function BunyangAlphaGo() {
 
       <footer className="relative z-10 border-t border-blue-900/30 py-12 mt-20">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-2 grayscale">
+          <div
+            className="flex items-center gap-2 grayscale hover:grayscale-0 cursor-pointer transition-all hover:text-blue-400"
+            onClick={() => window.location.href = "/"}
+          >
             <Cpu size={20} />
             <span className="text-sm font-bold">분양알파고</span>
           </div>
