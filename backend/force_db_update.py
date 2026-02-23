@@ -3,6 +3,14 @@ import asyncio
 
 async def force_sync():
     print("Forcing database update...")
+    from main import engine, Site
+    from sqlmodel import Session, select, delete
+    
+    with Session(engine) as session:
+        print("Clearing existing Site data...")
+        session.exec(delete(Site))
+        session.commit()
+        
     create_db_and_tables()
     print("Importing CSV data...")
     result = await import_csv_data()

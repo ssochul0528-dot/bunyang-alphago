@@ -98,8 +98,7 @@ MOCK_SITES = [
     {"id": "seoul_gangnam_1", "name": "청담 르엘", "address": "서울특별시 강남구 청담동", "brand": "르엘", "category": "아파트", "price": 7200, "target_price": 11000, "supply": 1261, "status": "분양중"},
     {"id": "seoul_songpa_1", "name": "잠실 래미안 아이파크", "address": "서울특별시 송파구 신천동", "brand": "래미안", "category": "아파트", "price": 5400, "target_price": 6200, "supply": 2678, "status": "분양중"},
     {"id": "gyeonggi_uijeongbu_1", "name": "의정부 힐스테이트 회룡 파크뷰", "address": "경기도 의정부시 회룡동", "brand": "힐스테이트", "category": "아파트", "price": 1850, "target_price": 2100, "supply": 1816, "status": "분양중"},
-    {"id": "gyeonggi_gimpo_2", "name": "이안 센트럴포레 장기", "address": "경기도 김포시 장기동", "brand": "이안", "category": "아파트", "price": 1650, "target_price": 1950, "supply": 917, "status": "준공완료"},
-    {"id": "gyeonggi_yongin_4", "name": "엘리움 용인 역북", "address": "경기도 용인시 처인구 역북동", "brand": "엘리움", "category": "오피스텔", "price": 1850, "target_price": 2100, "supply": 240, "status": "분양중"},
+    {"id": "seoul_gangdong_3", "name": "이안 강동 컴홈스테이", "address": "서울특별시 강동구 천호동", "brand": "이안", "category": "오피스텔", "price": 2100, "target_price": 2350, "supply": 654, "status": "준공완료"},
     {"id": "daejeon_yuseong_1", "name": "도안리버파크 1단지", "address": "대전광역시 유성구 학하동", "brand": "힐스테이트", "category": "아파트", "price": 1950, "target_price": 2250, "supply": 1124, "status": "분양중"},
     {"id": "busan_gangseo_1", "name": "부산 에코델타시티 12BL", "address": "부산광역시 강서구", "brand": "e편한세상", "category": "아파트", "price": 1600, "target_price": 1950, "supply": 1258, "status": "분양중"},
 ]
