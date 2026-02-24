@@ -327,29 +327,30 @@ async def regenerate_copy(req: AnalyzeRequest):
     fkp = req.field_keypoints or "탁월한 입지와 미래가치"
     
     prompt = f"""
-    당신은 대한민국 상위 0.1% 부동산 퍼포먼스 마케팅 디렉터이자 '분양 알파고'의 수석 전략가입니다. 
-    [{field_name}] 현장의 수분양 의향을 극대화하고 DB 전환율을 폭발적으로 높이기 위한 LMS(문서) 및 채널톡 카피 5종을 작성하십시오.
+    당신은 대한민국 상위 0.1% 부동산 퍼포먼스 마케팅 디렉터입니다. 
+    [{field_name}] 현장의 신규 고객 유입을 폭발적으로 늘리기 위한 LMS 및 채널톡 카피 3종을 작성하십시오.
+    
+    [핵심 미션: 매우 구체적이고 전문적인 긴 문장으로 작성]
+    - 단순 요약이 아닌, 수분양자의 마음을 흔드는 감성적 서사와 논리적 수익 분석이 결합된 '롱폼(Long-form)' 카피를 작성하십시오.
+    - 각 매체의 성격에 맞는 이모지를 풍부하게 사용하여 가독성과 후킹 요소를 극대화하십시오.
 
-    [현장 핵심 데이터]
+    [현장 데이터]
     - 현장명: {field_name} / 위치: {address}
     - 핵심 특장점: {fkp}
     - 금융 혜택: 계약금 {dp}, {ib}
     
-    [작성 요구사항]
-    1. LMS (5종 세트): 
-       - 1안(신뢰/브랜드): 장문의 전문성 있는 톤앤매너, 공식적 분위기.
-       - 2안(금융/수익): 주변 시세 대비 저렴한 분양가, 이자 혜택 등 수익성 강조.
-       - 3안(긴급/후킹): 마감 임박, 로열층 소진 등 심리적 트리거 활용.
-       - 4안(입지/비전): 미래 가치, 개발 호재, 교통망 부각.
-       - 5안(감성/라이프스타일): 거주 만족도, 특화 설계, 삶의 질 강조.
-    2. 채널톡 (5종 세트):
-       - 모바일 앱(호갱노노, 직방 등) 유저를 타겟으로 한 짧고 핵심적인 문구.
-       - 이모지를 적극적으로 활용하여 클릭율(CTR)을 극대화하십시오.
+    [작성 가이드]
+    1. LMS (3종 세트: 매우 길고 전문적인 스타일):
+       - 1안(신뢰/브랜드): 장문의 전문 서신 스타일. 입지 가치와 브랜드의 정통성, 미래 가치를 서술형으로 아주 상세히 작성.
+       - 2안(금융/수익): 실투자금, 시세차익, 중도금 혜택 등 철저히 자산 가치 상승을 수치와 논리로 설득하는 긴 글.
+       - 3안(긴급/후킹): "로얄층 선착순 마감", "오늘이 가장 저렴한 이유" 등 심리적 압박과 즉각 행동을 유도하는 강렬하고 긴 문구.
+    2. 채널톡 (3종 세트):
+       - 모바일 최적화된 긴 호흡의 카피. 이모지를 적극 활용하되, 핵심 정보를 빠짐없이 포함.
 
     [출력 포맷: JSON]
     {{
-        "lms_copy_samples": ["LMS 1안", "LMS 2안", "LMS 3안", "LMS 4안", "LMS 5안"],
-        "channel_talk_samples": ["채널톡 1안", "채널톡 2안", "채널톡 3안", "채널톡 4안", "채널톡 5안"]
+        "lms_copy_samples": ["LMS 고퀄리티 1안", "LMS 고퀄리티 2안", "LMS 고퀄리티 3안"],
+        "channel_talk_samples": ["채널톡 고퀄리티 1안", "채널톡 고퀄리티 2안", "채널톡 고퀄리티 3안"]
     }}
     """
     
@@ -372,33 +373,28 @@ async def regenerate_copy(req: AnalyzeRequest):
         lms_res = ai_data.get("lms_copy_samples", [])
         if not isinstance(lms_res, list): lms_res = []
         lms_res = [str(x) for x in lms_res if x]
-        while len(lms_res) < 5: lms_res.append(f"{field_name} 추가 카피 준비 중...")
+        while len(lms_res) < 3: lms_res.append(f"{field_name} 정밀 분석 카피가 준비 중입니다.")
         
         chn_res = ai_data.get("channel_talk_samples", [])
         if not isinstance(chn_res, list): chn_res = []
         chn_res = [str(x) for x in chn_res if x]
-        while len(chn_res) < 5: chn_res.append(f"{field_name} 추가 채널톡 준비 중...")
+        while len(chn_res) < 3: chn_res.append(f"{field_name} 맞춤 채널톡 카피가 준비 중입니다.")
 
         return RegenerateCopyResponse(
-            lms_copy_samples=lms_res[:5],
-            channel_talk_samples=chn_res[:5]
+            lms_copy_samples=lms_res[:3],
+            channel_talk_samples=chn_res[:3]
         )
     
     # Fallback to smart templates
-    gap_percent = 15
     lms_samples = [
-        f"【{field_name}】\n\n🔥 파격조건변경!!\n☛ 계약금 {dp}\n☛ {ib} 파격 혜택\n☛ 실거주의무 및 청약통장 無\n\n■ 브랜드 & 자산 가치\n▶ 주변 시세 대비 {gap_percent}% 낮은 압도적 분양가\n▶ {fkp} 특화 설계 적용\n☎️ 문의 : 1600-0000",
-        f"[특별공식발송] {field_name} 관심고객 안내\n💰 강력한 금융 혜택\n✅ 계약금 {dp}\n✅ {ib}\n☎️ 상담문의: 010-0000-0000",
-        f"🚨 {field_name} 제로계약금 수준 마감 임박!\n🔥 {ib}, 주택수 미포함 수혜\n📞 대표번호: 1811-0000",
-        f"💎 {field_name} 미래가치 리포트 공개\n🏙️ {address}의 핵심 수혜지\n📉 합리적 {gap_percent}% 낮은 가격\n▶ 상세 내용: [상담문의]",
-        f"🏢 {field_name} 프리미엄 평면 안내\n✨ 전세대 포베이 특화 설계\n🌳 주거 만족도 1위의 가치\n☎️ 대표문의: 0507-0000-0000"
+        f"【{field_name} | 공식 안내문】\n\n대한민국 상급지의 자부심, {field_name}이 선사하는 압도적 주거 경험에 여러분을 초대합니다. 💎\n\n현재 {address} 일대는 대규모 개발 호재와 함께 미래 자산 가치가 급격히 재편되고 있습니다. 본 현장은 단순한 주거 공간을 넘어, {fkp}라는 독보적 가치를 통해 입주민의 품격을 증명할 것입니다.\n\n💰 파격적 금융 혜택:\n- 계약금 {dp} 시스템으로 초기 자금 부담 최소화\n- {ib} 확정으로 입주 시까지 금리 걱정 NO!\n\n이미 발 빠른 자산가들의 로얄층 선점이 시작되었습니다. 시세 대비 합리적인 가격으로 내 집 마련과 자산 증식의 두 토끼를 동시에 잡으십시오. 🚀\n\n☎️ 공식 분양 본부: 1600-0000",
+        f"[특별 금융 분석] {field_name} 자산성 전문 리포트\n\n지금 {field_name}에 주목해야 하는 팩트 체크! 📊\n\n주변 구축 아파트 시세 대비 본 현장은 압도적인 신축 프리미엄과 함께 금융 혜택을 제공하고 있습니다. {ib} 혜택은 실질적으로 전용면적당 수천만 원의 절감 효과를 가져옵니다. 💸\n\n✅ 체크포인트:\n1. {address} 핵심 상권 및 인프라 초밀착 입지\n2. {fkp} 특화 설계를 통한 평면 경쟁력 확보\n3. 실거주 의무 해제 및 전매 무제한 수혜 지\n\n로얄 동·호수 배정은 실시간으로 소진되고 있습니다. 지금 바로 확인하세요.\n☎️ 긴급 상담: 010-0000-0000",
+        f"🚨 [마감임박] {field_name} 선착순 동·호수 지정 마감 🚨\n\n망설이는 순간, 당신의 미래 가치는 지나갑니다! 🔥\n현재 {field_name} 홍보관은 연일 인산인연으로 로얄층이 빠르게 완판되고 있습니다. 마지막 남은 극소량 잔여 세대를 선점할 수 있는 '최종 기회'입니다.\n\n✨ 놓치면 후회할 핵심 이유:\n- 주변 시세 압도하는 {field_name}만의 평당 분양가\n- {ib} + 계약금 {dp}의 파격적 콜라보\n- {fkp} 최신 트렌드를 반영한 명품 대단지\n\n오늘 방문 예약 시 특별 사은품을 증정합니다. 🎁 성공적인 자산 설계의 시작, 지금 바로 행동하십시오!\n📞 대표번호: 1811-0000"
     ]
     channel_samples = [
-        f"🔥 {field_name} | 파격 조건변경 소식!\n✅ 핵심 혜택 요약:\n- 계약금 {dp}\n- 이자 부담 제로! {ib} 확정\n📢 실시간 로열층 확인 👇",
-        f"🚨 [긴급] {field_name} 로열층 선착순 마감 직전!\n📞 긴급 상담 및 방문예약: 010-0000-0000",
-        f"📊 {field_name} 고관여 실거주용 [정밀 분석 리포트]\n{fkp} 등 주거 만족도 1위의 진짜 이유를 리포트로 확인하세요. 💎",
-        f"🏗️ {address}의 미래 [{field_name}]\n💎 랜드마크 입지 프리미엄 공개",
-        f"🎁 [{field_name}] 이벤트 참여\n모델하우스 방문 시 특별 선물 증정 ✨"
+        f"🔥 {field_name} | 파격 조건변경 소식! 🔥\n\n현재 호갱노노 실시간 급상승 1위! 그 이유가 궁금하시죠? 💎\n\n✅ 혜택 요약:\n- 초기 계약금 {dp}로 입주 시까지!\n- 이자 부담 제로! 파격적인 {ib} 확정\n\n🚅 {address}의 랜드마크이자 {fkp}를 누릴 단 하나의 선택. 지금 채팅으로 바로 문의하세요! 📢",
+        f"🚨 [긴급] {field_name} 로열층 선착순 소진 중! 🚨\n\n상담 대기 인원 급증! 망설이면 늦습니다. 💨\n\n💎 투자/실거주 핵심 포인트:\n1. {address} 내 독보적인 입지 희소성\n2. 인근 구축 대비 압도적 커스텀 평면 설계\n\n실시간 잔여 호수 확인하고 VIP 상담 예약을 지금 바로 진행하세요! 📞",
+        f"📊 {field_name} 고관여 전용 [정밀 분석 리포트] 📊\n\n호갱노노에서도 볼 수 없는 진짜 전문 데이터를 공개합니다. 🧐\n\n✨ 리포트 내용:\n- {address} 권역 향후 5년 공급량 데이터 분석\n- {fkp} 등 주거 만족도 1위의 진짜 이유\n- 실투자금 대비 수익률 정밀 시뮬레이션\n\n지금 채널톡에서 바로 리포트를 다운로드하세요! 💎"
     ]
     return RegenerateCopyResponse(lms_copy_samples=lms_samples, channel_talk_samples=channel_samples)
 
@@ -471,43 +467,38 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
 
         # 2. AI 분석을 위한 프롬프트 작성
         prompt = f"""
-        당신은 대한민국 부동산 분양 마케팅의 절대강자 '분양 알파고' 시스템입니다. 
-        [{field_name}] 현장의 성공적인 분양을 위한 '정밀 시장 분석' 및 '특화 마케팅 가이드'를 전문가 수준으로 상세하게 JSON으로 작성하십시오.
+        당신은 대한민국 부동산 분양 마케팅 상위 0.1% 전문가이자 '분양 알파고' 시스템입니다. 
+        [{field_name}] 현장의 성공적인 분양을 위한 '정밀 시장 및 매체 분석 리포트'를 전문가 수준으로 JSON 작성하십시오.
+
+        [분석 요청 사항]
+        - market_diagnosis: 전문 용어를 적극 활용하여 시장의 거시적 흐름과 단지의 입지적 강점을 최소 5문장 이상으로 상세히 분석하십시오.
+        - lms_copy_samples & channel_talk_samples: 이모지를 풍부하게 사용하고, 가독성이 좋으면서도 내용이 매우 긴 '호소력 짙은' 문안을 각 매체당 3개씩 작성하십시오.
+        - media_mix: '호갱노노 채널톡', 'LMS(문자 마케팅)'를 필수 포함한 3대 핵심 매체 전략을 제시하십시오.
 
         [데이터 세트]
         - 현장명: {field_name} / 위치: {address} / 상품군: {product_category}
         - 프라이싱: 공급가 {sales_price} VS 주변 시세 {target_price}
-        - 공급 규모: {supply_volume}세대
-        - 금융 조건: 계약금 {dp}, {ib}
+        - 규모/공급: {supply_volume}세대 / 금융조건: 계약금 {dp}, {ib}
         - 핵심 특장점: {fkp}
-        - 현재 마케팅 고민: {main_concern}
         
-        [검색참고 데이터] 
-        {search_context[:1000] if search_context else "최신 검색 트렌드 기반 분석 필요"}
-
-        [미션 및 출력 요구사항]
-        1. market_diagnosis: 현재의 거시 경제 흐름과 해당 지역의 구체적 지표를 결합한 날카로운 통찰력을 제공하십시오.
-        2. media_mix: '호갱노노 채널톡', 'LMS(문자 마케팅)'를 포함한 최적의 3개 매체 전략을 제시하십시오.
-        3. lms_copy_samples & channel_talk_samples: 위 매체에 특화된 고효율 카피 각 5종을 작성하십시오.
-
         [JSON Output Structure]
         {{
             "market_diagnosis": "...",
             "target_persona": "...",
-            "target_audience": ["#태그1", "#태그2", "#태그3", "#태그4", "#태그5"],
+            "target_audience": ["#1", "#2", "#3", "#4", "#5"],
             "competitors": [
-                {{"name": "인근 비교 단지 A", "price": {target_price or 0}, "gap_label": "도보 5분"}},
-                {{"name": "인근 비교 단지 B", "price": {target_price * 1.05 if target_price else 0}, "gap_label": "1.2km 인접"}}
+                {{"name": "인근 단지 A", "price": {target_price or 0}, "gap_label": "도보 5분"}},
+                {{"name": "인근 단지 B", "price": {target_price * 1.05 if target_price else 0}, "gap_label": "1.2km"}}
             ],
             "ad_recommendation": "...",
             "copywriting": "...",
-            "keyword_strategy": ["키워드1", "2", "3", "4", "5"],
-            "weekly_plan": ["1주차", "2주차", "3주차", "4주차"],
+            "keyword_strategy": ["키원드1", "2", "3", "4", "5"],
+            "weekly_plan": ["1주", "2주", "3주", "4주"],
             "roi_forecast": {{"expected_leads": 150, "expected_cpl": 45000, "conversion_rate": 3.5, "expected_ctr": 1.9}},
-            "lms_copy_samples": ["카피1", "카피2", "카피3", "카피4", "카피5"],
-            "channel_talk_samples": ["채널1", "채널2", "채널3", "채널4", "채널5"],
+            "lms_copy_samples": ["긴 카피 1안", "긴 카피 2안", "긴 카피 3안"],
+            "channel_talk_samples": ["채널톡 긴 카피 1안", "채널톡 긴 카피 2안", "채널톡 긴 카피 3안"],
             "media_mix": [
-                {{"media": "매체명", "feature": "강점", "reason": "이유", "strategy_example": "전략"}}
+                {{"media": "매체", "feature": "강점", "reason": "이유", "strategy_example": "전략"}}
             ]
         }}
         """
@@ -589,12 +580,12 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             elif not isinstance(val, list):
                 val = []
             
-            # 카피 샘플은 반드시 5개 보장
+            # 카피 샘플은 반드시 3개 보장
             if key in ["lms_copy_samples", "channel_talk_samples"]:
                 val = [str(x) for x in val if x]
-                while len(val) < 5:
-                    val.append(f"{field_name} 특화 분석 카피 생성 대기 중...")
-                val = val[:5]
+                while len(val) < 3:
+                    val.append(f"{field_name} 마케팅 정밀 카피 분석 중입니다.")
+                val = val[:3]
             else:
                 val = [str(x) for x in val]
                 
@@ -710,18 +701,14 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             ],
             "roi_forecast": {"expected_leads": 120, "expected_cpl": 48000, "expected_ctr": 1.7, "conversion_rate": 3.2},
             "lms_copy_samples": [
-                f"【{field_name}】\n\n🔥 파격조건변경!!\n☛ 계약금 {dp}\n☛ {ib} 혜택 확정\n☛ 실거주의무 및 전매제한 해제\n\n■ 브랜드 & 자산 가치\n▶ 주변 시세 대비 {gap_percent}% 낮은 압도적 분양가\n▶ {fkp if fkp else '프리미엄 특화 설계'} 적용\n▶ {supply_volume}세대 랜드마크 스케일\n\n☎️ 공식문의 : 1600-0000",
-                f"[공식본부발송] {field_name} 로열층 선착순 안내\n💰 강력한 금융 혜택\n✅ 계약금 정액제 실시\n✅ {ib}\n✅ 무제한 전매 가능\n\n🏡 현장 특장점\n- {address} 내 마지막 노다지 핵심 황금 자리\n- 시세 차익 약 {abs(market_gap):.0f}만원의 강력한 가치\n☎️ 대표번호: 010-0000-0000",
-                f"🚨 {field_name} 마감 임박 안내!\n🔥 전세대 영구 파노라마 조망\n🔥 인기 타입 완판 직전\n🔥 {ib} 수혜\n\n📞 긴급문의: 1800-0000",
-                f"💎 [{field_name}] 미래가치 리포트 발송\n🏙️ {address}의 중심, 다시 없을 기회\n📉 {gap_status} 가격대로 선점하는 내집마련\n🚀 GTX/교통 호재의 직접 수혜지\n▶ 리포트 확인: [상담예약]",
-                f"🏠 [{field_name}] 라이프스타일의 완성\n✨ {fkp if fkp else '최고급 커뮤니티'}를 갖춘 대단지\n🌿 도심 속 힐링 라이프, 숲세권 가치\n💝 선착순 방문 이벤트 진행 중\n☎️ 문의: 010-0000-0000"
+                f"【{field_name} | 프리미엄 분양 안내】\n\n대한민국 주거 문화를 선도하는 {field_name}의 특별한 가치에 초대합니다. ✨\n\n현재 {address} 일대는 입지적 희소성과 함께 실거주자들의 문의가 폭주하고 있습니다. 특히 본 현장만이 가진 {fkp if fkp else '압도적 미래 가치'}는 시간이 흐를수록 그 진가를 발휘할 것입니다.\n\n✅ 수분양자를 위한 파격적 혜택:\n- 계약금 단 {dp}로 내 집 마련의 꿈을 실현하세요.\n- 입주 전까지 금융 부담 제로! {ib} 혜택 전격 시행.\n\n주변 구축 시세 대비 약 {gap_percent}% 낮은 합리적 분양가는 향후 강력한 시세 차익의 발판이 될 것입니다. 지금 이 기회를 놓치지 마십시오.\n\n☎️ 공식 분양 센터: 1600-0000",
+                f"[High-End 분석] {field_name} 자산가치 집중 조명\n\n왜 지금 {field_name}이어야 하는가? 팩트로 증명합니다. 📊\n\n본 현장은 {address} 내에서도 {fkp if fkp else '우수한 입지'}를 점유하고 있으며, 1군 브랜드의 시공 능력이 더해진 명품 단지입니다.\n\n💰 금융 프로모션 안내:\n1. {ib} 수혜로 잔금 시까지 금융 비용 0원!\n2. 신축 아파트만의 특화 평면 및 최고급 커뮤니티\n3. {supply_volume}세대 랜드마크 스케일\n\n선착순 호수 지정 제도로 운영 중이오니, 로얄층 선점을 위해 서둘러 연락 주시기 바랍니다.\n☎️ 전문 상담: 010-0000-0000",
+                f"🚨 [긴급] {field_name} 인기 타입 선착순 마감 직전 🚨\n\n오늘 당신의 선택이 5년 뒤 자산의 크기를 바꿉니다! 🔥\n현재 {field_name} 현장은 실시간 계약 폭주로 인해 잔여 물량이 급속도로 소진되고 있습니다.\n\n✨ 핵심 소구점:\n- {address} 중심 인프라를 한 걸음에 누리는 완벽한 입지\n- 전매 무제한 수혜 및 {ib} 파격 조건\n- {fkp if fkp else '프리미엄 설계'} 적용\n\n지금 바로 모델하우스 방문 예약하시고 마지막 남은 로얄층의 주인공이 되십시오. 🎁\n📞 긴급 접수처: 1800-0000"
             ],
             "channel_talk_samples": [
-                f"🔥 {field_name} | 파격 조건변경 소식!\n✅ 핵심 혜택 요약:\n- 계약 초기 자금 부담 완화\n- 이자心配 없는 {ib} 혜택\n📢 잔여 세대 확인 👇",
-                f"🚨 [긴급] {field_name} 로열층 선착순 마감 직전!\n💎 투자/실거주 포인트:\n1. {address} 권역 최상위 입지\n2. 시세 차익만 {gap_percent}% 이상 예상\n📞 긴급 상담 문의: 010-0000-0000",
-                f"📊 {field_name} 전용 [팩트 체크 리포트]\n✨ 리포트 수록 내용:\n- {address} 권역 분석\n- 인근 대비 {gap_percent}% 저렴한 분양가\n▶ 리포트 신청: [상담예약신청]",
-                f"🏗️ {address}의 판도를 바꿀 [{field_name}]\n💎 브랜드 프리미엄과 압도적 입지\n🌟 랜드마크가 될 이유, 지금 확인하세요.",
-                f"🎁 [{field_name}] 특별 방문 이벤트!\n방문만 해도 증정되는 특별한 혜택\n지금 바로 예약하고 로열층 선점하세요. ✨"
+                f"🔥 {field_name} | 파격 조건변경 소식! 🔥\n\n현재 호갱노노 급상승 검색어 등재! 💎\n입주 시까지 계약금 {dp}만으로 내 집 마련이 가능한 마지막 현장.\n\n이자 부담 걱정 끝! {ib} 확정 수혜 단지.\n🚅 {address}의 미래를 선점할 유일한 입지.\n\n지금 바로 채팅으로 잔여 세대를 확인하세요! 👇",
+                f"🚨 [긴급] {field_name} 로열층 선착순 폭주 중! 🚨\n\n망설이면 사라지는 마지막 기회! 현재 홍보관 방문 예약이 줄을 잇고 있습니다. 💨\n\n💎 투자 핵심:\n1. {address} 랜드마크급 {supply_volume}세대 스케일\n2. 인근 대비 {gap_percent}% 합리적 공급가\n\n실시간 잔여 호수와 특별 혜택 정보를 지금 바로 안내해 드립니다! 🗨️",
+                f"📊 {field_name} 전용 [정밀 분석 리포트 확인] 📊\n\n전문가가 분석한 진짜 정보, 궁금하시죠? 🧐\n\n수록 내용:\n- {address} 입지적 가치 및 공급 현황 정밀 진단\n- 시세 차익을 결정짓는 {fkp if fkp else '핵심 입지 가치'}\n- 금융 혜택 적용 시 실투자금 시뮬레이션\n\n지금 채널톡 신청 시 리포트를 즉시 발송해 드립니다! 💎"
             ],
             "media_mix": [
                 {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": "실시간 데이터 기반", "strategy_example": "입지 분석 리포트 중심 상담 유도"},

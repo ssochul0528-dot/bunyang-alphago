@@ -190,19 +190,15 @@ export default function BunyangAlphaGo() {
   };
 
   const lmsTabs = [
-    { label: "신뢰/종합", desc: "공식 브랜드 가치 및 시세차익 강조" },
-    { label: "혜택집중", desc: "금융 솔루션 및 실질 투자 비용 중심" },
-    { label: "마감임박", desc: "실시간 계약 폭주 및 심리적 트리거" },
-    { label: "투자 가치", desc: "미래 지향적 개발 호재 및 자산 가치 상향" },
-    { label: "라이프스타일", desc: "특화 설계 및 최상급 주거 환경 강조" }
+    { label: "신뢰/종합 (긴글)", desc: "공식 브랜드 가치 및 서술형 미래 가치 강조" },
+    { label: "혜택집중 (공략)", desc: "금융 솔루션 및 수익성 정밀 분석" },
+    { label: "마감임박 (후킹)", desc: "심리적 트리거 및 실시간 현장 분위기" }
   ];
 
   const channelTabs = [
-    { label: "조건/혜택", desc: "🔥 파격 조건변경 및 압도적 혜택" },
-    { label: "긴급/마감", desc: "🚨 잔여세대 급소진 및 긴급 공지" },
-    { label: "프리미엄", desc: "💎 랜드마크 입지 및 미래가치 분석" },
-    { label: "입지 분석", desc: "📍 주변 인프라 및 핵심 입지 디테일" },
-    { label: "이벤트/선물", desc: "🎁 모델하우스 방문 및 계약 혜택" }
+    { label: "조건/혜택 (Long)", desc: "🔥 파격 조건변경 및 모바일 최적화 긴 문구" },
+    { label: "긴급/마감 (폭주)", desc: "🚨 잔여세대 급소진 및 VIP 예약 안내" },
+    { label: "전문 분석 (리포트)", desc: "💎 전문가 전용 정밀 분석 및 팩트 체크" }
   ];
   const [fieldName, setFieldName] = useState("");
   const [addressValue, setAddressValue] = useState("");
@@ -1694,7 +1690,7 @@ export default function BunyangAlphaGo() {
                   <div>
                     <h3 className="text-xl font-black flex items-center gap-3">
                       <MessageSquare className="text-indigo-400" size={24} />
-                      전략별 맞춤 LMS 카피 (5종)
+                      전략별 맞춤 LMS 카피 (3종)
                     </h3>
                     <p className="text-xs text-slate-500 mt-1 italic">상담 목적에 맞는 마케팅 문구를 선택하여 활용하세요.</p>
                   </div>
@@ -1786,7 +1782,7 @@ export default function BunyangAlphaGo() {
                   <div>
                     <h3 className="text-xl font-black flex items-center gap-3 text-orange-400">
                       <MessageCircle className="text-orange-400" size={24} />
-                      호갱노노 채널톡 최적화 카피 (5종)
+                      호갱노노 채널톡 최적화 카피 (3종)
                     </h3>
                     <p className="text-xs text-slate-500 mt-1 italic">호갱노노 유저 성향에 맞춘 임팩트 있는 이모지 카피입니다.</p>
                   </div>
