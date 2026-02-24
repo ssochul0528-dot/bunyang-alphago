@@ -16,7 +16,7 @@ import json
 from typing import List, Optional, Union, Any
 
 # Gemini API 설정
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyCpLoq9OIzHB5Z0xJyXbUrALsh4ePqgVV0")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyCd5wNhgfAFZWpHdGDA9RSzpQ-YZeTHms0")
 genai.configure(api_key=GEMINI_API_KEY)
 
 import logging
@@ -304,11 +304,11 @@ class AnalyzeRequest(BaseModel):
     interest_benefit: Optional[str] = "없음"
     additional_benefits: Optional[Union[List[str], str]] = []
     main_concern: Optional[str] = "기타"
-    monthly_budget: Optional[Union[int, float]] = 0
+    monthly_budget: Optional[Union[int, float, str]] = 0
     existing_media: Optional[Union[List[str], str]] = []
-    sales_price: Optional[float] = 0.0
-    target_area_price: Optional[float] = 0.0
-    down_payment_amount: Optional[Union[int, float]] = 0
+    sales_price: Optional[Union[float, str, int]] = 0.0
+    target_area_price: Optional[Union[float, str, int]] = 0.0
+    down_payment_amount: Optional[Union[int, float, str]] = 0
     supply_volume: Optional[Union[int, str]] = 0
     field_keypoints: Optional[str] = ""
     user_email: Optional[str] = None
@@ -352,53 +352,86 @@ async def regenerate_copy(req: AnalyzeRequest):
     }}
     """
     
-    try:
-        model = genai.GenerativeModel('models/gemini-2.0-flash')
-        response = model.generate_content(prompt)
-        ai_data = extract_json(response.text)
-        if ai_data:
-            return RegenerateCopyResponse(
-                lms_copy_samples=ai_data.get("lms_copy_samples", []),
-                channel_talk_samples=ai_data.get("channel_talk_samples", [])
-            )
-    except Exception as e:
-        logger.error(f"Regenerate copy AI error: {e}")
+    ai_data = None
+    model_candidates = ['gemini-flash-latest', 'gemini-pro-latest', 'gemini-2.0-flash-lite']
     
-    # Fallback to smart templates if AI fails
-    gap_percent = 15 # Default fallback
+    for model_name in model_candidates:
+        try:
+            logger.info(f"Regenerate copy attempt with: {model_name}")
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(prompt)
+            if response and response.text:
+                ai_data = extract_json(response.text)
+                if ai_data: break
+        except Exception as e:
+            logger.error(f"Regenerate copy model {model_name} failed: {e}")
+            continue
+
+    if ai_data:
+        return RegenerateCopyResponse(
+            lms_copy_samples=ai_data.get("lms_copy_samples", []),
+            channel_talk_samples=ai_data.get("channel_talk_samples", [])
+        )
+    
+    # Fallback to smart templates
+    gap_percent = 15
     lms_samples = [
-        f"【{field_name}】\n\n🔥 파격조건변경!!\n☛ 계약금 {dp}\n☛ {ib} 파격 혜택\n☛ 실거주의무 및 청약통장 無\n\n■ 초현대적 입지+트리플 교통망\n🚅 GTX 및 주요 노선 연장 수혜(예정)\n🏫 단지 바로 앞 초·중·고 도보 학세권\n🏙️ {address} 핵심 인프라 원스톱 라이프\n\n■ 브랜드 & 자산 가치\n▶ 주변 시세 대비 {gap_percent}% 낮은 압도적 분양가\n▶ {fkp} 특화 설계 적용\n▶ 대단지 프리미엄 랜드마크 스케일\n\n🎁 예약 후 방문 시 '신세계 상품권' 증정\n🎉 계약 시 '고급 가전 사은품' 특별 증정\n☎️ 문의 : 1600-0000",
-        f"[특별공식발송] {field_name} 관심고객 안내\n\n💰 강력한 금융 혜택\n✅ 계약금 {dp}\n✅ 중도금 {ib}\n✅ 무제한 전매 가능 단지\n\n🏡 현장 특장점\n- {address} 내 마지막 노다지 핵심 입지\n- {fkp} 등 고품격 커뮤니티 시설\n\n더 이상 망설이지 마세요. 마지막 로열층이 소진 중입니다.\n☎️ 상담문의: 010-0000-0000",
-        f"🚨 {field_name} 제로계약금 수준 마감 임박!\n\n🔥 인기 타입 완판 직전, 잔여 소수 분양\n🔥 {ib}, 주택수 미포함 수혜 단지\n🏗️ 인접 대규모 개발 호재로 인한 미래 가치 급상승\n\n🎁 선착순 계약축하 이벤트 진행 중\n📞 대표번호: 1811-0000"
+        f"【{field_name}】\n\n🔥 파격조건변경!!\n☛ 계약금 {dp}\n☛ {ib} 파격 혜택\n☛ 실거주의무 및 청약통장 無\n\n■ 브랜드 & 자산 가치\n▶ 주변 시세 대비 {gap_percent}% 낮은 압도적 분양가\n▶ {fkp} 특화 설계 적용\n☎️ 문의 : 1600-0000",
+        f"[특별공식발송] {field_name} 관심고객 안내\n💰 강력한 금융 혜택\n✅ 계약금 {dp}\n✅ {ib}\n☎️ 상담문의: 010-0000-0000",
+        f"🚨 {field_name} 제로계약금 수준 마감 임박!\n🔥 {ib}, 주택수 미포함 수혜\n📞 대표번호: 1811-0000"
     ]
     channel_samples = [
-        f"🔥 {field_name} | 파격 조건변경 소식!\n\n현재 호갱노노에서 가장 뜨거운 관심을 받는 이유! 💎\n\n✅ 핵심 혜택 요약:\n- 계약금 {dp}\n- 이자 부담 제로! {ib} 확정\n\n🚅 {address}의 랜드마크를 지금 바로 선점하십시오.\n\n📢 실시간 로열층 확인 👇",
-        f"🚨 [긴급] {field_name} 로열층 선착순 마감 직전!\n\n망설이는 순간 기회는 지나갑니다. 현재 {field_name} 현장은 실시간 예약 폭주 중! 💨\n\n📞 긴급 상담 및 방문예약: 010-0000-0000",
-        f"📊 {field_name} 고관여 실거주용 [정밀 분석 리포트]\n\n호갱노노 유저들이 주목하는 진짜 정보를 분석했습니다. 🧐\n{fkp} 등 주거 만족도 1위의 진짜 이유를 리포트로 확인하세요. 💎"
+        f"🔥 {field_name} | 파격 조건변경 소식!\n✅ 핵심 혜택 요약:\n- 계약금 {dp}\n- 이자 부담 제로! {ib} 확정\n📢 실시간 로열층 확인 👇",
+        f"🚨 [긴급] {field_name} 로열층 선착순 마감 직전!\n📞 긴급 상담 및 방문예약: 010-0000-0000",
+        f"📊 {field_name} 고관여 실거주용 [정밀 분석 리포트]\n{fkp} 등 주거 만족도 1위의 진짜 이유를 리포트로 확인하세요. 💎"
     ]
     return RegenerateCopyResponse(lms_copy_samples=lms_samples, channel_talk_samples=channel_samples)
 
 @app.post("/analyze")
 async def analyze_site(request: Optional[AnalyzeRequest] = None):
     """Gemini AI를 사용한 현장 정밀 분석 API (고도화 버전)"""
+    # 기본값 설정 (fallback 시 NameError 방지)
+    field_name = "분석 현장"
+    address = "지역 정보 없음"
+    product_category = "아파트"
+    sales_price = 0.0
+    target_price = 0.0
+    market_gap = 0.0
+    gap_percent = 0.0
+    gap_status = "높은"
+    supply_volume = 0
+    field_keypoints = ""
+    ib = "무이자"
+    dp = "10%"
+    main_concern = "기타"
+
     logger.info(f">>> Analyze request received: {request.field_name if request else 'No request body'}")
+    
     try:
         req = request if request else AnalyzeRequest()
         
         field_name = getattr(req, 'field_name', "분석 현장")
         address = getattr(req, 'address', "지역 정보 없음")
         product_category = getattr(req, 'product_category', "아파트")
-        sales_price = float(req.sales_price or 0.0)
-        target_price = float(req.target_area_price or 0.0)
         
-        # 기본 변수 미리 계산 (프롬프트 및 Fallback 공용)
+        # 숫자 필드 안전하게 변환
+        try:
+            sales_price = float(req.sales_price or 0.0)
+        except: sales_price = 0.0
+        
+        try:
+            target_price = float(req.target_area_price or 0.0)
+        except: target_price = 0.0
+        
         market_gap = target_price - sales_price
         gap_status = "저렴" if market_gap > 0 else "높은"
         gap_percent = abs(round((market_gap / (sales_price if sales_price > 0 else 1)) * 100, 1))
         
-        # supply_volume 처리
+        # supply_volume 처리 (문자열 포함 시 숫자만 추출)
         try:
-            supply_volume = int(req.supply_volume or 0)
+            sv_raw = str(req.supply_volume or "0")
+            sv_digits = "".join(filter(str.isdigit, sv_raw))
+            supply_volume = int(sv_digits) if sv_digits else 0
         except:
             supply_volume = 0
             
@@ -421,7 +454,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         except Exception as e:
             logger.warning(f"Live search skipped: {e}")
 
-        # 2. AI 분석을 위한 프롬프트 작성 (고도화 버전)
+        # 2. AI 분석을 위한 프롬프트 작성
         prompt = f"""
         당신은 대한민국 부동산 분양 마케팅 상위 0.1% 전문가이자 퍼포먼스 마케팅 디렉터입니다. 
         [{field_name}] 현장의 성공적인 분양을 위한 '정밀 시장 분석' 및 '특화 마케팅 가이드'를 전문 용어를 사용하여 아주 상세하게 JSON으로 작성하십시오.
@@ -438,15 +471,10 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         {search_context[:1000] if search_context else "최신 검색 트렌드 기반 분석 필요"}
 
         [미션 및 출력 요구사항 - 절대 준수]
-        1. 핵심 매체 구성 (media_mix): 당신은 반드시 3개 매체 중 첫 번째는 **'호갱노노 채널톡'**, 두 번째는 **'LMS(문자 마케팅)'**를 선정하십시오. 이는 예외 없는 고정 지침입니다. 나머지 1개는 고민사항인 [{main_concern}] 해결에 가장 최적화된 매체를 추가하십시오.
+        1. 핵심 매체 구성 (media_mix): 반드시 3개 매체 중 첫 번째는 **'호갱노노 채널톡'**, 두 번째는 **'LMS(문자 마케팅)'**를 선정하십시오.
         2. market_diagnosis: 현 지역 부동산 흐름과 연계된 날카로운 전문가 통찰력을 제공하십시오. (최소 4-5문장)
         3. target_persona: 주거 목적 및 자산 수준을 포함한 구체적 페르소나를 정의하십시오.
         4. 소재 및 전략: 위 매체 3종 각각에 대해 '운영 전략'과 '소재 제작 포인트'를 전문가 수준으로 작성하십시오.
-        4. lms_copy_samples (3종): 
-           - 1안(신뢰): 브랜드/입지 중심의 묵직한 가치 전달.
-           - 2안(수익): 철저하게 데이터와 돈 기반의 분석형 멘트.
-           - 3안(긴급): 트리거를 자극하는 강력한 마감 임박 멘트.
-        5. channel_talk_samples (3종): 모바일 사용자의 직관적 클릭을 유도하는 트렌디하고 가독성 높은 문구.
 
         [JSON Output Structure]
         {{
@@ -454,8 +482,8 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             "target_persona": "...",
             "target_audience": ["#태그1", "#태그2", "#태그3", "#태그4", "#태그5"],
             "competitors": [
-                {{"name": "인근 비교 단지 A", "price": {target_price or 0}, "distance": "800m"}},
-                {{"name": "인근 비교 단지 B", "price": {(target_price or sales_price) * 1.05:.0f}, "distance": "1.5km"}}
+                {{"name": "인근 비교 단지 A", "price": {target_price or 0}, "gap_label": "도보 10분"}},
+                {{"name": "인근 비교 단지 B", "price": {(target_price or sales_price) * 1.05:.0f}, "gap_label": "1.5km 인접"}}
             ],
             "ad_recommendation": "...",
             "copywriting": "...",
@@ -472,15 +500,11 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         }}
         """
 
-        # 3. Gemini 모델 시도 (유료 키 가용 모델 우선 순위 조정)
         ai_data = None
-        # 유료 계정에서 선호되는 2.0 및 latest 모델 우선 시도
         model_candidates = [
-            'models/gemini-2.0-flash', 
-            'models/gemini-1.5-flash', 
-            'models/gemini-flash-latest',
-            'models/gemini-1.5-pro',
-            'models/gemini-pro-latest'
+            'gemini-flash-latest',
+            'gemini-pro-latest',
+            'gemini-2.0-flash-lite'
         ]
         
         for model_name in model_candidates:
@@ -498,7 +522,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 continue
 
         if not ai_data:
-            logger.warning("AI model failed to provide valid JSON. Triggering Smart Local Engine.")
+            logger.warning("AI model failed. Triggering Smart Local Engine.")
             raise Exception("AI Response Parsing Failed")
 
         # 필수 필드 누락 방지 및 기본값 보정
@@ -516,16 +540,64 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             "channel_talk_samples": ai_data.get("channel_talk_samples") or [],
             "media_mix": ai_data.get("media_mix") or []
         }
-        # Ensure expected_ctr is present if roi_forecast was provided by AI but missing this field
+        
+        # media_mix 내부 필드 보정
+        final_media_mix = []
+        for m in safe_data["media_mix"]:
+            if isinstance(m, dict):
+                final_media_mix.append({
+                    "media": str(m.get("media", "매체")),
+                    "feature": str(m.get("feature", "특징")),
+                    "reason": str(m.get("reason", "분석 사유")),
+                    "strategy_example": str(m.get("strategy_example", "전략 예시"))
+                })
+        safe_data["media_mix"] = final_media_mix
         if "expected_ctr" not in safe_data["roi_forecast"]:
             safe_data["roi_forecast"]["expected_ctr"] = 1.8
 
-        # 점수 계산 logic
+        # ROI Forecast 필드 보정
+        default_roi = {"expected_leads": 100, "expected_cpl": 50000, "conversion_rate": 2.5, "expected_ctr": 1.8}
+        if not isinstance(safe_data.get("roi_forecast"), dict):
+            safe_data["roi_forecast"] = default_roi
+        else:
+            for k, v in default_roi.items():
+                if k not in safe_data["roi_forecast"]:
+                    safe_data["roi_forecast"][k] = v
+                else:
+                    try:
+                        safe_data["roi_forecast"][k] = float(safe_data["roi_forecast"][k])
+                    except:
+                        safe_data["roi_forecast"][k] = v
+
+        # 리스트 필드 보정
+        for key in ["lms_copy_samples", "channel_talk_samples", "target_audience", "weekly_plan", "keyword_strategy"]:
+            val = safe_data.get(key)
+            if isinstance(val, str):
+                safe_data[key] = [val]
+            elif not isinstance(val, list):
+                safe_data[key] = []
+            else:
+                safe_data[key] = [str(x) for x in val]
+
+        # competitors 필드 보정
+        final_competitors = []
+        for c in safe_data["competitors"]:
+            if isinstance(c, dict):
+                try:
+                    p_val = float(c.get("price", 0))
+                except: p_val = 0.0
+                
+                final_competitors.append({
+                    "name": str(c.get("name", "경쟁 단지")),
+                    "price": p_val,
+                    "gap_label": str(c.get("gap_label") or c.get("distance") or "비교군")
+                })
+        safe_data["competitors"] = final_competitors
+
         price_score = min(100, max(0, 100 - abs(sales_price - target_price) / (target_price if target_price > 0 else 1) * 100))
         location_score = 75 + random.randint(-5, 10)
         benefit_score = 70 + random.randint(-5, 10)
         total_score = int((price_score * 0.4 + location_score * 0.3 + benefit_score * 0.3))
-        # gap_percent는 위에서 미리 계산됨
 
         return {
             "score": int(total_score),
@@ -536,7 +608,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 "total_score": int(total_score)
             },
             "market_diagnosis": safe_data["market_diagnosis"],
-            "market_gap_percent": round(market_gap_percent, 2),
+            "market_gap_percent": round(gap_percent, 2),
             "price_data": [
                 {"name": "우리 현장", "price": sales_price},
                 {"name": "주변 시세", "price": target_price},
@@ -568,15 +640,9 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         }
     except Exception as e:
         import traceback
-        err_detail = str(e)
         logger.error(f"Critical analyze error: {e}\n{traceback.format_exc()}")
         
-        # Fallback 변수 (이미 함수 상단에서 계산됨)
-        
-        # 상품군별 특화 멘트
         cat_msg = "주거 선호도가 높은 아파트" if "아파트" in product_category else "수익형 부동산으로서 가치가 높은 상품"
-        
-        # 지능형 시장 진단 생성
         smart_diagnosis = (
             f"[{field_name}]은 인근 시세({target_price}만원) 대비 약 {gap_percent}% {gap_status}한 가격대로 책정되어 실거주 및 투자 수요의 유입이 매우 강력할 것으로 예측됩니다. "
             f"특히 {address} 내에서도 {cat_msg}로 분류되어 입지적 희소성이 돋보이며, {field_keypoints if field_keypoints else '탁월한 입지'}를 바탕으로 초기 분양률 80% 이상을 목표로 하는 공격적인 마케팅이 유효한 시점입니다. "
@@ -592,7 +658,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 "total_score": 85
             },
             "market_diagnosis": smart_diagnosis,
-            "market_gap_percent": round((market_gap / (sales_price if sales_price > 0 else 1)) * 100, 2),
+            "market_gap_percent": round(gap_percent, 2),
             "price_data": [
                 {"name": "우리 현장", "price": sales_price},
                 {"name": "주변 시세", "price": target_price},
@@ -623,34 +689,20 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             ],
             "roi_forecast": {"expected_leads": 120, "expected_cpl": 48000, "expected_ctr": 1.7, "conversion_rate": 3.2},
             "lms_copy_samples": [
-                f"【{field_name}】\n\n🔥 파격조건변경!!\n☛ 계약금 10%\n☛ 중도금 무이자 혜택 확정\n☛ 실거주의무 및 전매제한 해제\n\n■ 초특급 입지+광역 교통망 확보\n🚅 GTX 수혜 및 지하철 연장(예정) 수혜지\n🏫 단지 바로 앞 초·중·고 학세권\n🏙️ {address} 중심 상권 및 생활 인프라 완비\n\n■ 브랜드 & 자산 가치\n▶ 주변 시세 대비 {gap_percent}% 낮은 압도적 분양가\n▶ {field_keypoints if field_keypoints else '프리미엄 특화 설계'} 적용\n▶ {supply_volume}세대 랜드마크 스케일\n\n🎁 예약 방문 시 '신세계 상품권' 증정\n🎉 계약 시 '고급 가전 사은품' 특별 증정\n☎️ 공식문의 : 1600-0000",
-                f"[공식본부발송] {field_name} 로열층 선착순 안내\n(전세대 선호도 높은 {product_category} 구성)\n\n💰 강력한 금융 혜택\n✅ 계약금 정액제 실시\n✅ 중도금 60% 전액 무이자\n✅ 실거주의무 無 / 무제한 전매 가능\n\n🏡 현장 특장점\n- {address} 내 마지막 노다지 핵심 황금 자리\n- 시세 차익만 약 {abs(market_gap):.0f}만원의 강력한 가치\n- 도보권 명품 학군 및 대단지 프리미엄 커뮤니티\n- {field_keypoints if field_keypoints else '입주민 전용 특화 서비스'}\n\n고민하시는 사이 마지막 로열층이 빠르게 소진 중입니다.\n☎️ 대표번호: 010-0000-0000",
-                f"🚨 {field_name} 제로계약금 수준 마감 임박 안내!\n\n🔥 전세대 영구 파노라마 조망 및 남향 배치\n🔥 현재 인기 타입 완판 직전, 소수 잔여 분양\n🔥 취득세 중과 배제 및 주택수 미포함 수혜\n\n🚗 광역 교통망 확정으로 서울 및 판교 20분대\n🏞️ 단지 앞 대형 공원을 품은 완벽한 숲세권 라이프\n🏗️ 인접 대규모 정비사업으로 입주 시 가치 폭등\n\n🎁 선착순 계약축하 이벤트 '황금열쇠' 증정 중\n상담 예약만 해도 '사은품' 100% 증정\n📞 긴급문의: 1800-0000"
+                f"【{field_name}】\n\n🔥 파격조건변경!!\n☛ 계약금 {dp}\n☛ {ib} 혜택 확정\n☛ 실거주의무 및 전매제한 해제\n\n■ 브랜드 & 자산 가치\n▶ 주변 시세 대비 {gap_percent}% 낮은 압도적 분양가\n▶ {field_keypoints if field_keypoints else '프리미엄 특화 설계'} 적용\n▶ {supply_volume}세대 랜드마크 스케일\n\n☎️ 공식문의 : 1600-0000",
+                f"[공식본부발송] {field_name} 로열층 선착순 안내\n💰 강력한 금융 혜택\n✅ 계약금 정액제 실시\n✅ {ib}\n✅ 무제한 전매 가능\n\n🏡 현장 특장점\n- {address} 내 마지막 노다지 핵심 황금 자리\n- 시세 차익만 약 {abs(market_gap):.0f}만원의 강력한 가치\n☎️ 대표번호: 010-0000-0000",
+                f"🚨 {field_name} 마감 임박 안내!\n🔥 전세대 영구 파노라마 조망\n🔥 인기 타입 완판 직전\n🔥 {ib} 수혜\n\n📞 긴급문의: 1800-0000"
             ],
             "channel_talk_samples": [
-                f"🔥 {field_name} | 파격 조건변경 소식!\n\n현재 호갱노노 유저들이 가장 주목하는 현장, 이유가 있습니다! 💎\n\n✅ 핵심 혜택 요약:\n- 계약 초기 자금 부담 완화\n- 이자心配 없는 {ib} 혜택 확약\n- 인근 시세 대비 {gap_percent}% 낮은 압도적 가격 메리트\n\n🚅 {address}의 핵심 인프라를 모두 누리는 마지막 기회. '이 가격에 이 입지가 가능해?'라는 데이터의 가치를 직접 확인하십시오.\n\n📢 잔여 세대 확인 및 분석 리포트 신청 👇\n☎️ 대표문의 : 1600-0000",
-                f"🚨 [긴급] {field_name} 로열층 선착순 마감 5분 전!\n\n망설이는 순간 사라집니다. 현재 {field_name} 현장은 실시간 계약 폭주로 로열층 수량이 급격히 소진 중입니다! 💨\n\n💎 투자/실거주 포인트:\n1. {address} 권역 최상위 랜드마크 입지\n2. 시세 차익만 {gap_percent}% 이상 예상되는 수익성\n3. {field_keypoints if field_keypoints else '프리미엄 주거 라이프'} 실현\n\n지금 예약 방문 시 대기 없이 관람 가능한 '우선 입장권'과 '사은품 증정권'을 즉시 발급해 드립니다. 🎁\n\n📞 긴급 상담 문의: 010-0000-0000",
-                f"📊 {field_name} 고관여 타겟 전용 [팩트 체크 리포트]\n\n호갱노노에서 찾을 수 없는 진짜 입지 데이터를 정리했습니다. 🧐\n학군, 상권, 미래 교통 호재를 수치로 증명한 유료급 정밀 리포트 배포 중!\n\n✨ 리포트 수록 내용:\n- {address} 권역 5년 내 공급 총량 분석\n- 인근 대비 {gap_percent}% 더 가벼운 분양가 분석 데이터\n- 자산 가치를 높이는 {field_keypoints if field_keypoints else '입지적 희소성'} 근거\n\n오직 위 리포트를 신청하신 분께만 비공개 잔여 물량 정보를 우선 제공합니다. 💎\n\n▶ 리포트 신청: [상담예약신청]"
+                f"🔥 {field_name} | 파격 조건변경 소식!\n✅ 핵심 혜택 요약:\n- 계약 초기 자금 부담 완화\n- 이자心配 없는 {ib} 혜택\n📢 잔여 세대 확인 👇",
+                f"🚨 [긴급] {field_name} 로열층 선착순 마감 직전!\n💎 투자/실거주 포인트:\n1. {address} 권역 최상위 입지\n2. 시세 차익만 {gap_percent}% 이상 예상\n📞 긴급 상담 문의: 010-0000-0000",
+                f"📊 {field_name} 전용 [팩트 체크 리포트]\n✨ 리포트 수록 내용:\n- {address} 권역 분석\n- 인근 대비 {gap_percent}% 저렴한 분양가\n▶ 리포트 신청: [상담예약신청]"
             ],
-            "media_mix": (
-                [
-                    {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": "실시간 데이터 기반", "strategy_example": "입지 분석 리포트 중심 상담 유도"},
-                    {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "높은 인지 및 확인율", "strategy_example": "혜택 강조 및 방문 예약 유도"},
-                    {"media": "메타/인스타 리드광고", "feature": "DB 수량 극대화", "reason": "관심사 기반 대량 노출", "strategy_example": "혜택 위주 소재 10종 교차 테스트"}
-                ] if main_concern == "DB 수량 부족" else [
-                    {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": "실시간 데이터 기반", "strategy_example": "입지 분석 리포트 중심 상담 유도"},
-                    {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "높은 인지 및 확인율", "strategy_example": "혜택 강조 및 방문 예약 유도"},
-                    {"media": "네이버 브랜드검색", "feature": "신뢰도 극대화", "reason": "의도 검색자 선점", "strategy_example": "공식 채널 강조 및 리포트 제공"}
-                ] if main_concern == "DB 질 저하" else [
-                    {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": "실시간 데이터 기반", "strategy_example": "입지 분석 리포트 중심 상담 유도"},
-                    {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "높은 인지 및 확인율", "strategy_example": "혜택 강조 및 방문 예약 유도"},
-                    {"media": "유튜브 인스트림", "feature": "비주얼 임팩트", "reason": "압도적 주목도", "strategy_example": "현장 드론 영상 및 특화 설계 부각"}
-                ] if main_concern == "낮은 클릭률(CTR)" else [
-                    {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": "실시간 데이터 기반", "strategy_example": "입지 분석 리포트 중심 상담 유도"},
-                    {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "높은 인지 및 확인율", "strategy_example": "혜택 강조 및 방문 예약 유도"},
-                    {"media": "카카오 톡캘린더", "feature": "방문 예약 자동화", "reason": "재방문/리마인드 효과", "strategy_example": "방문 예약 버튼 커스텀 연동"}
-                ]
-            )
+            "media_mix": [
+                {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": "실시간 데이터 기반", "strategy_example": "입지 분석 리포트 중심 상담 유도"},
+                {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "높은 인지 및 확인율", "strategy_example": "혜택 강조 및 방문 예약 유도"},
+                {"media": "메타/인스타 리드광고", "feature": "DB 수량 극대화", "reason": "관심사 기반 대량 노출", "strategy_example": "혜택 위주 소재 활용"}
+            ]
         }
 
 @app.get("/import-csv")

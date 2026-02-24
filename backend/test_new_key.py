@@ -2,12 +2,12 @@ import google.generativeai as genai
 import os
 
 # New key provided by user
-GEMINI_API_KEY = "AIzaSyCpLoq9OIzHB5Z0xJyXbUrALsh4ePqgVV0"
+GEMINI_API_KEY = "AIzaSyCd5wNhgfAFZWpHdGDA9RSzpQ-YZeTHms0"
 genai.configure(api_key=GEMINI_API_KEY)
 
 try:
     print("Testing API Key...")
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-flash-latest')
     response = model.generate_content("Ping")
     print(f"STATUS: SUCCESS")
     print(f"RESPONSE: {response.text}")
