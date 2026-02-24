@@ -41,6 +41,10 @@ import {
   Cell
 } from "recharts";
 
+// For PDF generation
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+
 // --- Types ---
 interface AnalysisResult {
   score: number;
@@ -145,40 +149,41 @@ export default function BunyangAlphaGo() {
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownloadPDF = async () => {
-    if (!reportRef.current) return;
-    setIsDownloading(true);
-    try {
-      const html2canvas = (await import('html2canvas')).default;
-      const jsPDF = (await import('jspdf')).jsPDF;
+    if (!reportRef.current) {
+      alert("리포트 데이터를 준비하고 있습니다. 잠시만 기다려 주세요.");
+      return;
+    }
 
+    setIsDownloading(true);
+    // 차트와 애니메이션이 완전히 렌더링될 시간을 줍니다.
+    await new Promise(resolve => setTimeout(resolve, 1200));
+
+    try {
       const element = reportRef.current;
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
+        allowTaint: true,
         backgroundColor: '#020617',
         logging: false,
-        onclone: (doc) => {
-          const el = doc.getElementById('pdf-report-container');
-          if (el) {
-            el.style.backgroundColor = '#020617';
-            el.style.padding = '40px';
-          }
-        }
+        scrollX: 0,
+        scrollY: -window.scrollY,
+        windowWidth: document.documentElement.offsetWidth,
+        windowHeight: document.documentElement.offsetHeight
       });
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      const imgWidth = pdfWidth - 20; // 10mm margin
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 10;
+      const imgWidth = pageWidth - (margin * 2);
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
       pdf.save(`${fieldName || '부동산'}_알파고_분석리포트.pdf`);
-    } catch (e) {
-      console.error("PDF generation failed:", e);
-      alert("리포트 생성 중 오류가 발생했습니다.");
+    } catch (e: any) {
+      console.error("PDF download failure:", e);
+      alert(`리포트 생성 중 문제가 발생했습니다: ${e.message || '렌더링 오류'}\n브라우저를 새로고침하신 후, 모든 차트가 나타나면 다시 시도해 주세요.`);
     } finally {
       setIsDownloading(false);
     }
@@ -187,13 +192,17 @@ export default function BunyangAlphaGo() {
   const lmsTabs = [
     { label: "신뢰/종합", desc: "공식 브랜드 가치 및 시세차익 강조" },
     { label: "혜택집중", desc: "금융 솔루션 및 실질 투자 비용 중심" },
-    { label: "마감임박", desc: "실시간 계약 폭주 및 심리적 트리거" }
+    { label: "마감임박", desc: "실시간 계약 폭주 및 심리적 트리거" },
+    { label: "투자 가치", desc: "미래 지향적 개발 호재 및 자산 가치 상향" },
+    { label: "라이프스타일", desc: "특화 설계 및 최상급 주거 환경 강조" }
   ];
 
   const channelTabs = [
     { label: "조건/혜택", desc: "🔥 파격 조건변경 및 압도적 혜택" },
     { label: "긴급/마감", desc: "🚨 잔여세대 급소진 및 긴급 공지" },
-    { label: "프리미엄", desc: "💎 랜드마크 입지 및 미래가치 분석" }
+    { label: "프리미엄", desc: "💎 랜드마크 입지 및 미래가치 분석" },
+    { label: "입지 분석", desc: "📍 주변 인프라 및 핵심 입지 디테일" },
+    { label: "이벤트/선물", desc: "🎁 모델하우스 방문 및 계약 혜택" }
   ];
   const [fieldName, setFieldName] = useState("");
   const [addressValue, setAddressValue] = useState("");
