@@ -264,6 +264,9 @@ export default function BunyangAlphaGo() {
             id: site.id,
             name: site.name,
             address: site.address,
+            category: site.category,
+            brand: site.brand,
+            status: site.status,
             isLocal: true
           }));
 
