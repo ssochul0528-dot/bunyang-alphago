@@ -16,7 +16,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Database setup
-sqlite_file_name = "database.db"
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sqlite_file_name = os.path.join(BASE_DIR, "database.db")
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
 

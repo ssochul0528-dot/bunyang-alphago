@@ -61,7 +61,8 @@ def extract_json(text: str):
         return None
 
 # --- Database Setup ---
-sqlite_file_name = "database.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sqlite_file_name = os.path.join(BASE_DIR, "database.db")
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
 
@@ -89,6 +90,16 @@ class Lead(SQLModel, table=True):
     rank: str
     site: str
     source: Optional[str] = Field(default="알 수 없음")
+    created_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
+
+class AnalysisHistory(SQLModel, table=True):
+    __table_args__ = {'extend_existing': True}
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_email: Optional[str] = Field(default=None, index=True)
+    field_name: str
+    address: str
+    score: int
+    response_json: str
     created_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
 
 # --- NATIONWIDE START DATA ---
@@ -172,7 +183,7 @@ class SiteSearchResponse(BaseModel):
 
 @app.get("/search-sites", response_model=List[SiteSearchResponse])
 async def search_sites(q: str):
-    if not q or len(q) < 2:
+    if not q or len(q) < 1:
         return []
 
     results = []
@@ -181,18 +192,28 @@ async def search_sites(q: str):
 
     # 1. DB 검색 (분양 데이터베이스 우선)
     try:
+        q_parts = q_lower.split()
+        if not q_parts:
+            return []
+            
         with Session(engine) as session:
-            # 대소문자 구분 없이 검색 (name, address, brand, category, status 모두 검색)
-            statement = select(Site).where(
-                or_(
-                    col(Site.name).ilike(f"%{q}%"), 
-                    col(Site.address).ilike(f"%{q}%"), 
-                    col(Site.brand).ilike(f"%{q}%"),
-                    col(Site.category).ilike(f"%{q}%"),
-                    col(Site.status).ilike(f"%{q}%")
+            # 모든 검색어 조각이 각각 name, address, brand, category, status 중 하나에라도 포함되어야 함 (AND 검색)
+            statement = select(Site)
+            for part in q_parts:
+                part_lower = part.lower()
+                statement = statement.where(
+                    or_(
+                        col(Site.name).ilike(f"%{part_lower}%"), 
+                        col(Site.address).ilike(f"%{part_lower}%"), 
+                        col(Site.brand).ilike(f"%{part_lower}%"),
+                        col(Site.category).ilike(f"%{part_lower}%"),
+                        col(Site.status).ilike(f"%{part_lower}%")
+                    )
                 )
-            ).order_by(col(Site.last_updated).desc()).limit(100)
+            
+            statement = statement.order_by(col(Site.last_updated).desc()).limit(100)
             db_sites = session.exec(statement).all()
+            logger.info(f"DB search for '{q_lower}' (parts: {q_parts}) found {len(db_sites)} results")
             for s in db_sites:
                 if s.id not in seen_ids:
                     results.append(SiteSearchResponse(id=s.id, name=s.name, address=s.address, status=s.status, brand=s.brand, category=s.category))
@@ -240,24 +261,33 @@ async def search_sites(q: str):
     except Exception as e:
         logger.error(f"API search error: {e}")
 
-    # 검색 결과 정렬 - 현장명에 검색어가 포함된 경우 우선 표시
+    # 검색 결과 정렬 고도화
     def sort_key(x):
-        name_lower = x.name.lower() if x.name else ""
-        address_lower = x.address.lower() if x.address else ""
+        name_l = x.name.lower() if x.name else ""
+        addr_l = x.address.lower() if x.address else ""
+        brand_l = x.brand.lower() if x.brand else ""
+        cat_l = x.category.lower() if x.category else ""
         
-        # 정확히 일치하는 경우 최우선
-        if name_lower == q_lower:
-            return (0, 0)
-        # 현장명이 검색어로 시작하는 경우
-        if name_lower.startswith(q_lower):
-            return (1, name_lower.find(q_lower))
-        # 현장명에 검색어가 포함된 경우
-        if q_lower in name_lower:
-            return (2, name_lower.find(q_lower))
-        # 주소에 검색어가 포함된 경우
-        if q_lower in address_lower:
-            return (3, address_lower.find(q_lower))
-        # 그 외
+        # 1. 현장명과 정확히 일치
+        if name_l == q_lower: return (0, 0)
+        # 2. 브랜드명과 정확히 일치
+        if brand_l == q_lower: return (0, 1)
+        
+        # 3. 현장명이 검색어로 시작
+        if name_l.startswith(q_lower): return (1, name_l.find(q_lower))
+        # 4. 브랜드명이 검색어로 시작
+        if brand_l.startswith(q_lower): return (1, 100 + brand_l.find(q_lower))
+        
+        # 5. 현장명에 검색어 포함
+        if q_lower in name_l: return (2, name_l.find(q_lower))
+        # 6. 브랜드명에 검색어 포함
+        if q_lower in brand_l: return (2, 100 + brand_l.find(q_lower))
+        
+        # 7. 주소에 검색어 포함
+        if q_lower in addr_l: return (3, addr_l.find(q_lower))
+        # 8. 카테고리에 검색어 포함
+        if q_lower in cat_l: return (4, cat_l.find(q_lower))
+        
         return (999, 999)
     
     results.sort(key=sort_key)
@@ -414,6 +444,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
     field_keypoints = ""
     ib = "무이자"
     dp = "10%"
+    fkp = "탁월한 입지와 미래가치"
     main_concern = "기타"
 
     logger.info(f">>> Analyze request received: {request.field_name if request else 'No request body'}")
@@ -611,7 +642,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         benefit_score = 70 + random.randint(-5, 10)
         total_score = int((price_score * 0.4 + location_score * 0.3 + benefit_score * 0.3))
 
-        return {
+        final_result = {
             "score": int(total_score),
             "score_breakdown": {
                 "price_score": int(price_score),
@@ -650,6 +681,24 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 {"media": "카카오", "feature": "모먼트 타겟", "reason": "지역 기반 노출", "strategy_example": "방문 유도"}
             ]
         }
+        
+        # 결과를 히스토리에 저장
+        try:
+            with Session(engine) as session:
+                new_history = AnalysisHistory(
+                    user_email=req.user_email,
+                    field_name=field_name,
+                    address=address,
+                    score=int(total_score),
+                    response_json=json.dumps(final_result)
+                )
+                session.add(new_history)
+                session.commit()
+                logger.info(f"Analysis saved to history for {field_name}")
+        except Exception as he:
+            logger.error(f"Failed to save analysis to history: {he}")
+            
+        return final_result
     except Exception as e:
         import traceback
         logger.error(f"Critical analyze error: {e}\n{traceback.format_exc()}")
@@ -661,7 +710,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             f"주변 {product_category} 공급량과 대비해 보았을 때 시세 차익 약 {abs(market_gap):.0f}만원의 프리미엄 확보가 가능하므로, 이를 핵심 소구점으로 한 퍼포먼스 광고 집행을 적극 권장합니다."
         )
 
-        return {
+        final_result = {
             "score": 85,
             "score_breakdown": {
                 "price_score": 90 if market_gap > 0 else 70,
@@ -703,26 +752,44 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             "lms_copy_samples": [
                 f"【{field_name} | 프리미엄 분양 안내】\n\n대한민국 주거 문화를 선도하는 {field_name}의 특별한 가치에 초대합니다. ✨\n\n현재 {address} 일대는 입지적 희소성과 함께 실거주자들의 문의가 폭주하고 있습니다. 특히 본 현장만이 가진 {fkp if fkp else '압도적 미래 가치'}는 시간이 흐를수록 그 진가를 발휘할 것입니다.\n\n✅ 수분양자를 위한 파격적 혜택:\n- 계약금 단 {dp}로 내 집 마련의 꿈을 실현하세요.\n- 입주 전까지 금융 부담 제로! {ib} 혜택 전격 시행.\n\n주변 구축 시세 대비 약 {gap_percent}% 낮은 합리적 분양가는 향후 강력한 시세 차익의 발판이 될 것입니다. 지금 이 기회를 놓치지 마십시오.\n\n☎️ 공식 분양 센터: 1600-0000",
                 f"[High-End 분석] {field_name} 자산가치 집중 조명\n\n왜 지금 {field_name}이어야 하는가? 팩트로 증명합니다. 📊\n\n본 현장은 {address} 내에서도 {fkp if fkp else '우수한 입지'}를 점유하고 있으며, 1군 브랜드의 시공 능력이 더해진 명품 단지입니다.\n\n💰 금융 프로모션 안내:\n1. {ib} 수혜로 잔금 시까지 금융 비용 0원!\n2. 신축 아파트만의 특화 평면 및 최고급 커뮤니티\n3. {supply_volume}세대 랜드마크 스케일\n\n선착순 호수 지정 제도로 운영 중이오니, 로얄층 선점을 위해 서둘러 연락 주시기 바랍니다.\n☎️ 전문 상담: 010-0000-0000",
-                f"🚨 [긴급] {field_name} 인기 타입 선착순 마감 직전 🚨\n\n오늘 당신의 선택이 5년 뒤 자산의 크기를 바꿉니다! 🔥\n현재 {field_name} 현장은 실시간 계약 폭주로 인해 잔여 물량이 급속도로 소진되고 있습니다.\n\n✨ 핵심 소구점:\n- {address} 중심 인프라를 한 걸음에 누리는 완벽한 입지\n- 전매 무제한 수혜 및 {ib} 파격 조건\n- {fkp if fkp else '프리미엄 설계'} 적용\n\n지금 바로 모델하우스 방문 예약하시고 마지막 남은 로얄층의 주인공이 되십시오. 🎁\n📞 긴급 접수처: 1800-0000"
+                f"🚨 [긴급] {field_name} 인기 타입 선착순 마감 직전 🚨\n\n오늘 당신의 선택이 5년 뒤 자산의 크기를 바꿉니다! 🔥\n현재 {field_name} 현장은 실시간 계약 폭주로 인해 잔여 물량이 급속도로 소진되고 있습니다.\n\n✨ 핵심 소구점:\n- {address} 중심 인프라를 한 걸음에 누리는 완벽한 입지\n- 전매 무제한 수혜 및 {ib} 파격 조건\n- {fkp} 적용\n\n지금 바로 모델하우스 방문 예약하시고 마지막 남은 로얄층의 주인공이 되십시오. 🎁\n📞 긴급 접수처: 1800-0000"
             ],
             "channel_talk_samples": [
                 f"🔥 {field_name} | 파격 조건변경 소식! 🔥\n\n현재 호갱노노 급상승 검색어 등재! 💎\n입주 시까지 계약금 {dp}만으로 내 집 마련이 가능한 마지막 현장.\n\n이자 부담 걱정 끝! {ib} 확정 수혜 단지.\n🚅 {address}의 미래를 선점할 유일한 입지.\n\n지금 바로 채팅으로 잔여 세대를 확인하세요! 👇",
                 f"🚨 [긴급] {field_name} 로열층 선착순 폭주 중! 🚨\n\n망설이면 사라지는 마지막 기회! 현재 홍보관 방문 예약이 줄을 잇고 있습니다. 💨\n\n💎 투자 핵심:\n1. {address} 랜드마크급 {supply_volume}세대 스케일\n2. 인근 대비 {gap_percent}% 합리적 공급가\n\n실시간 잔여 호수와 특별 혜택 정보를 지금 바로 안내해 드립니다! 🗨️",
                 f"📊 {field_name} 전용 [정밀 분석 리포트 확인] 📊\n\n전문가가 분석한 진짜 정보, 궁금하시죠? 🧐\n\n수록 내용:\n- {address} 입지적 가치 및 공급 현황 정밀 진단\n- 시세 차익을 결정짓는 {fkp if fkp else '핵심 입지 가치'}\n- 금융 혜택 적용 시 실투자금 시뮬레이션\n\n지금 채널톡 신청 시 리포트를 즉시 발송해 드립니다! 💎"
             ],
-            "media_mix": [
+            "media_mix": safe_data["media_mix"] if safe_data["media_mix"] else [
                 {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": "실시간 데이터 기반", "strategy_example": "입지 분석 리포트 중심 상담 유도"},
                 {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "높은 인지 및 확인율", "strategy_example": "혜택 강조 및 방문 예약 유도"},
                 {"media": "메타/인스타 리드광고", "feature": "DB 수량 극대화", "reason": "관심사 기반 대량 노출", "strategy_example": "혜택 위주 소재 활용"}
             ]
         }
+        
+        # 결과를 히스토리에 저장 (Fallback 케이스)
+        try:
+            with Session(engine) as session:
+                new_history = AnalysisHistory(
+                    user_email=req.user_email,
+                    field_name=field_name,
+                    address=address,
+                    score=85,
+                    response_json=json.dumps(final_result)
+                )
+                session.add(new_history)
+                session.commit()
+                logger.info(f"Fallback analysis saved to history for {field_name}")
+        except Exception as he:
+            logger.error(f"Failed to save fallback analysis to history: {he}")
+            
+        return final_result
 
 @app.get("/import-csv")
 async def import_csv_data():
     """CSV 파일에서 데이터를 import"""
     import csv
     
-    csv_file = "sites_data.csv"
+    csv_file = os.path.join(BASE_DIR, "sites_data.csv")
     if not os.path.exists(csv_file):
         return {"status": "error", "message": "CSV 파일을 찾을 수 없습니다."}
     
@@ -817,6 +884,21 @@ async def submit_lead(req: LeadSubmitRequest):
     except Exception as e:
         logger.error(f"Lead submission error: {e}")
         raise HTTPException(status_code=500, detail="리드 제출 중 서버 오류가 발생했습니다.")
+@app.get("/history", response_model=List[AnalysisHistory])
+async def get_history(email: Optional[str] = None):
+    """분석 히스토리 조회 API"""
+    try:
+        with Session(engine) as session:
+            statement = select(AnalysisHistory)
+            if email:
+                statement = statement.where(AnalysisHistory.user_email == email)
+            statement = statement.order_by(AnalysisHistory.created_at.desc()).limit(50)
+            results = session.exec(statement).all()
+            return results
+    except Exception as e:
+        logger.error(f"History fetch error: {e}")
+        return []
+
 @app.get("/")
 async def root():
     return {"message": "Bunyang AlphaGo API is running"}

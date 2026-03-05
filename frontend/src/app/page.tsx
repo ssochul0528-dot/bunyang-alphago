@@ -42,7 +42,7 @@ import {
 } from "recharts";
 
 // For PDF generation
-import html2canvas from 'html2canvas';
+import { toCanvas } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 
 // --- Types ---
@@ -111,11 +111,29 @@ const AnimatedNumber = ({ value, decimals = 0 }: { value: number, decimals?: num
   return <span>{displayValue.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</span>;
 };
 
-// --- Base URL - 환경에 따라 동적으로 설정 (로컬 개발 vs 배포 환경) ---
-const API_BASE_URL = typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  ? "http://localhost:8000"
-  : "https://bunyang-alphago-production-d17b.up.railway.app";
+// --- Base URL - 환경에 따라 동적으로 설정 ---
+const getBaseUrl = () => {
+  // 우선적으로 환경 변수(Vercel 등에서 설정 가능)를 사용합니다.
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+
+  if (typeof window === 'undefined') return "http://localhost:8000";
+  const { hostname, port } = window.location;
+
+  // 로컬 접속 (localhost, 127.0.0.1, 또는 사설 IP 대역) 여부 확인
+  const isLocal =
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.startsWith('192.168.') ||
+    hostname.startsWith('10.') ||
+    hostname.startsWith('172.') ||
+    port === '3000';
+
+  return isLocal
+    ? `http://${hostname}:8000`
+    : "https://bunyang-alphago-production-d17b.up.railway.app"; // 기본 백엔드 URL
+};
+
+const API_BASE_URL = getBaseUrl();
 
 export default function BunyangAlphaGo() {
   const [mounted, setMounted] = useState(false);
@@ -160,16 +178,10 @@ export default function BunyangAlphaGo() {
 
     try {
       const element = reportRef.current;
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
+      const canvas = await toCanvas(element, {
+        pixelRatio: 2,
         backgroundColor: '#020617',
-        logging: false,
-        scrollX: 0,
-        scrollY: -window.scrollY,
-        windowWidth: document.documentElement.offsetWidth,
-        windowHeight: document.documentElement.offsetHeight
+        cacheBust: true,
       });
 
       const imgData = canvas.toDataURL('image/png');
