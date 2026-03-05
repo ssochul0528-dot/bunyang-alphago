@@ -30,6 +30,7 @@ import {
   RefreshCw,
   FileText
 } from "lucide-react";
+import sitesData from "./sites.json";
 import {
   RadarChart,
   Radar,
@@ -247,42 +248,58 @@ export default function BunyangAlphaGo() {
     if (isScanning || showConfig || result) return;
 
     const delayDebounceFn = setTimeout(async () => {
-      if (address.trim().length >= 1) {
+      const query = address.trim();
+      if (query.length >= 1) {
         setIsSearching(true);
+
+        // 1. 로컬 데이터에서 우선 검색 (네트워크 장애 대비)
+        const localResults = sitesData
+          .filter(site =>
+            site.name.toLowerCase().includes(query.toLowerCase()) ||
+            site.address.toLowerCase().includes(query.toLowerCase()) ||
+            (site.brand && site.brand.toLowerCase().includes(query.toLowerCase()))
+          )
+          .slice(0, 50)
+          .map(site => ({
+            id: site.id,
+            name: site.name,
+            address: site.address,
+            isLocal: true
+          }));
+
+        if (localResults.length > 0) {
+          setSearchResults(localResults);
+        }
+
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15초로 증가
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         try {
-          console.log("🔍 Fetching from:", `${API_BASE_URL}/search-sites?q=${encodeURIComponent(address.trim())}`);
-          const res = await fetch(`${API_BASE_URL}/search-sites?q=${encodeURIComponent(address.trim())}`, {
+          const res = await fetch(`${API_BASE_URL}/search-sites?q=${encodeURIComponent(query)}`, {
             signal: controller.signal,
-            cache: 'no-store', // 🚨 캐시 방지 추가
-            headers: {
-              'Pragma': 'no-cache',
-              'Cache-Control': 'no-cache'
-            }
+            cache: 'no-store'
           });
           clearTimeout(timeoutId);
           if (res.ok) {
-            const data = await res.json();
-            setSearchResults(data);
-          } else {
-            setSearchResults([]);
+            const serverData = await res.json();
+            // 서버 데이터가 있으면 서버 데이터로 교체 (더 최신 데이터일 수 있음)
+            if (serverData && serverData.length > 0) {
+              setSearchResults(serverData);
+            }
           }
         } catch (e: any) {
-          if (e.name === 'AbortError') {
-            console.error("Search request timed out");
-          } else {
-            console.error("Search fetch failed:", e);
+          console.error("Server search failed, using local results if available:", e);
+          // 서버 실패 시 로컬 결과가 이미 있으면 유지, 없으면 빈 배열
+          if (localResults.length === 0) {
+            setSearchResults([]);
           }
-          setSearchResults([]);
         } finally {
           setIsSearching(false);
         }
       } else {
         setSearchResults([]);
       }
-    }, 200);
+    }, 400);
     return () => clearTimeout(delayDebounceFn);
   }, [address, isScanning, showConfig, result]);
 
