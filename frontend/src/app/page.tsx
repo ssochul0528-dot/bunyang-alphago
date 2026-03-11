@@ -449,12 +449,12 @@ export default function BunyangAlphaGo() {
       const data = await response.json();
       setResult(data);
       setSimulationBudget(monthlyBudget);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Analysis failed:", error);
       setResult({
         score: 82,
         score_breakdown: { price_score: 35, location_score: 25, benefit_score: 22, total_score: 82 },
-        market_diagnosis: "연결 오류가 발생했으나 로컬 분석 모드로 전환합니다.",
+        market_diagnosis: `서버 연결에 실패했으나 로컬 분석 모드로 진단합니다. (Error: ${error.message || 'Unknown'})`,
         market_gap_percent: 12.5,
         price_data: [{ name: "우리 현장", price: salesPrice }, { name: "비교군", price: targetPrice }, { name: "대장주", price: targetPrice * 1.1 }],
         radar_data: [
