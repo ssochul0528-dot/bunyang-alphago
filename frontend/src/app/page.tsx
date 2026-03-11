@@ -335,7 +335,7 @@ export default function BunyangAlphaGo() {
     }
   };
 
-  const handleSelectSite = async (site: { id: string, name: string, address: string }) => {
+  const handleSelectSite = async (site: any) => {
     setIsScanning(true);
     setSearchResults([]);
     setAddress(site.name);
@@ -357,15 +357,55 @@ export default function BunyangAlphaGo() {
           setIsScanning(false);
           setShowConfig(true);
         }, 1200);
-      } else {
-        throw new Error("상세 정보를 가져오지 못했습니다.");
+        return;
       }
     } catch (e) {
-      console.error("Selection failed:", e);
+      console.error("Server site details failed, trying local fallback:", e);
+    }
+
+    // --- Local Fallback: Find site details in sites.json ---
+    const localSite = sitesData.find(s => s.id === site.id);
+    if (localSite) {
+      setFieldName(localSite.name);
+      setAddressValue(localSite.address);
+      setProductCategory(localSite.category || "아파트");
+      setSalesPrice(Number(localSite.price) || 2800);
+      setTargetPrice(Number(localSite.target_price) || 3200);
+      setSupply(Number(localSite.supply) || 300);
+      setDownPayment(localSite.down_payment || "10%");
+      setInterestBenefit(localSite.interest_benefit || "중도금 무이자");
+
+      setTimeout(() => {
+        setIsScanning(false);
+        setShowConfig(true);
+      }, 1000);
+      return;
+    }
+
+    // --- Second Fallback: Use data already in the search result object if available ---
+    // This handles external sites from server search that aren't in local sites.json
+    if (site.name && site.address) {
+      console.log("Using search result data as fallback for:", site.name);
+      setFieldName(site.name);
+      setAddressValue(site.address);
+      setProductCategory(site.category || "아파트");
+      // Use defaults for unknown fields
+      setSalesPrice(2800);
+      setTargetPrice(3200);
+      setSupply(300);
+      setDownPayment("10%");
+      setInterestBenefit("중도금 무이자");
+
+      setTimeout(() => {
+        setIsScanning(false);
+        setShowConfig(true);
+      }, 1000);
+    } else {
       alert("현장 데이터를 동기화하는 중 오류가 발생했습니다. 수동 입력을 진행합니다.");
       handleManualScan();
     }
   };
+
 
   const handleFinalAnalyze = async () => {
     setIsScanning(true);
@@ -785,54 +825,64 @@ export default function BunyangAlphaGo() {
                       style={{ backgroundColor: '#020617', opacity: 1 }}
                       className="absolute left-0 right-0 mt-3 border border-slate-800 rounded-2xl overflow-hidden z-[9999] shadow-[0_20px_60px_rgba(0,0,0,1)]"
                     >
-                      {isSearching && (
-                        <div className="px-6 py-12 text-center flex flex-col items-center gap-3">
-                          <RefreshCw size={24} className="animate-spin text-blue-500" />
-                          <p className="text-sm text-slate-300 font-medium">실시간 데이터베이스 조회 중...</p>
+                      {isSearching && searchResults.length === 0 && (
+                        <div className="px-6 py-12 text-center flex flex-col items-center gap-3 text-slate-400">
+                          <RefreshCw size={24} className="animate-spin text-blue-500/50" />
+                          <p className="text-sm font-medium">실시간 데이터베이스 조회 중...</p>
                         </div>
                       )}
 
-                      {!isSearching && searchResults && searchResults.length > 0 && searchResults.map((site: any) => (
-                        <button
-                          key={site.id}
-                          onClick={() => handleSelectSite(site)}
-                          className="w-full px-6 py-5 text-left hover:bg-white/10 transition-all border-b border-white/5 last:border-0 flex justify-between items-center group"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1.5">
-                              {site.category && (
-                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${site.category === '민간임대'
-                                  ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
-                                  : site.category === '아파트'
-                                    ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
-                                    : 'bg-orange-500/20 text-orange-300 border-orange-500/40'
-                                  }`}>
-                                  {site.category}
-                                </span>
-                              )}
-                              {site.brand && site.brand !== "기타" && (
-                                <span className="text-[10px] font-black bg-slate-700/50 text-slate-300 px-1.5 py-0.5 rounded border border-slate-600/40">
-                                  {site.brand}
-                                </span>
-                              )}
-                              <div className="text-white font-extrabold text-base group-hover:text-blue-400 transition-colors">{site.name}</div>
-                              {site.status && (
-                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${site.status.includes('미분양') || site.status.includes('할인') || site.status.includes('잔여')
-                                  ? 'bg-red-500/30 text-red-300 border border-red-500/40'
-                                  : 'bg-green-500/30 text-green-300 border border-green-500/40'
-                                  }`}>
-                                  {site.status}
-                                </span>
-                              )}
+                      {searchResults && searchResults.length > 0 && (
+                        <div className="max-h-[60vh] overflow-y-auto">
+                          {isSearching && (
+                            <div className="px-4 py-2 bg-blue-500/5 border-b border-white/5 text-[9px] text-blue-400/70 font-bold flex items-center gap-2">
+                              <RefreshCw size={10} className="animate-spin" />
+                              최신 데이터를 불러오고 있습니다...
                             </div>
-                            <div className="text-sm text-white flex items-center gap-1.5 font-medium">
-                              <MapPin className="w-3.5 h-3.5 text-blue-400" />
-                              {site.address}
-                            </div>
-                          </div>
-                          <ShieldCheck className="text-slate-700 group-hover:text-blue-500 transition-all transform group-hover:scale-110" size={24} />
-                        </button>
-                      ))}
+                          )}
+                          {searchResults.map((site: any) => (
+                            <button
+                              key={site.id}
+                              onClick={() => handleSelectSite(site)}
+                              className="w-full px-6 py-5 text-left hover:bg-white/10 transition-all border-b border-white/5 last:border-0 flex justify-between items-center group"
+                            >
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1.5">
+                                  {site.category && (
+                                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${site.category === '민간임대'
+                                      ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                                      : site.category === '아파트'
+                                        ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                                        : 'bg-orange-500/20 text-orange-300 border-orange-500/40'
+                                      }`}>
+                                      {site.category}
+                                    </span>
+                                  )}
+                                  {site.brand && site.brand !== "기타" && (
+                                    <span className="text-[10px] font-black bg-slate-700/50 text-slate-300 px-1.5 py-0.5 rounded border border-slate-600/40">
+                                      {site.brand}
+                                    </span>
+                                  )}
+                                  <div className="text-white font-extrabold text-base group-hover:text-blue-400 transition-colors">{site.name}</div>
+                                  {site.status && (
+                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${site.status.includes('미분양') || site.status.includes('할인') || site.status.includes('잔여')
+                                      ? 'bg-red-500/30 text-red-300 border border-red-500/40'
+                                      : 'bg-green-500/30 text-green-300 border border-green-500/40'
+                                      }`}>
+                                      {site.status}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-sm text-white flex items-center gap-1.5 font-medium">
+                                  <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                                  {site.address}
+                                </div>
+                              </div>
+                              <ShieldCheck className="text-slate-700 group-hover:text-blue-500 transition-all transform group-hover:scale-110" size={24} />
+                            </button>
+                          ))}
+                        </div>
+                      )}
 
                       {!isSearching && searchResults.length === 0 && address.trim().length >= 1 && (
                         <div className="px-6 py-10 text-center">
@@ -854,9 +904,11 @@ export default function BunyangAlphaGo() {
               </motion.div>
             </div>
           )}
+        </section>
 
-          {/* New: Detailed Introduction Section */}
-          {!isScanning && !showConfig && !result && (
+        {/* New: Detailed Introduction Section */}
+        {
+          !isScanning && !showConfig && !result && (
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1187,151 +1239,151 @@ export default function BunyangAlphaGo() {
                 </div>
               </div>
             </motion.div>
+          )
+        }
+
+        <AnimatePresence>
+          {isScanning && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center mt-20">
+              <div className="relative w-64 h-64 flex items-center justify-center">
+                <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full" />
+                <div className="absolute inset-0 border-t-4 border-blue-500 rounded-full radar-sweep" />
+                <Cpu className="text-blue-400 animate-pulse" size={48} />
+              </div>
+              <h3 className="text-xl font-bold text-blue-400 mt-8">네이버 부동산 데이터 동기화 중...</h3>
+            </motion.div>
           )}
 
-          <AnimatePresence>
-            {isScanning && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center mt-20">
-                <div className="relative w-64 h-64 flex items-center justify-center">
-                  <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full" />
-                  <div className="absolute inset-0 border-t-4 border-blue-500 rounded-full radar-sweep" />
-                  <Cpu className="text-blue-400 animate-pulse" size={48} />
-                </div>
-                <h3 className="text-xl font-bold text-blue-400 mt-8">네이버 부동산 데이터 동기화 중...</h3>
-              </motion.div>
-            )}
+          {showConfig && !isScanning && (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-4xl mx-auto glass p-10 rounded-[2.5rem] border-blue-500/20 shadow-2xl">
+              <h3 className="text-2xl font-black mb-10 flex items-center gap-3">
+                <ShieldCheck className="text-blue-500" size={28} /> 데이터 최종 확인
+              </h3>
 
-            {showConfig && !isScanning && (
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-4xl mx-auto glass p-10 rounded-[2.5rem] border-blue-500/20 shadow-2xl">
-                <h3 className="text-2xl font-black mb-10 flex items-center gap-3">
-                  <ShieldCheck className="text-blue-500" size={28} /> 데이터 최종 확인
-                </h3>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                {/* Left Column: Logic & Parameters (5 units) */}
+                <div className="lg:col-span-5 space-y-8">
+                  {/* Basic Info Group */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-1 h-4 bg-blue-500 rounded-full" />
+                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">01. 기본 정보</span>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 block mb-1.5 ml-1">현장명</label>
+                      <input type="text" value={fieldName} onChange={e => setFieldName(e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 block mb-1.5 ml-1">상세 주소</label>
+                      <input type="text" value={addressValue} onChange={e => setAddressValue(e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 block mb-1.5 ml-1">상품 분류</label>
+                      <select value={productCategory} onChange={e => setProductCategory(e.target.value)} className={inputClass}>
+                        {["아파트", "민간임대", "오피스텔", "지식산업센터", "상가", "숙박시설", "타운하우스"].map(v => <option key={v} value={v} className="bg-slate-950">{v}</option>)}
+                      </select>
+                    </div>
+                  </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                  {/* Left Column: Logic & Parameters (5 units) */}
-                  <div className="lg:col-span-5 space-y-8">
-                    {/* Basic Info Group */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-1 h-4 bg-blue-500 rounded-full" />
-                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">01. 기본 정보</span>
-                      </div>
+                  {/* Sales Terms Group */}
+                  <div className="space-y-4 pt-6 border-t border-slate-800/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-1 h-4 bg-indigo-500 rounded-full" />
+                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">02. 분양 조건</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[10px] font-bold text-slate-500 block mb-1.5 ml-1">현장명</label>
-                        <input type="text" value={fieldName} onChange={e => setFieldName(e.target.value)} className={inputClass} />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-500 block mb-1.5 ml-1">상세 주소</label>
-                        <input type="text" value={addressValue} onChange={e => setAddressValue(e.target.value)} className={inputClass} />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-500 block mb-1.5 ml-1">상품 분류</label>
-                        <select value={productCategory} onChange={e => setProductCategory(e.target.value)} className={inputClass}>
-                          {["아파트", "민간임대", "오피스텔", "지식산업센터", "상가", "숙박시설", "타운하우스"].map(v => <option key={v} value={v} className="bg-slate-950">{v}</option>)}
+                        <label className="text-[10px] font-bold text-slate-500 block mb-1.5 ml-1">계약금 비율</label>
+                        <select value={downPayment} onChange={e => setDownPayment(e.target.value)} className={inputClass}>
+                          {["5%", "10%", "정액제"].map(v => <option key={v} value={v} className="bg-slate-950">{v}</option>)}
                         </select>
                       </div>
-                    </div>
-
-                    {/* Sales Terms Group */}
-                    <div className="space-y-4 pt-6 border-t border-slate-800/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-1 h-4 bg-indigo-500 rounded-full" />
-                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">02. 분양 조건</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-500 block mb-1.5 ml-1">계약금 비율</label>
-                          <select value={downPayment} onChange={e => setDownPayment(e.target.value)} className={inputClass}>
-                            {["5%", "10%", "정액제"].map(v => <option key={v} value={v} className="bg-slate-950">{v}</option>)}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-500 block mb-1.5 ml-1">계약금액 (만원)</label>
-                          <input type="number" value={downPaymentAmount} onChange={e => setDownPaymentAmount(Number(e.target.value))} className={inputClass} />
-                        </div>
-                      </div>
                       <div>
-                        <label className="text-[10px] font-bold text-slate-500 block mb-1.5 ml-1">공급 규모 (세대)</label>
-                        <input type="number" value={supply} onChange={e => setSupply(Number(e.target.value))} className={inputClass} />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-500 block mb-1.5 ml-1">주요 추가 혜택</label>
-                        <div className="flex flex-wrap gap-2">
-                          {["전매 제한 해제", "풀옵션 무상", "발코니 확장", "중도금 무이자"].map(v => (
-                            <button key={v} onClick={() => toggleBenefit(v)} className={`px-2 py-1.5 rounded-lg text-[9px] font-bold transition-all border ${additionalBenefits.includes(v) ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
-                              {v}
-                            </button>
-                          ))}
-                        </div>
+                        <label className="text-[10px] font-bold text-slate-500 block mb-1.5 ml-1">계약금액 (만원)</label>
+                        <input type="number" value={downPaymentAmount} onChange={e => setDownPaymentAmount(Number(e.target.value))} className={inputClass} />
                       </div>
                     </div>
-
-                    {/* Price Matrix Group */}
-                    <div className="space-y-4 pt-6 border-t border-slate-800/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-1 h-4 bg-emerald-500 rounded-full" />
-                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">03. 시세 분석 (만원/평)</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <input type="number" value={salesPrice} onChange={e => setSalesPrice(Number(e.target.value))} placeholder="분양가" className={inputClass} />
-                        <input type="number" value={targetPrice} onChange={e => setTargetPrice(Number(e.target.value))} placeholder="주변 시세" className={inputClass} />
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 block mb-1.5 ml-1">공급 규모 (세대)</label>
+                      <input type="number" value={supply} onChange={e => setSupply(Number(e.target.value))} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 block mb-1.5 ml-1">주요 추가 혜택</label>
+                      <div className="flex flex-wrap gap-2">
+                        {["전매 제한 해제", "풀옵션 무상", "발코니 확장", "중도금 무이자"].map(v => (
+                          <button key={v} onClick={() => toggleBenefit(v)} className={`px-2 py-1.5 rounded-lg text-[9px] font-bold transition-all border ${additionalBenefits.includes(v) ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
+                            {v}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </div>
 
-                  {/* Right Column: Content & Copywriting (7 units) */}
-                  <div className="lg:col-span-7 bg-slate-900/20 rounded-3xl p-8 border border-white/5 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-8 opacity-5"><Cpu size={120} /></div>
-
-                    <div className="flex items-center gap-2 mb-6 relative z-10">
-                      <div className="w-1.5 h-6 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-                      <label className="text-[15px] font-black text-white uppercase tracking-tight">현장 핵심 강조 포인트</label>
+                  {/* Price Matrix Group */}
+                  <div className="space-y-4 pt-6 border-t border-slate-800/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-1 h-4 bg-emerald-500 rounded-full" />
+                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">03. 시세 분석 (만원/평)</span>
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input type="number" value={salesPrice} onChange={e => setSalesPrice(Number(e.target.value))} placeholder="분양가" className={inputClass} />
+                      <input type="number" value={targetPrice} onChange={e => setTargetPrice(Number(e.target.value))} placeholder="주변 시세" className={inputClass} />
+                    </div>
+                  </div>
+                </div>
 
-                    <div className="space-y-4 relative z-10">
-                      {[
-                        { id: 'loc', label: '입지 호재', icon: <MapPin size={14} />, color: 'text-emerald-400', val: kpLocation, set: setKpLocation, placeholder: '예: GTX-C 개통 확정, 트리플 역세권' },
-                        { id: 'prod', label: '단지 특징', icon: <Building size={14} />, color: 'text-blue-400', val: kpProduct, set: setKpProduct, placeholder: '예: 1,816세대 대단지, 초품아, 4Bay' },
-                        { id: 'ben', label: '파격 혜택', icon: <Zap size={14} />, color: 'text-indigo-400', val: kpBenefit, set: setKpBenefit, placeholder: '예: 10년 전 분양가, 계약금 5% 최저가' },
-                        { id: 'gift', label: '방문 사은품', icon: <Download size={14} />, color: 'text-orange-400', val: kpGift, set: setKpGift, placeholder: '예: 스타벅스 기프트카드, 고급 와인' },
-                        { id: 'extra', label: '기타 강조', icon: <Target size={14} />, color: 'text-slate-400', val: kpExtra, set: setKpExtra, placeholder: '예: 투자 가치 높은 갭투자 현장' }
-                      ].map((item) => (
-                        <div key={item.id} className="relative group">
-                          <div className="flex items-center justify-between mb-1.5 px-1">
-                            <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider ${item.color}`}>
-                              {item.icon} {item.label}
-                            </div>
+                {/* Right Column: Content & Copywriting (7 units) */}
+                <div className="lg:col-span-7 bg-slate-900/20 rounded-3xl p-8 border border-white/5 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-8 opacity-5"><Cpu size={120} /></div>
+
+                  <div className="flex items-center gap-2 mb-6 relative z-10">
+                    <div className="w-1.5 h-6 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                    <label className="text-[15px] font-black text-white uppercase tracking-tight">현장 핵심 강조 포인트</label>
+                  </div>
+
+                  <div className="space-y-4 relative z-10">
+                    {[
+                      { id: 'loc', label: '입지 호재', icon: <MapPin size={14} />, color: 'text-emerald-400', val: kpLocation, set: setKpLocation, placeholder: '예: GTX-C 개통 확정, 트리플 역세권' },
+                      { id: 'prod', label: '단지 특징', icon: <Building size={14} />, color: 'text-blue-400', val: kpProduct, set: setKpProduct, placeholder: '예: 1,816세대 대단지, 초품아, 4Bay' },
+                      { id: 'ben', label: '파격 혜택', icon: <Zap size={14} />, color: 'text-indigo-400', val: kpBenefit, set: setKpBenefit, placeholder: '예: 10년 전 분양가, 계약금 5% 최저가' },
+                      { id: 'gift', label: '방문 사은품', icon: <Download size={14} />, color: 'text-orange-400', val: kpGift, set: setKpGift, placeholder: '예: 스타벅스 기프트카드, 고급 와인' },
+                      { id: 'extra', label: '기타 강조', icon: <Target size={14} />, color: 'text-slate-400', val: kpExtra, set: setKpExtra, placeholder: '예: 투자 가치 높은 갭투자 현장' }
+                    ].map((item) => (
+                      <div key={item.id} className="relative group">
+                        <div className="flex items-center justify-between mb-1.5 px-1">
+                          <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider ${item.color}`}>
+                            {item.icon} {item.label}
                           </div>
-                          <input
-                            type="text"
-                            value={item.val}
-                            onChange={e => item.set(e.target.value)}
-                            placeholder={item.placeholder}
-                            className="w-full bg-slate-950/80 border border-slate-800 rounded-2xl px-5 py-4 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 transition-all shadow-inner"
-                          />
                         </div>
-                      ))}
-                    </div>
+                        <input
+                          type="text"
+                          value={item.val}
+                          onChange={e => item.set(e.target.value)}
+                          placeholder={item.placeholder}
+                          className="w-full bg-slate-950/80 border border-slate-800 rounded-2xl px-5 py-4 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 transition-all shadow-inner"
+                        />
+                      </div>
+                    ))}
+                  </div>
 
-                    <div className="mt-8 p-5 bg-blue-600/10 rounded-2xl border border-blue-500/20 flex gap-4 relative z-10">
-                      <Cpu size={20} className="text-blue-500 shrink-0 mt-0.5" />
-                      <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-                        입력하신 키포인트는 AI 엔진이 분석하여 <span className="text-blue-400 font-bold">LMS의 헤드라인</span>과 <span className="text-orange-400 font-bold">호갱노노의 실시간 톡</span> 광고 문구로 자동 조합되어 반영됩니다.
-                      </p>
-                    </div>
+                  <div className="mt-8 p-5 bg-blue-600/10 rounded-2xl border border-blue-500/20 flex gap-4 relative z-10">
+                    <Cpu size={20} className="text-blue-500 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
+                      입력하신 키포인트는 AI 엔진이 분석하여 <span className="text-blue-400 font-bold">LMS의 헤드라인</span>과 <span className="text-orange-400 font-bold">호갱노노의 실시간 톡</span> 광고 문구로 자동 조합되어 반영됩니다.
+                    </p>
                   </div>
                 </div>
+              </div>
 
-                <div className="mt-12 flex gap-4">
-                  <button onClick={() => setShowConfig(true)} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-4 rounded-2xl font-bold transition-all border border-slate-700">초기화</button>
-                  <button onClick={handleFinalAnalyze} className="flex-[2] bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-bold blue-glow transition-all flex items-center justify-center gap-2">
-                    <Zap size={20} /> 정밀 분석 실행
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </section>
+              <div className="mt-12 flex gap-4">
+                <button onClick={() => setShowConfig(true)} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-4 rounded-2xl font-bold transition-all border border-slate-700">초기화</button>
+                <button onClick={handleFinalAnalyze} className="flex-[2] bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-bold blue-glow transition-all flex items-center justify-center gap-2">
+                  <Zap size={20} /> 정밀 분석 실행
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Section 2 & 3: Results */}
         {
@@ -1976,63 +2028,62 @@ export default function BunyangAlphaGo() {
                 </div>
               </motion.div>
             </motion.div>
-          )}
+          )
+        }
       </main>
 
       {/* Success Notification Modal */}
       <AnimatePresence>
-        {
-          showSuccessModal && (
-            <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowSuccessModal(false)}
-                className="absolute inset-0 bg-slate-950/90 backdrop-blur-md"
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-sm bg-gradient-to-b from-blue-900/20 to-slate-900 border border-blue-500/50 rounded-[2.5rem] p-10 overflow-hidden text-center shadow-[0_0_50px_-12px_rgba(59,130,246,0.5)]"
-              >
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 animate-pulse" />
+        {showSuccessModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSuccessModal(false)}
+              className="absolute inset-0 bg-slate-950/90 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm bg-gradient-to-b from-blue-900/20 to-slate-900 border border-blue-500/50 rounded-[2.5rem] p-10 overflow-hidden text-center shadow-[0_0_50px_-12px_rgba(59,130,246,0.5)]"
+            >
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 animate-pulse" />
 
-                <div className="mb-6 relative">
-                  <div className="w-20 h-20 bg-blue-600/20 rounded-3xl flex items-center justify-center mx-auto border border-blue-500/30">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", damping: 10, stiffness: 100, delay: 0.2 }}
-                    >
-                      <CheckCircle2 className="text-blue-500" size={48} />
-                    </motion.div>
-                  </div>
-                  {/* Decorative particles */}
-                  <div className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 rounded-full blur-xl opacity-50" />
-                  <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-indigo-500 rounded-full blur-xl opacity-50" />
+              <div className="mb-6 relative">
+                <div className="w-20 h-20 bg-blue-600/20 rounded-3xl flex items-center justify-center mx-auto border border-blue-500/30">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", damping: 10, stiffness: 100, delay: 0.2 }}
+                  >
+                    <CheckCircle2 className="text-blue-500" size={48} />
+                  </motion.div>
                 </div>
+                {/* Decorative particles */}
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 rounded-full blur-xl opacity-50" />
+                <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-indigo-500 rounded-full blur-xl opacity-50" />
+              </div>
 
-                <h2 className="text-2xl font-black text-white mb-4">카피 생성 완료!</h2>
-                <p className="text-sm text-slate-400 mb-8 leading-relaxed">
-                  현재 현장의 최신 데이터를 분석하여<br />
-                  <span className="text-blue-400 font-bold">10종의 마케팅 문구</span>가 성공적으로 업데이트되었습니다.
-                </p>
+              <h2 className="text-2xl font-black text-white mb-4">카피 생성 완료!</h2>
+              <p className="text-sm text-slate-400 mb-8 leading-relaxed">
+                현재 현장의 최신 데이터를 분석하여<br />
+                <span className="text-blue-400 font-bold">10종의 마케팅 문구</span>가 성공적으로 업데이트되었습니다.
+              </p>
 
-                <button
-                  type="button"
-                  onClick={() => setShowSuccessModal(false)}
-                  className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-sm transition-all shadow-lg blue-glow flex items-center justify-center group"
-                >
-                  새로운 카피 확인하기
-                  <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" size={16} />
-                </button>
-              </motion.div>
-            </div>
-          )
-        }
-      </AnimatePresence >
+              <button
+                type="button"
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-sm transition-all shadow-lg blue-glow flex items-center justify-center group"
+              >
+                새로운 카피 확인하기
+                <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" size={16} />
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <footer className="relative z-10 border-t border-blue-900/30 py-12 mt-20">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
@@ -2361,7 +2412,7 @@ export default function BunyangAlphaGo() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </div >
   );
 }
 
