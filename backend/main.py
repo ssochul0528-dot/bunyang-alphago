@@ -137,6 +137,18 @@ def create_db_and_tables():
                     conn.execute(text("ALTER TABLE site ADD COLUMN interest_benefit TEXT DEFAULT '중도금 무이자'"))
                 conn.commit()
                 logger.info("Database migration: Added columns to 'site' table.")
+            
+            # AnalysisHistory 테이블 마이그레이션
+            history_columns = [row[1] for row in conn.execute(text("PRAGMA table_info(analysishistory)")).fetchall()]
+            if history_columns:
+                if 'user_email' not in history_columns:
+                    conn.execute(text("ALTER TABLE analysishistory ADD COLUMN user_email TEXT"))
+                if 'score' not in history_columns:
+                    conn.execute(text("ALTER TABLE analysishistory ADD COLUMN score INTEGER DEFAULT 0"))
+                if 'response_json' not in history_columns:
+                    conn.execute(text("ALTER TABLE analysishistory ADD COLUMN response_json TEXT"))
+                conn.commit()
+                logger.info("Database migration: Added columns to 'analysishistory' table.")
     except Exception as e:
         logger.error(f"Migration error: {e}")
 
@@ -553,23 +565,28 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
 
         ai_data = None
         model_candidates = [
-            'gemini-flash-latest',
+            'models/gemini-1.5-flash',
+            'models/gemini-1.5-pro',
+            'models/gemini-2.0-flash-exp',
             'gemini-pro-latest',
-            'gemini-2.0-flash-lite'
+            'gemini-flash-latest'
         ]
         
         for model_name in model_candidates:
             try:
                 logger.info(f"Attempting AI analysis with model: {model_name}")
                 model = genai.GenerativeModel(model_name)
-                response = model.generate_content(prompt)
+                # GenerationConfig를 사용하여 JSON 형식 응답 유도 (Gemini 지원 모델인 경우)
+                gen_config = {"response_mime_type": "application/json"} if "gemini-1.5" in model_name or "gemini-2.0" in model_name else None
+                
+                response = model.generate_content(prompt, generation_config=gen_config)
                 if response and response.text:
                     ai_data = extract_json(response.text)
                     if ai_data: 
                         logger.info(f"Success with model: {model_name}")
                         break
             except Exception as e:
-                logger.error(f"Model {model_name} failed: {e}")
+                logger.error(f"Model {model_name} failed: {str(e)[:100]}")
                 continue
 
         if not ai_data:
