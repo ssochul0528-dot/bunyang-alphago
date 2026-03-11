@@ -689,7 +689,12 @@ export default function BunyangAlphaGo() {
               >
                 <Database size={16} className="group-hover:scale-110 transition-transform" /> 내 리포트
               </button>
-              <a href="#" className="hover:text-blue-400 transition-all">솔루션 안내</a>
+              <a href="#solution-guide" className="hover:text-blue-400 transition-all">솔루션 안내</a>
+              {result && (
+                <a href="#ai-performance-guide" className="text-blue-500 hover:text-blue-400 transition-all flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 rounded-full border border-blue-500/20">
+                  <Zap size={12} className="fill-blue-500" /> AI 가이드
+                </a>
+              )}
             </nav>
 
             <div className="h-4 w-[1px] bg-white/10 hidden md:block" />
@@ -910,6 +915,7 @@ export default function BunyangAlphaGo() {
         {
           !isScanning && !showConfig && !result && (
             <motion.div
+              id="solution-guide"
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
@@ -1545,7 +1551,7 @@ export default function BunyangAlphaGo() {
               </div>
 
               {/* Dashboard Row 3: Diagnosis Updated to Full Width */}
-              <div className="lg:col-span-12 glass p-8 rounded-3xl relative overflow-hidden">
+              <div id="ai-performance-guide" className="lg:col-span-12 glass p-8 rounded-3xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-5"><Zap size={140} className="text-blue-500" /></div>
                 <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><Database className="text-blue-500" size={18} /> AI 퍼포먼스 가이드</h3>
                 <p className="text-slate-300 text-sm leading-relaxed mb-8 whitespace-pre-line">{result.market_diagnosis}</p>
