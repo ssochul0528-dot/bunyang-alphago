@@ -115,23 +115,33 @@ const AnimatedNumber = ({ value, decimals = 0 }: { value: number, decimals?: num
 // --- Base URL - 환경에 따라 동적으로 설정 ---
 const getBaseUrl = () => {
   // 우선적으로 환경 변수(Vercel 등에서 설정 가능)를 사용합니다.
-  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  let url = process.env.NEXT_PUBLIC_API_URL;
 
-  if (typeof window === 'undefined') return "http://localhost:8000";
-  const { hostname, port } = window.location;
+  if (!url) {
+    if (typeof window === 'undefined') return "http://localhost:8000";
+    const { hostname, port } = window.location;
 
-  // 로컬 접속 (localhost, 127.0.0.1, 또는 사설 IP 대역) 여부 확인
-  const isLocal =
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname.startsWith('192.168.') ||
-    hostname.startsWith('10.') ||
-    hostname.startsWith('172.') ||
-    port === '3000';
+    // 로컬 접속 (localhost, 127.0.0.1, 또는 사설 IP 대역) 여부 확인
+    const isLocal =
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('172.') ||
+      port === '3000';
 
-  return isLocal
-    ? `http://${hostname}:8000`
-    : "https://bunyang-alphago-production-d17b.up.railway.app"; // 기본 백엔드 URL
+    url = isLocal
+      ? `http://${hostname}:8000`
+      : "https://bunyang-alphago-production-d17b.up.railway.app";
+  }
+
+  // 프로토콜이 없는 경우 https:// 추가 (브라우저에서 상대 경로로 인식되는 것 방지)
+  if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+    url = `https://${url}`;
+  }
+
+  // 마지막 슬래시가 있으면 제거하여 중복 방지
+  return url.replace(/\/$/, "");
 };
 
 const API_BASE_URL = getBaseUrl();
