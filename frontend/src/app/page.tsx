@@ -451,10 +451,11 @@ export default function BunyangAlphaGo() {
       setSimulationBudget(monthlyBudget);
     } catch (error: any) {
       console.error("Analysis failed:", error);
+      const attemptedUrl = `${API_BASE_URL}/analyze`;
       setResult({
         score: 82,
         score_breakdown: { price_score: 35, location_score: 25, benefit_score: 22, total_score: 82 },
-        market_diagnosis: `서버 연결에 실패했으나 로컬 분석 모드로 진단합니다. (Error: ${error.message || 'Unknown'})`,
+        market_diagnosis: `서버 연결에 실패했으나 로컬 분석 모드로 진단합니다.\n(Try URL: ${attemptedUrl})\n(Error: ${error.message || 'Unknown'})`,
         market_gap_percent: 12.5,
         price_data: [{ name: "우리 현장", price: salesPrice }, { name: "비교군", price: targetPrice }, { name: "대장주", price: targetPrice * 1.1 }],
         radar_data: [
