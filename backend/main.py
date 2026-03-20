@@ -18,11 +18,10 @@ from typing import List, Optional, Union, Any
 # Gemini API 설정
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
-    logger.warning("GEMINI_API_KEY environment variable not set. Application will run in fallback local mode.")
+    print("WARNING: GEMINI_API_KEY environment variable not set. Application will run in fallback local mode.")
     
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-
 
 import logging
 import re
