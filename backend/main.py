@@ -16,8 +16,13 @@ import json
 from typing import List, Optional, Union, Any
 
 # Gemini API 설정
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyCd5wNhgfAFZWpHdGDA9RSzpQ-YZeTHms0")
-genai.configure(api_key=GEMINI_API_KEY)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    logger.warning("GEMINI_API_KEY environment variable not set. Application will run in fallback local mode.")
+    
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+
 
 import logging
 import re
@@ -795,9 +800,9 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 f"📊 {field_name} 전용 [정밀 분석 리포트 확인] 📊\n\n전문가가 분석한 진짜 정보, 궁금하시죠? 🧐\n\n수록 내용:\n- {address} 입지적 가치 및 공급 현황 정밀 진단\n- 시세 차익을 결정짓는 {fkp if fkp else '핵심 입지 가치'}\n- 금융 혜택 적용 시 실투자금 시뮬레이션\n\n지금 채널톡 신청 시 리포트를 즉시 발송해 드립니다! 💎"
             ],
             "media_mix": [
-                {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": "실시간 데이터 기반", "strategy_example": "입지 분석 리포트 중심 상담 유도"},
-                {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "높은 인지 및 확인율", "strategy_example": "혜택 강조 및 방문 예약 유도"},
-                {"media": "메타/인스타 리드광고", "feature": "DB 수량 극대화", "reason": "관심사 기반 대량 노출", "strategy_example": "혜택 위주 소재 활용"}
+                {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": f"({main_concern}) 고민 타파", "strategy_example": f"최신 트렌드 데이터 리포트로 {main_concern} 관련 우려 불식시키기"},
+                {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "높은 인지 및 확인율", "strategy_example": f"고객의 {main_concern} 문제를 단번에 해결할 특별 혜택 안내 메시지"},
+                {"media": "메타/인스타 리드광고", "feature": "DB 수량 극대화", "reason": "관심사 기반 대량 노출", "strategy_example": f"{main_concern}에 대한 명확한 해답을 제시하는 후킹 소재 발굴"}
             ]
         }
         
