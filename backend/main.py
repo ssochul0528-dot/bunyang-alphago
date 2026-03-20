@@ -531,15 +531,16 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         [{field_name}] 현장의 성공적인 분양을 위한 '정밀 시장 및 매체 분석 리포트'를 전문가 수준으로 JSON 작성하십시오.
 
         [분석 요청 사항]
-        - market_diagnosis: 전문 용어를 적극 활용하여 시장의 거시적 흐름과 단지의 입지적 강점을 최소 5문장 이상으로 상세히 분석하십시오.
+        - market_diagnosis: 전문 용어를 적극 활용하여 시장의 거시적 흐름과 단지의 입지적 강점을 최소 5문장 이상으로 상세히 분석하되, 사용자의 가장 큰 고민({main_concern})을 해결할 솔루션을 제안하십시오.
         - lms_copy_samples & channel_talk_samples: 이모지를 풍부하게 사용하고, 가독성이 좋으면서도 내용이 매우 긴 '호소력 짙은' 문안을 각 매체당 3개씩 작성하십시오.
-        - media_mix: '호갱노노 채널톡', 'LMS(문자 마케팅)'를 필수 포함한 3대 핵심 매체 전략을 제시하십시오.
+        - media_mix: '호갱노노 채널톡', 'LMS(문자 마케팅)'를 필수 포함한 3대 핵심 매체 전략을 제시하십시오. 단, 반드시 **현장의 가장 큰 고민({main_concern})**을 타파할 수 있는 매체별 구체적인 방안과 명분을 포함하십시오.
 
         [데이터 세트]
         - 현장명: {field_name} / 위치: {address} / 상품군: {product_category}
         - 프라이싱: 공급가 {sales_price} VS 주변 시세 {target_price}
         - 규모/공급: {supply_volume}세대 / 금융조건: 계약금 {dp}, {ib}
         - 핵심 특장점: {fkp}
+        - 🚨 현장의 가장 큰 마케팅 고민: {main_concern}
         
         [JSON Output Structure]
         {{
