@@ -570,11 +570,10 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
 
         ai_data = None
         model_candidates = [
-            'models/gemini-1.5-flash',
-            'models/gemini-1.5-pro',
-            'models/gemini-2.0-flash-exp',
-            'gemini-pro-latest',
-            'gemini-flash-latest'
+            'models/gemini-2.5-flash',
+            'models/gemini-2.0-flash',
+            'models/gemini-flash-latest',
+            'models/gemini-pro-latest'
         ]
         
         for model_name in model_candidates:
@@ -582,7 +581,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 logger.info(f"Attempting AI analysis with model: {model_name}")
                 model = genai.GenerativeModel(model_name)
                 # GenerationConfig를 사용하여 JSON 형식 응답 유도 (Gemini 지원 모델인 경우)
-                gen_config = {"response_mime_type": "application/json"} if "gemini-1.5" in model_name or "gemini-2.0" in model_name else None
+                gen_config = {"response_mime_type": "application/json"} if "gemini" in model_name else None
                 
                 response = model.generate_content(prompt, generation_config=gen_config)
                 if response and response.text:
