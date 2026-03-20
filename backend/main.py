@@ -793,7 +793,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 f"🚨 [긴급] {field_name} 로열층 선착순 폭주 중! 🚨\n\n망설이면 사라지는 마지막 기회! 현재 홍보관 방문 예약이 줄을 잇고 있습니다. 💨\n\n💎 투자 핵심:\n1. {address} 랜드마크급 {supply_volume}세대 스케일\n2. 인근 대비 {gap_percent}% 합리적 공급가\n\n실시간 잔여 호수와 특별 혜택 정보를 지금 바로 안내해 드립니다! 🗨️",
                 f"📊 {field_name} 전용 [정밀 분석 리포트 확인] 📊\n\n전문가가 분석한 진짜 정보, 궁금하시죠? 🧐\n\n수록 내용:\n- {address} 입지적 가치 및 공급 현황 정밀 진단\n- 시세 차익을 결정짓는 {fkp if fkp else '핵심 입지 가치'}\n- 금융 혜택 적용 시 실투자금 시뮬레이션\n\n지금 채널톡 신청 시 리포트를 즉시 발송해 드립니다! 💎"
             ],
-            "media_mix": safe_data["media_mix"] if safe_data["media_mix"] else [
+            "media_mix": [
                 {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": "실시간 데이터 기반", "strategy_example": "입지 분석 리포트 중심 상담 유도"},
                 {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "높은 인지 및 확인율", "strategy_example": "혜택 강조 및 방문 예약 유도"},
                 {"media": "메타/인스타 리드광고", "feature": "DB 수량 극대화", "reason": "관심사 기반 대량 노출", "strategy_example": "혜택 위주 소재 활용"}
