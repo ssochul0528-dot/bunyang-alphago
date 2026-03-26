@@ -798,9 +798,9 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 f"📊 {field_name} 전용 [정밀 분석 리포트 확인] 📊\n\n전문가가 분석한 진짜 정보, 궁금하시죠? 🧐\n\n수록 내용:\n- {address} 입지적 가치 및 공급 현황 정밀 진단\n- 시세 차익을 결정짓는 {fkp if fkp else '핵심 입지 가치'}\n- 금융 혜택 적용 시 실투자금 시뮬레이션\n\n지금 채널톡 신청 시 리포트를 즉시 발송해 드립니다! 💎"
             ],
             "media_mix": [
-                {"media": "호갱노노 채널톡", "feature": "현장 집중 관심자", "reason": f"({main_concern}) 고민 타파", "strategy_example": f"최신 트렌드 데이터 리포트로 {main_concern} 관련 우려 불식시키기"},
-                {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "높은 인지 및 확인율", "strategy_example": f"고객의 {main_concern} 문제를 단번에 해결할 특별 혜택 안내 메시지"},
-                {"media": "메타/인스타 리드광고", "feature": "DB 수량 극대화", "reason": "관심사 기반 대량 노출", "strategy_example": f"{main_concern}에 대한 명확한 해답을 제시하는 후킹 소재 발굴"}
+                {"media": "호갱노노 채널톡", "feature": "빅데이터 기반 타겟팅", "reason": "실시간 관심 고객이 가장 많이 모이는 플랫폼", "strategy_example": f"주변 시세 대비 확실한 차익을 강조하는 단독 팝업과 전문 리포트 제공으로 {main_concern} 문제 해소"},
+                {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "지역 내 투자자 및 50대 이상 고관여군 직접 접촉", "strategy_example": "긴급 마감 및 파격적인 이자 지원 혜택을 부각시킨 장문 메시지로 모델하우스 내방 즉각 유도"},
+                {"media": "메타/인스타 리드광고", "feature": "비주얼 임팩트 확산", "reason": "3040 신혼부부 및 실수요자 폭넓은 도달", "strategy_example": f"화려한 외관과 커뮤니티 시설을 보여주는 짧은 릴스 영상과 후킹 카피 배치로 {main_concern} 돌파"}
             ]
         }
         
