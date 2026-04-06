@@ -28,7 +28,12 @@ import {
   LogOut,
   ChevronRight,
   RefreshCw,
-  FileText
+  FileText,
+  Mail,
+  Video,
+  ShoppingBag,
+  Wallet,
+  Eye,
 } from "lucide-react";
 import sitesData from "./sites.json";
 import {
@@ -57,7 +62,7 @@ interface AnalysisResult {
   };
   market_diagnosis: string;
   ad_recommendation: string;
-  media_mix: { media: string; feature: string; reason: string; strategy_example: string }[];
+  media_mix: { media_id: string; attention: string; empathy: string; action: string }[];
   copywriting: string;
   price_data: { name: string; price: number }[];
   radar_data: { subject: string; A: number; B: number; fullMark: number }[];
@@ -146,6 +151,15 @@ const getBaseUrl = () => {
 
 const API_BASE_URL = getBaseUrl();
 
+const MEDIA_CATALOG = [
+  { id: "gdn", name: "구글 GDN", feature: "전국 인지도 확산", desc: "수백만 개의 웹사이트 네트워크를 통해 고객의 일상 곳곳에 현장 배너를 노출하여 막강한 인지도를 구축합니다.", minLabel: "최소 월 300만 원", note: "75만 회 이상 노출", minBudget: 300, cpm: 4000, cpl: 70000, tips: { attention: "3초 안에 핵심 메시지를 전달하세요. '입주시까지 0원' 문구 필수.", empathy: "실거주자에게는 생활 편의를, 투자자에게는 시세 차익 숫자를 제시하세요.", action: "선착순 특별 혜택을 넣어 즉각적인 상담 신청(CTA)을 유도하세요." } },
+  { id: "kakao", name: "카카오 모먼트", feature: "모바일 상담 집중", desc: "국민 메신저 카카오톡 상단 탭 등에 노출되어 가장 빠르고 직접적으로 고관여 유저의 채팅 상담을 유도합니다.", minLabel: "최소 월 300만 원", note: "45만 회 이상 노출", minBudget: 300, cpm: 6666, cpl: 60000, tips: { attention: "3초 안에 핵심 메시지를 전달하세요. '입주시까지 0원' 문구 필수.", empathy: "실거주자에게는 생활 편의를, 투자자에게는 시세 차익 숫자를 제시하세요.", action: "선착순 특별 혜택을 넣어 즉각적인 상담 신청(CTA)을 유도하세요." } },
+  { id: "daangn", name: "당근마켓 배너", feature: "지역 밀착/생활권", desc: "현장 반경 5~10km 내 거주하는 동네 진짜 주민들을 겨냥한 배너로, 홍보관 오프라인 방문율을 극대화합니다.", minLabel: "최소 월 200만 원", note: "22만 회 이상 노출", minBudget: 200, cpm: 9090, cpl: 50000, tips: { attention: "이웃에게 친근한 카피를 사용하세요. '우리 동네 신축' 필수.", empathy: "실거주자에게는 생활 편의를, 투자자에게는 시세 차익 숫자를 제시하세요.", action: "선착순 특별 혜택을 넣어 즉각적인 상담 신청(CTA)을 유도하세요." } },
+  { id: "hogangnono", name: "호갱노노 채널톡", feature: "고관여 실입주자", desc: "아파트 실거래가 앱을 켜고 시세를 비교하는 진성 투자자와 실수요자에게 우리 현장의 단독 팝업을 직접 띄웁니다.", minLabel: "건당 150원부터", note: "도달률 90% 이상", minBudget: 100, cpm: 150000, cpl: 30000, tips: { attention: "3초 안에 핵심 메시지를 전달하세요. '입주시까지 0원' 문구 필수.", empathy: "실거주자에게는 생활 편의를, 투자자에게는 시세 차익 숫자를 제시하세요.", action: "선착순 특별 혜택을 넣어 즉각적인 상담 신청(CTA)을 유도하세요." } },
+  { id: "meta", name: "메타 릴스", feature: "폭발적인 CALL", desc: "화려한 모델하우스 숏폼 영상(릴스)과 시각적 조감도로 3040 신혼부부 및 젊은 수요층의 시선을 3초 만에 사로잡습니다.", minLabel: "최소 월 300만 원", note: "유효 DB 70건 이상 보장", minBudget: 300, cpm: 10000, cpl: 42857, tips: { attention: "3초 안에 핵심 메시지를 전달하세요. '입주시까지 0원' 문구 필수.", empathy: "실거주자에게는 생활 편의를, 투자자에게는 시세 차익 숫자를 제시하세요.", action: "선착순 특별 혜택을 넣어 즉각적인 상담 신청(CTA)을 유도하세요." } },
+  { id: "lms", name: "LMS 문자", feature: "90% 도달률/긴급정보", desc: "관심 고객이나 지역 공인중개사 등 고관여 DB에게 즉각적인 타격감을 주는 긴급 마감 정보 및 방문 이벤트를 발송합니다.", minLabel: "건당 80원부터", note: "이벤트 및 홍보 최적", minBudget: 100, cpm: 80000, cpl: 15000, tips: { attention: "3초 안에 핵심 메시지를 전달하세요. '입주시까지 0원' 문구 필수.", empathy: "실거주자에게는 생활 편의를, 투자자에게는 시세 차익 숫자를 제시하세요.", action: "선착순 특별 혜택을 넣어 즉각적인 상담 신청(CTA)을 유도하세요." } }
+];
+
 export default function BunyangAlphaGo() {
   const [mounted, setMounted] = useState(false);
   const [address, setAddress] = useState("");
@@ -157,6 +171,9 @@ export default function BunyangAlphaGo() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [activeLmsTab, setActiveLmsTab] = useState(0);
   const [activeChannelTab, setActiveChannelTab] = useState(0);
+
+  const [selectedMedia, setSelectedMedia] = useState<string[]>([]);
+  const [mediaBudgets, setMediaBudgets] = useState<Record<string, number>>({});
 
   const { data: session } = useSession();
   const user = session?.user;
@@ -412,7 +429,20 @@ export default function BunyangAlphaGo() {
       }, 1000);
     } else {
       alert("현장 데이터를 동기화하는 중 오류가 발생했습니다. 수동 입력을 진행합니다.");
-      handleManualScan();
+      // Fix: directly set manual scan state bypassing the isScanning check
+      setFieldName((site.name || address) + " (신규 등록)");
+      setAddressValue(site.address || address);
+      setProductCategory("아파트");
+      setSalesPrice(2800);
+      setTargetPrice(3200);
+      setSupply(300);
+      setDownPayment("10%");
+      setInterestBenefit("중도금 무이자");
+
+      setTimeout(() => {
+        setIsScanning(false);
+        setShowConfig(true);
+      }, 1500);
     }
   };
 
@@ -478,9 +508,9 @@ export default function BunyangAlphaGo() {
         ],
         ad_recommendation: "메타 광고 위주 집행 추천 (로컬 모드)",
         media_mix: [
-          { media: "메타 릴스", feature: "인스타그램/페이스북 노출", reason: "초기 인지도 확산 및 잠재 고객 확보 유리", strategy_example: "인테리어와 혜택을 강조한 숏폼 영상 광고 집행" },
-          { media: "네이버", feature: "키워드/블로그 검색", reason: "관심 고객의 능동적 검색 대응", strategy_example: "키워드 상위 노출 및 블로그 리뷰 확보" },
-          { media: "당근마켓", feature: "지역 기반 타겟팅", reason: "인근 거주 실거주 수요 공략", strategy_example: "인근 주민 대상 타겟 광고 및 이벤트 노출" }
+          { media_id: "meta", attention: "인스타그램/페이스북 노출", empathy: "초기 인지도 확산 및 잠재 고객 확보 유리", action: "인테리어와 혜택을 강조한 숏폼 영상 광고 집행" },
+          { media_id: "gdn", attention: "시선 강탈 배너", empathy: "관심 고객의 능동적 검색 대응", action: "키워드 상위 노출 및 블로그 리뷰 확보" },
+          { media_id: "daangn", attention: "지역 기반 타겟팅", empathy: "인근 거주 실거주 수요 공략", action: "인근 주민 대상 타겟 광고 및 이벤트 노출" }
         ],
         copywriting: "지금이 바로 기회입니다. 놓치지 마세요!",
         target_audience: ["실거주자", "투자자"],
@@ -1582,191 +1612,154 @@ export default function BunyangAlphaGo() {
                 </div>
               </div>
 
-              {/* Dashboard Row 4: Specialized Media Strategy */}
-              <div className="lg:col-span-12 glass p-8 rounded-3xl border-blue-500/10">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-                  <div>
-                    <h3 className="text-xl font-black flex items-center gap-3">
-                      <Database className="text-blue-500" size={24} />
-                      매체별 맞춤전략
-                      <span className="text-[10px] font-bold bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30 uppercase tracking-widest ml-2">Smart Mix</span>
+              {/* Dashboard Row 4: Real-time Ads Simulator */}
+              <div className="lg:col-span-12 glass p-8 rounded-[2.5rem] border-indigo-500/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 mb-10 border-b border-indigo-500/20 pb-10">
+                  <div className="lg:w-1/3">
+                    <h3 className="text-2xl font-black flex items-center gap-3 mb-3">
+                      <ShoppingBag className="text-indigo-400" size={28} />
+                      실시간 광고 및 DB 시뮬레이터
+                      <span className="text-[10px] font-bold bg-indigo-500/20 text-indigo-400 px-3 py-1 rounded-full border border-indigo-500/30 uppercase tracking-widest ml-2">Shopping Mode</span>
                     </h3>
-                    <p className="text-xs text-slate-500 mt-1 font-medium italic">선택한 현장 고민 해결을 위한 최적의 미디어 믹 제안</p>
+                    <p className="text-sm text-slate-400 mt-2 font-medium leading-relaxed">
+                      광고 매체를 장바구니에 담고 예산을 조절해 보세요. 선택한 조합에 따른 <strong className="text-indigo-300">획득 가능 DB(문의) 숫자</strong>와 <strong className="text-indigo-300">총 예산</strong>을 직관적으로 예측해 드립니다.
+                    </p>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">현재 현장의 가장 큰 고민 선택</label>
-                    <div className="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
-                      {["DB 수량 부족", "DB 질 저하", "낮은 클릭률(CTR)", "방문객 없음"].map(v => (
-                        <button
-                          key={v}
-                          onClick={() => {
-                            setMainConcern(v);
-                            setTimeout(() => handleFinalAnalyze(), 50);
-                          }}
-                          className={`px-5 py-2.5 rounded-xl text-[11px] font-bold transition-all ${mainConcern === v
-                            ? 'bg-blue-600 text-white blue-glow shadow-lg'
-                            : 'text-slate-500 hover:text-slate-300'
-                            }`}
-                        >
-                          {v}
-                        </button>
-                      ))}
+                  <div className="lg:w-2/3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    {/* Budget Total */}
+                    <div className="p-6 bg-slate-950/80 rounded-3xl border border-slate-800 text-center flex flex-col items-center justify-center relative overflow-hidden group hover:border-slate-600 transition-all">
+                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 flex flex-col items-center">
+                         <span className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center mb-3 group-hover:bg-slate-800 transition-colors"><Wallet size={20} className="text-slate-400" /></span>
+                         총 집행 예산
+                      </div>
+                      <div className="text-3xl font-black text-white">
+                        <AnimatedNumber value={selectedMedia.reduce((acc, id) => acc + (mediaBudgets[id] || 0), 0)} />
+                        <span className="text-xs text-slate-500 ml-1">만원</span>
+                      </div>
+                    </div>
+
+                    {/* Impressions Total */}
+                    <div className="p-6 bg-slate-950/80 rounded-3xl border border-slate-800 text-center flex flex-col items-center justify-center relative overflow-hidden group hover:border-slate-600 transition-all">
+                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 flex flex-col items-center">
+                         <span className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center mb-3 group-hover:bg-slate-800 transition-colors"><Eye size={20} className="text-slate-400" /></span>
+                         총 예상 노출수
+                      </div>
+                      <div className="text-3xl font-black text-white">
+                         <AnimatedNumber value={selectedMedia.reduce((acc, id) => {
+                             const b = mediaBudgets[id] || 0;
+                             const m = MEDIA_CATALOG.find(x => x.id === id);
+                             return acc + (b * 10000 / (m?.cpm || 1)) * 1000;
+                           }, 0)} decimals={0} />
+                        <span className="text-xs text-slate-500 ml-1">회</span>
+                      </div>
+                    </div>
+
+                    {/* DB Total */}
+                    <div className="p-6 bg-indigo-900/10 rounded-3xl border border-indigo-500/40 text-center flex flex-col items-center justify-center relative shadow-[0_20px_40px_-15px_rgba(79,70,229,0.3)] hover:bg-indigo-900/20 transition-all group">
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 px-4 py-1.5 rounded-full text-[9px] font-black tracking-widest text-white shadow-lg shadow-indigo-500/30 border border-indigo-400">COMBINED DB</div>
+                      <div className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.2em] mb-3 flex flex-col items-center mt-2">
+                         <span className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-lg shadow-indigo-600/40"><Database size={20} className="text-white" /></span>
+                         총 예상 DB 확보량
+                      </div>
+                      <div className="text-4xl font-black text-white">
+                         <AnimatedNumber value={selectedMedia.reduce((acc, id) => {
+                             const b = mediaBudgets[id] || 0;
+                             const m = MEDIA_CATALOG.find(x => x.id === id);
+                             return acc + (b * 10000 / (m?.cpl || 1));
+                           }, 0)} decimals={0} />
+                        <span className="text-sm text-indigo-400 ml-1">개</span>
+                      </div>
                     </div>
                   </div>
                 </div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {(result.media_mix || []).map((item, idx) => (
+                  {MEDIA_CATALOG.map((item, idx) => {
+                    const isSelected = selectedMedia.includes(item.id);
+                    const aiMediaData = (result.media_mix || []).find((m: any) => m.media_id === item.id);
+                    const attentionText = aiMediaData && aiMediaData.attention ? aiMediaData.attention : item.tips.attention;
+                    const empathyText = aiMediaData && aiMediaData.empathy ? aiMediaData.empathy : item.tips.empathy;
+                    const actionText = aiMediaData && aiMediaData.action ? aiMediaData.action : item.tips.action;
+
+                    return (
                     <motion.div
-                      key={idx}
+                      key={item.id}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: idx * 0.1 }}
-                      className="p-6 bg-slate-900/40 rounded-2xl border border-slate-800 hover:border-blue-500/30 transition-all flex flex-col gap-3 group relative overflow-hidden"
+                      className={`p-6 rounded-2xl border transition-all flex flex-col gap-3 group relative overflow-hidden cursor-pointer ${isSelected ? 'bg-indigo-900/10 border-indigo-500 shadow-lg shadow-indigo-900/20' : 'bg-slate-900/40 border-slate-800 hover:border-slate-600'}`}
+                      onClick={() => {
+                        if (!isSelected) {
+                          setSelectedMedia(prev => [...prev, item.id]);
+                          setMediaBudgets(prev => ({...prev, [item.id]: item.minBudget}));
+                        } else {
+                          setSelectedMedia(prev => prev.filter(id => id !== item.id));
+                        }
+                      }}
                     >
-                      <div className="absolute top-0 right-0 p-4 opacity-10 grayscale group-hover:grayscale-0 transition-all duration-500">
-                        {getMediaIcon(item.media)}
+                      <div className="absolute top-4 right-4 text-[10px] font-bold">
+                        <input type="checkbox" checked={isSelected} readOnly className="w-5 h-5 accent-indigo-500 pointer-events-none" />
                       </div>
 
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300">
-                          {getMediaIcon(item.media)}
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-inner group-hover:scale-105 ${isSelected ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.5)]' : 'bg-slate-800 text-slate-400'}`}>
+                          {item.id === "gdn" ? <Target size={24} /> : item.id === "kakao" ? <MessageCircle size={24} /> : item.id === "daangn" ? <MapPin size={24} /> : item.id === "hogangnono" ? <Smartphone size={24} /> : item.id === "meta" ? <Video size={24} /> : <Mail size={24} />}
                         </div>
-                        <span className="text-blue-100 font-black text-sm tracking-tight">{item.media}</span>
+                        <div>
+                           <span className={`block font-black text-lg tracking-tight transition-colors ${isSelected ? 'text-white' : 'text-slate-300'}`}>{item.name}</span>
+                           <span className="text-[11px] font-bold text-slate-500 uppercase">{item.feature}</span>
+                        </div>
                       </div>
 
-                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-tighter bg-slate-900/80 px-2 py-1.5 rounded w-fit border border-slate-800">
-                        {item.feature}
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        <span className="text-[10px] font-black tracking-widest bg-slate-950 px-2 py-1 rounded text-slate-400 border border-slate-800">{item.minLabel}</span>
+                        <span className="text-[10px] font-black tracking-widest bg-slate-950 px-2 py-1 rounded text-slate-400 border border-slate-800">{item.note}</span>
                       </div>
-                      <p className="text-xs text-slate-300 leading-relaxed font-medium mt-1">
-                        {item.reason}
-                      </p>
+                      <div className="mt-2 mb-1 p-3 bg-slate-900/50 rounded-xl border border-slate-800/80">
+                         <p className="text-[11px] text-slate-400 leading-relaxed font-medium">{item.desc}</p>
+                      </div>
 
-                      <div className="mt-4 p-3 bg-blue-600/5 rounded-xl border border-blue-500/10">
-                        <div className="text-[10px] font-black text-blue-400 mb-1 flex items-center gap-1">
-                          <Zap size={10} /> 집행 전략 제안
-                        </div>
-                        <p className="text-[11px] text-slate-400 leading-snug font-medium italic">
-                          "{item.strategy_example}"
-                        </p>
-                      </div>
+                      <AnimatePresence>
+                        {isSelected && (
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} onClick={e => e.stopPropagation()}>
+                            <div className="mt-4 pt-4 border-t border-indigo-500/20">
+                               <label className="text-[10px] font-bold text-slate-400 block mb-2 px-1">집행 예산 (만원)</label>
+                               <input type="number" 
+                                      value={mediaBudgets[item.id] || 0} 
+                                      onChange={(e) => setMediaBudgets(prev => ({...prev, [item.id]: Number(e.target.value)}))} 
+                                      className="w-full bg-slate-950 border border-indigo-500/30 rounded-xl px-4 py-3 text-white font-black outline-none focus:border-indigo-400 transition-all shadow-inner" />
+                            </div>
+                            
+                            <div className="mt-4 p-4 bg-slate-950/80 rounded-xl border border-slate-800 space-y-3 shadow-inner">
+                               <div className="text-[10px] font-black text-indigo-400 flex items-center gap-1.5 border-b border-slate-800 pb-2"><Zap size={12}/> 마케팅 3요소 Check</div>
+                               <div className="text-xs text-slate-300 leading-relaxed font-medium">
+                                 <p className="flex flex-col gap-1 mb-2"><strong className="text-emerald-400">시선(Attention):</strong> <span>{attentionText}</span></p>
+                                 <p className="flex flex-col gap-1 mb-2"><strong className="text-blue-400">공감(Empathy):</strong> <span>{empathyText}</span></p>
+                                 <p className="flex flex-col gap-1"><strong className="text-orange-400">행동(Action):</strong> <span>{actionText}</span></p>
+                               </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Dashboard Row 5: Redesigned ROI Simulation */}
-              <div className="lg:col-span-12 glass p-10 rounded-[2.5rem] bg-gradient-to-br from-indigo-900/20 via-slate-900/50 to-blue-900/20 border-indigo-500/20">
-                <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
-                  <div className="w-full lg:w-1/3">
-                    <h3 className="text-2xl font-black mb-4 flex items-center gap-3">
-                      <PieChart className="text-indigo-400" size={28} />
-                      예상 ROI 시뮬레이션
-                    </h3>
-                    <p className="text-sm text-slate-400 leading-relaxed mb-8">
-                      마케팅 고민과 예산을 조절하여 <span className="text-white font-bold">최적의 매체 믹스 성과</span>를 실시간으로 시뮬레이션 하세요.
-                    </p>
-
-                    <div className="mb-6 invisible h-0" />
-
-                    <div className="mb-10 p-6 bg-slate-950/70 rounded-[2rem] border border-blue-500/30 shadow-2xl">
-                      <div className="flex justify-between items-center mb-6">
-                        <span className="text-sm font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
-                          <Zap size={16} className="fill-blue-400" />
-                          실시간 예산 조정
-                        </span>
-                        <span className="text-2xl font-black text-white bg-blue-600/20 px-4 py-1.5 rounded-xl border border-blue-500/30">
-                          {simulationBudget.toLocaleString()}<span className="text-xs ml-1 text-slate-400">만원</span>
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="100"
-                        max="10000"
-                        step="100"
-                        value={simulationBudget}
-                        onChange={(e) => setSimulationBudget(Number(e.target.value))}
-                        className="w-full h-3 bg-slate-800 rounded-xl appearance-none cursor-pointer accent-blue-500 mb-4"
-                      />
-                      <div className="flex justify-between">
-                        <span className="text-xs font-bold text-slate-600">100만원</span>
-                        <span className="text-xs font-bold text-slate-600">1억원</span>
-                      </div>
-                    </div>
-
-                    <div className="p-8 bg-indigo-600 rounded-[2rem] shadow-2xl shadow-indigo-900/40 border border-indigo-400/30">
-                      <div className="text-xs font-black text-indigo-100 uppercase tracking-widest mb-3 flex items-center gap-2">
-                        <Cpu size={14} /> AI Performance Advice
-                      </div>
-                      <p className="text-sm font-bold leading-relaxed">{result.ad_recommendation}</p>
-                    </div>
-                  </div>
-
-                  <div className="w-full lg:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-6 relative">
-                    {/* Step 1: Budget */}
-                    <div className="p-8 bg-slate-950/50 rounded-[2.5rem] border border-slate-800 text-center flex flex-col items-center justify-center group hover:border-blue-500/50 transition-all hover:bg-slate-900/50">
-                      <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mb-5 text-slate-500 group-hover:text-blue-400 transition-colors shadow-inner">
-                        <TrendingUp size={32} />
-                      </div>
-                      <div className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">집행 예산</div>
-                      <div className="text-4xl font-black text-white">
-                        <AnimatedNumber value={simulationBudget} />
-                        <span className="text-sm text-slate-500 ml-1">만원</span>
-                      </div>
-                    </div>
-
-                    {/* Step 2: CTR */}
-                    <div className="p-8 bg-slate-950/50 rounded-[2.5rem] border border-slate-800 text-center flex flex-col items-center justify-center group hover:border-orange-500/50 transition-all hover:bg-slate-900/50">
-                      <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mb-5 text-slate-500 group-hover:text-orange-400 transition-colors shadow-inner">
-                        <Target size={32} />
-                      </div>
-                      <div className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">예상 클릭률(CTR)</div>
-                      <div className="text-4xl font-black text-white">
-                        <AnimatedNumber value={result.roi_forecast.expected_ctr || 1.8} decimals={1} />
-                        <span className="text-sm text-slate-500 ml-1">%</span>
-                      </div>
-                    </div>
-
-                    {/* Step 3: Leads */}
-                    <div className="p-8 bg-blue-900/10 rounded-[2.5rem] border border-blue-500/30 text-center flex flex-col items-center justify-center relative shadow-[0_20px_40px_-15px_rgba(59,130,246,0.3)] hover:bg-blue-900/20 transition-all">
-                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-blue-600 text-[10px] font-black rounded-full shadow-lg border border-blue-400/30 tracking-widest">LIVE ESTIMATE</div>
-                      <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-5 text-white shadow-xl shadow-blue-900/40">
-                        <ShieldCheck size={32} />
-                      </div>
-                      <div className="text-[11px] font-black text-blue-300 uppercase tracking-[0.2em] mb-3">예상 DB 확보</div>
-                      <div className="text-5xl font-black text-white">
-                        <AnimatedNumber value={(result.roi_forecast.expected_leads / (Number(monthlyBudget) || 1)) * simulationBudget} />
-                        <span className="text-sm text-blue-400 ml-1">개</span>
-                      </div>
-                    </div>
-
-                    {/* Step 4: Conversion */}
-                    <div className="p-8 bg-emerald-900/10 rounded-[2.5rem] border border-emerald-500/20 text-center flex flex-col items-center justify-center group hover:border-emerald-500/50 transition-all hover:bg-emerald-900/20">
-                      <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mb-5 text-slate-500 group-hover:text-emerald-400 transition-colors shadow-inner">
-                        <Zap size={32} />
-                      </div>
-                      <div className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">예상 방문/전환</div>
-                      <div className="text-4xl font-black text-white">
-                        <AnimatedNumber value={((result.roi_forecast.expected_leads / (Number(monthlyBudget) || 1)) * simulationBudget) * result.roi_forecast.conversion_rate / 100} decimals={1} />
-                        <span className="text-sm text-slate-500 ml-1">명</span>
-                      </div>
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
 
-                {/* 추가된 강력한 CTA 버튼 */}
+                {/* Shopping Mode CTA */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  className="mt-12 w-full"
+                  className="mt-12 w-full pt-8 border-t border-indigo-500/20"
                 >
                   <motion.button
                     whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(79, 70, 229, 0.4)" }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       setLeadForm(prev => ({ ...prev, site: fieldName }));
-                      setLeadSource("ROI 시뮬레이션 하단");
+                      setLeadSource("Shopping Mode 하단");
                       setShowLeadModal(true);
                     }}
                     className="w-full py-6 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600 bg-[length:200%_auto] hover:bg-right text-white rounded-3xl font-black text-lg transition-all shadow-2xl flex items-center justify-center gap-4 relative overflow-hidden group"

@@ -537,7 +537,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         [분석 요청 사항]
         - market_diagnosis: 전문 용어를 적극 활용하여 시장의 거시적 흐름과 단지의 입지적 강점을 최소 5문장 이상으로 상세히 분석하되, 사용자의 가장 큰 고민({main_concern})을 해결할 솔루션을 제안하십시오.
         - lms_copy_samples & channel_talk_samples: 이모지를 풍부하게 사용하고, 가독성이 좋으면서도 내용이 매우 긴 '호소력 짙은' 문안을 각 매체당 3개씩 작성하십시오.
-        - media_mix: '호갱노노 채널톡', 'LMS(문자 마케팅)', '메타/인스타 리드광고'를 필수 포함한 3대 핵심 매체 전략을 제시하십시오. **각 매체의 성격이 완전히 다르므로, 내용이 절대 겹치지 않게 매체별로 고유하고 차별화된 전략(feature, reason, strategy_example)을 도출**해야 합니다. 반드시 현장의 가장 큰 고민({main_concern})을 타파할 수 있는 매체 특화 맞춤 방안을 포함하십시오.
+        - media_mix: '구글 GDN', '카카오 모먼트', '당근마켓 배너', '호갱노노 채널톡', '메타 릴스', 'LMS 문자' 등 총 6개의 핵심 매체 전부에 대해, **사용자의 핵심 강조 포인트({fkp})와 고민({main_concern})을 타파할 수 있는 매체별 차별화된 광고 3요소(attention, empathy, action)**를 각각 작성하십시오. (media_id는 각각 gdn, kakao, daangn, hogangnono, meta, lms 로 고정)
 
         [데이터 세트]
         - 현장명: {field_name} / 위치: {address} / 상품군: {product_category}
@@ -563,7 +563,7 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             "lms_copy_samples": ["긴 카피 1안", "긴 카피 2안", "긴 카피 3안"],
             "channel_talk_samples": ["채널톡 긴 카피 1안", "채널톡 긴 카피 2안", "채널톡 긴 카피 3안"],
             "media_mix": [
-                {{"media": "매체", "feature": "강점", "reason": "이유", "strategy_example": "전략"}}
+                {{"media_id": "gdn", "attention": "시선 집중 예시 카피", "empathy": "공감 메시지", "action": "행동 촉구 메시지"}}
             ]
         }}
         """
@@ -618,10 +618,10 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
         for m in safe_data["media_mix"]:
             if isinstance(m, dict):
                 final_media_mix.append({
-                    "media": str(m.get("media", "매체")),
-                    "feature": str(m.get("feature", "특징")),
-                    "reason": str(m.get("reason", "분석 사유")),
-                    "strategy_example": str(m.get("strategy_example", "전략 예시"))
+                    "media_id": str(m.get("media_id", "meta")),
+                    "attention": str(m.get("attention", "3초 안에 핵심 메시지를 전달하세요.")),
+                    "empathy": str(m.get("empathy", "실거주자와 투자자의 니즈를 자극하세요.")),
+                    "action": str(m.get("action", "즉각적인 상담 신청(CTA)을 유도하세요."))
                 })
         safe_data["media_mix"] = final_media_mix
         if "expected_ctr" not in safe_data["roi_forecast"]:
@@ -714,9 +714,12 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
             "lms_copy_samples": safe_data["lms_copy_samples"],
             "channel_talk_samples": safe_data["channel_talk_samples"],
             "media_mix": safe_data["media_mix"] if safe_data["media_mix"] else [
-                {"media": "메타/인스타", "feature": "정밀 타켓팅", "reason": "관심사 기반 도달", "strategy_example": "혜택 강조 광고"},
-                {"media": "네이버", "feature": "검색 기반", "reason": "구매 의향 고객 확보", "strategy_example": "지역 키워드 점유"},
-                {"media": "카카오", "feature": "모먼트 타겟", "reason": "지역 기반 노출", "strategy_example": "방문 유도"}
+                {"media_id": "gdn", "attention": f"[{field_name}] {fkp}를 강조한 전국 확산 배너 카피!", "empathy": f"{main_concern} 돌파하는 시세차익 강조로 이성적 설득.", "action": "지금 바로 단독 팝업 배너 클릭 유도."},
+                {"media_id": "kakao", "attention": "카카오톡 사용자 최적화된 시선 집중 메시지 구성.", "empathy": "채팅방 내 실시간 정보 제공 및 신뢰도 강화.", "action": "대화형(CTA) 버튼으로 빠른 카톡 상담 유입."},
+                {"media_id": "daangn", "attention": "우리 동네 이웃들에게 보내는 친근하고 핫한 아파트 소식.", "empathy": "현장과 가장 가까운 동네 생활권 내 실거주 수요 자극.", "action": "가벼운 마음으로 채팅 문의 유도."},
+                {"media_id": "hogangnono", "attention": "빅데이터 검색 유저를 위한 확고한 타겟팅 팝업 노출.", "empathy": "실시간 관심 고객에게 투자가치 리포트 및 매력 발산.", "action": f"{main_concern} 극복형 전문 리포트 신청 CTA."},
+                {"media_id": "meta", "attention": "화려한 숏폼 릴스와 비주얼 임팩트로 초기 3초 시선 강탈.", "empathy": "3040 신혼부부의 주거 로망을 자극하는 감성 터치.", "action": "스폰서드 링크에서 즉시 양식 작성 및 콜백 유도."},
+                {"media_id": "lms", "attention": "다이렉트 도달! 스마트폰 즉각 확인 가능한 긴급 SMS 헤드라인.", "empathy": "지역 내 고관여 투자자에게 강력한 이자 지원 동기 부여.", "action": "선착순 방문 예약 링크 클릭 및 혜택 한정 공지."}
             ]
         }
         
@@ -798,9 +801,12 @@ async def analyze_site(request: Optional[AnalyzeRequest] = None):
                 f"📊 {field_name} 전용 [정밀 분석 리포트 확인] 📊\n\n전문가가 분석한 진짜 정보, 궁금하시죠? 🧐\n\n수록 내용:\n- {address} 입지적 가치 및 공급 현황 정밀 진단\n- 시세 차익을 결정짓는 {fkp if fkp else '핵심 입지 가치'}\n- 금융 혜택 적용 시 실투자금 시뮬레이션\n\n지금 채널톡 신청 시 리포트를 즉시 발송해 드립니다! 💎"
             ],
             "media_mix": [
-                {"media": "호갱노노 채널톡", "feature": "빅데이터 기반 타겟팅", "reason": "실시간 관심 고객이 가장 많이 모이는 플랫폼", "strategy_example": f"주변 시세 대비 확실한 차익을 강조하는 단독 팝업과 전문 리포트 제공으로 {main_concern} 문제 해소"},
-                {"media": "LMS(문자 마케팅)", "feature": "다이렉트 도달", "reason": "지역 내 투자자 및 50대 이상 고관여군 직접 접촉", "strategy_example": "긴급 마감 및 파격적인 이자 지원 혜택을 부각시킨 장문 메시지로 모델하우스 내방 즉각 유도"},
-                {"media": "메타/인스타 리드광고", "feature": "비주얼 임팩트 확산", "reason": "3040 신혼부부 및 실수요자 폭넓은 도달", "strategy_example": f"화려한 외관과 커뮤니티 시설을 보여주는 짧은 릴스 영상과 후킹 카피 배치로 {main_concern} 돌파"}
+                {"media_id": "gdn", "attention": "3초 안에 관심을 끄는 구글 배너", "empathy": "전국 투자자의 시세차익 열망 자극", "action": "홈페이지 방문 유도"},
+                {"media_id": "kakao", "attention": "카카오톡 알림톡 최적화 메시지", "empathy": "신뢰도 높은 카카오 채널 정보", "action": "카톡 상담 버튼"},
+                {"media_id": "daangn", "attention": "동네 주민 타겟의 이웃 메시지", "empathy": "실거주 로망 실현", "action": "채팅하기 유도"},
+                {"media_id": "hogangnono", "attention": "빅데이터 기반 타겟팅 전문 리포트", "empathy": f"주변 시세 대비 확실한 차익 강조로 {main_concern} 해소", "action": "단독 팝업으로 상세 리포트 신청 유도"},
+                {"media_id": "meta", "attention": "비주얼 임팩트가 강한 숏폼 릴스", "empathy": "3040 신혼부부 및 실수요자 폭넓은 도달", "action": f"화려한 커뮤니티 시설 노출로 {main_concern} 돌파 및 양식 제출"},
+                {"media_id": "lms", "attention": "다이렉트 도달하는 긴급 마감 정보", "empathy": "지역 내 투자자 및 50대 이상 고관여군 자극", "action": "파격적 혜택 부각시킨 장문 메시지로 콜 유도"}
             ]
         }
         
